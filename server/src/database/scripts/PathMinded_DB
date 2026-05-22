@@ -1,0 +1,511 @@
+-- =========================================================
+-- Academic Advising Matrix System
+-- PostgreSQL Full Schema
+-- =========================================================
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- =========================================================
+-- ENUMS
+-- =========================================================
+
+CREATE TYPE user_role AS ENUM (
+    'STUDENT',
+    'ADVISOR',
+    'ADMIN'
+);
+
+CREATE TYPE student_status AS ENUM (
+    'ACTIVE',
+    'GRADUATED',
+    'DROPPED'
+);
+
+CREATE TYPE import_status AS ENUM (
+    'PENDING',
+    'SUCCESS',
+    'FAILED'
+);
+
+CREATE TYPE source_type AS ENUM (
+    'PASTE',
+    'FILE'
+);
+
+CREATE TYPE course_status AS ENUM (
+    'PASSED',
+    'FAILED',
+    'STUDYING'
+);
+
+CREATE TYPE course_type AS ENUM (
+    'REQUIRED',
+    'ELECTIVE',
+    'PE',
+    'ENGLISH',
+    'DEFENSE',
+    'OTHER'
+);
+
+CREATE TYPE export_type AS ENUM (
+    'MATRIX'
+);
+
+-- =========================================================
+-- USERS
+-- =========================================================
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role user_role NOT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- ADVISORS
+-- =========================================================
+
+CREATE TABLE advisors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+
+    full_name VARCHAR(255) NOT NULL,
+    department VARCHAR(255),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- PROGRAMS
+-- =========================================================
+
+CREATE TABLE programs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    program_code VARCHAR(50) NOT NULL,
+    program_name VARCHAR(255) NOT NULL,
+    major_name VARCHAR(255),
+    version VARCHAR(50),
+    total_credits INT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(program_code, version)
+);
+
+-- =========================================================
+-- CLASSES
+-- =========================================================
+
+CREATE TABLE classes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    advisor_id UUID REFERENCES advisors(id) ON DELETE SET NULL,
+    program_id UUID REFERENCES programs(id) ON DELETE SET NULL,
+
+    class_code VARCHAR(50) UNIQUE NOT NULL,
+    class_name VARCHAR(255),
+    cohort_year INT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- STUDENTS
+-- =========================================================
+
+CREATE TABLE students (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    user_id UUID UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+
+    student_code VARCHAR(50) UNIQUE NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+
+    class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
+    program_id UUID REFERENCES programs(id) ON DELETE SET NULL,
+
+    cohort_year INT,
+
+    status student_status DEFAULT 'ACTIVE',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- CURRICULUM IMPORTS
+-- =========================================================
+
+CREATE TABLE curriculum_imports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    advisor_id UUID REFERENCES advisors(id) ON DELETE SET NULL,
+    program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
+
+    file_name TEXT NOT NULL,
+    file_path TEXT,
+
+    import_status import_status DEFAULT 'PENDING',
+    import_error TEXT,
+
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP
+);
+
+-- =========================================================
+-- CURRICULUM COURSES
+-- =========================================================
+
+CREATE TABLE curriculum_courses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    program_id UUID NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    import_id UUID REFERENCES curriculum_imports(id) ON DELETE SET NULL,
+
+    course_code VARCHAR(50) NOT NULL,
+    course_name VARCHAR(255) NOT NULL,
+
+    credits INT,
+    expected_semester INT,
+
+    course_group VARCHAR(255),
+
+    course_type course_type DEFAULT 'REQUIRED',
+
+    is_required BOOLEAN DEFAULT TRUE,
+
+    sort_order INT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(program_id, course_code)
+);
+
+-- =========================================================
+-- TRANSCRIPT UPLOADS
+-- =========================================================
+
+CREATE TABLE transcript_uploads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+
+    raw_text TEXT NOT NULL,
+
+    source_type source_type DEFAULT 'PASTE',
+
+    parse_status import_status DEFAULT 'PENDING',
+    parse_error TEXT,
+
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    parsed_at TIMESTAMP
+);
+
+-- =========================================================
+-- STUDENT COURSE RESULTS
+-- =========================================================
+
+CREATE TABLE student_course_results (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+
+    upload_id UUID REFERENCES transcript_uploads(id) ON DELETE SET NULL,
+
+    course_code VARCHAR(50) NOT NULL,
+    course_name VARCHAR(255),
+
+    credits INT,
+
+    school_year VARCHAR(20),
+
+    semester_code VARCHAR(20),
+
+    semester_number INT,
+
+    score_10 NUMERIC(4,2),
+    score_4 NUMERIC(4,2),
+
+    letter_grade VARCHAR(10),
+
+    result_text TEXT,
+
+    status course_status NOT NULL,
+
+    attempt_no INT DEFAULT 1,
+
+    is_latest BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- EXPORTS
+-- =========================================================
+
+CREATE TABLE exports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    advisor_id UUID REFERENCES advisors(id) ON DELETE SET NULL,
+
+    class_id UUID REFERENCES classes(id) ON DELETE CASCADE,
+
+    program_id UUID REFERENCES programs(id) ON DELETE SET NULL,
+
+    file_name TEXT NOT NULL,
+    file_path TEXT,
+
+    export_type export_type DEFAULT 'MATRIX',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- EXPORT LOGS
+-- =========================================================
+
+CREATE TABLE export_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    export_id UUID NOT NULL REFERENCES exports(id) ON DELETE CASCADE,
+
+    student_count INT DEFAULT 0,
+    course_count INT DEFAULT 0,
+
+    success_count INT DEFAULT 0,
+    warning_count INT DEFAULT 0,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- CLASS IMPORTS
+-- =========================================================
+
+CREATE TABLE class_imports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    advisor_id UUID REFERENCES advisors(id) ON DELETE SET NULL,
+
+    class_id UUID REFERENCES classes(id) ON DELETE CASCADE,
+
+    file_name TEXT NOT NULL,
+    file_path TEXT,
+
+    import_status import_status DEFAULT 'PENDING',
+
+    import_error TEXT,
+
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP
+);
+
+-- =========================================================
+-- CLASS IMPORT ROWS
+-- =========================================================
+
+CREATE TABLE class_import_rows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    import_id UUID NOT NULL REFERENCES class_imports(id) ON DELETE CASCADE,
+
+    row_number INT,
+
+    student_code VARCHAR(50),
+
+    full_name VARCHAR(255),
+
+    email VARCHAR(255),
+
+    row_status import_status DEFAULT 'PENDING',
+
+    row_error TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- PARSE WARNINGS
+-- =========================================================
+
+CREATE TABLE parse_warnings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    source_type VARCHAR(50) NOT NULL,
+
+    source_id UUID NOT NULL,
+
+    row_number INT,
+
+    warning_code VARCHAR(100),
+
+    warning_message TEXT,
+
+    raw_value TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================
+-- COURSE EQUIVALENCIES
+-- =========================================================
+
+CREATE TABLE course_equivalencies (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
+
+    original_course_code VARCHAR(50) NOT NULL,
+
+    equivalent_course_code VARCHAR(50) NOT NULL,
+
+    note TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(program_id, original_course_code, equivalent_course_code)
+);
+
+-- =========================================================
+-- COURSE PREREQUISITES
+-- =========================================================
+
+CREATE TABLE course_prerequisites (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    program_id UUID REFERENCES programs(id) ON DELETE CASCADE,
+
+    course_code VARCHAR(50) NOT NULL,
+
+    prerequisite_course_code VARCHAR(50) NOT NULL,
+
+    prerequisite_type VARCHAR(50) DEFAULT 'REQUIRED',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(program_id, course_code, prerequisite_course_code)
+);
+
+-- =========================================================
+-- INDEXES
+-- =========================================================
+
+CREATE INDEX idx_students_class_id
+ON students(class_id);
+
+CREATE INDEX idx_students_program_id
+ON students(program_id);
+
+CREATE INDEX idx_curriculum_courses_program_course
+ON curriculum_courses(program_id, course_code);
+
+CREATE INDEX idx_results_student_course
+ON student_course_results(student_id, course_code);
+
+CREATE INDEX idx_results_student_latest
+ON student_course_results(student_id, is_latest);
+
+CREATE INDEX idx_results_course_status
+ON student_course_results(course_code, status);
+
+CREATE INDEX idx_uploads_student_uploaded
+ON transcript_uploads(student_id, uploaded_at);
+
+CREATE INDEX idx_class_imports_class_id
+ON class_imports(class_id);
+
+CREATE INDEX idx_class_import_rows_import_id
+ON class_import_rows(import_id);
+
+CREATE INDEX idx_parse_warnings_source
+ON parse_warnings(source_type, source_id);
+
+CREATE INDEX idx_course_equiv_program_original
+ON course_equivalencies(program_id, original_course_code);
+
+CREATE INDEX idx_course_prereq_program_course
+ON course_prerequisites(program_id, course_code);
+
+-- =========================================================
+-- UPDATED_AT TRIGGER FUNCTION
+-- =========================================================
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = CURRENT_TIMESTAMP;
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =========================================================
+-- UPDATED_AT TRIGGERS
+-- =========================================================
+
+CREATE TRIGGER trg_users_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_advisors_updated_at
+BEFORE UPDATE ON advisors
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_students_updated_at
+BEFORE UPDATE ON students
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_classes_updated_at
+BEFORE UPDATE ON classes
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_programs_updated_at
+BEFORE UPDATE ON programs
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trg_curriculum_courses_updated_at
+BEFORE UPDATE ON curriculum_courses
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- =========================================================
+-- OUTPUT MAPPING
+-- =========================================================
+
+/*
+PASSED   -> x
+FAILED   -> o
+STUDYING -> semester_number
+MISSING  -> blank
+*/
+
+-- =========================================================
+-- EXPORT MATRIX LOGIC
+-- =========================================================
+
+/*
+Rows:
+    curriculum_courses
+
+Columns:
+    students
+
+Cells:
+    student_course_results.status
+
+Generated dynamically during export.
+DO NOT STORE MATRIX IN DATABASE.
+*/
