@@ -10,7 +10,11 @@ import { DB_PROVIDER } from '../../constants/app.constant';
 import { CreateUsersDto } from './dto/create_users.dto';
 import { QuerryUsersDto } from './dto/querry_users.dto';
 import { UpdateUsersDto } from './dto/update_users.dto';
-import { UserEntity, UserResponse } from './interfaces/users.interfaces';
+import {
+  UserEntity,
+  UserResponse,
+  UsersPaginationResponse,
+} from './interfaces/users.interfaces';
 
 @Injectable()
 export class UserService {
@@ -76,6 +80,86 @@ export class UserService {
     );
 
     return result.rows;
+  }
+
+  async pagination(query: QuerryUsersDto): Promise<UsersPaginationResponse> {
+    const clauses: string[] = [];
+    const values: Array<string | number> = [];
+    let idx = 1;
+
+    if (query.email) {
+      clauses.push(`email ILIKE $${idx++}`);
+      values.push(`%${query.email}%`);
+    }
+
+    if (query.role) {
+      clauses.push(`role = $${idx++}::user_role`);
+      values.push(query.role);
+    }
+
+    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const page = Math.max(1, Number(query.page ?? 1));
+    const limit = Math.max(1, Number(query.limit ?? 20));
+    const offset = (page - 1) * limit;
+
+    const countResult = await this.pool.query<{ total: string }>(
+      `
+        SELECT COUNT(*) AS total
+        FROM users
+        ${where}
+      `,
+      values,
+    );
+
+    const total = Number(countResult.rows[0]?.total ?? 0);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    const dataValues = [...values, limit, offset];
+    const result = await this.pool.query<UserResponse>(
+      `
+        SELECT id, email, role, created_at, updated_at
+        FROM users
+        ${where}
+        ORDER BY created_at DESC
+        LIMIT $${idx++}
+        OFFSET $${idx++}
+      `,
+      dataValues,
+    );
+
+    return {
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
+  }
+
+  async countUsers(query: QuerryUsersDto): Promise<{ count: number }> {
+    const clauses: string[] = [];
+    const values: Array<string | number> = [];
+    let idx = 1;
+
+    if (query.email) {
+      clauses.push(`email ILIKE $${idx++}`);
+      values.push(`%${query.email}%`);
+    }
+
+    if (query.role) {
+      clauses.push(`role = $${idx++}::user_role`);
+      values.push(query.role);
+    }
+
+    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const result = await this.pool.query<{ count: string }>(
+      `SELECT COUNT(*) AS count FROM users ${where}`,
+      values,
+    );
+
+    return { count: Number(result.rows[0]?.count ?? 0) };
   }
 
   async findOne(id: string): Promise<UserResponse> {

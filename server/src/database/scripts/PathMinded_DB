@@ -82,7 +82,7 @@ CREATE TABLE advisors (
 
 -- =========================================================
 -- PROGRAMS
--- =========================================================
+-- ======================================================npm install @cj-tech-master/excelts===
 
 CREATE TABLE programs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

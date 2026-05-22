@@ -16,3 +16,13 @@ export type UserResponse = {
   created_at: Date;
   updated_at: Date;
 };
+
+export type UsersPaginationResponse = {
+  data: UserResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
