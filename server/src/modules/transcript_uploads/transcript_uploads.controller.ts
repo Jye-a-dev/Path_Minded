@@ -6,31 +6,31 @@ import {
 } from './interfaces/transcript_uploads.interfaces';
 import { TranscriptUploadsService } from './transcript_uploads.service';
 
-@ApiTags('Transcript Uploads')
+@ApiTags('Import - Transcript (Paste/Text)')
 @Controller('transcript_uploads')
 export class TranscriptUploadsController {
   constructor(private readonly service: TranscriptUploadsService) {}
 
-  @ApiOperation({ summary: 'Create' })
+  @ApiOperation({ summary: 'Import transcript paste/text (create upload session)' })
   @ApiBody({ schema: { type: 'object' } })
   @Post()
   create(@Body() payload: Record<string, unknown>): Promise<TranscriptUploadResponse> {
     return this.service.create(payload);
   }
 
-  @ApiOperation({ summary: 'Find all' })
+  @ApiOperation({ summary: 'List transcript upload sessions' })
   @Get()
   findAll(@Query() query: Record<string, unknown>): Promise<TranscriptUploadResponse[]> {
     return this.service.findAll(query);
   }
 
-  @ApiOperation({ summary: 'Pagination' })
+  @ApiOperation({ summary: 'Paginate transcript upload sessions' })
   @Get('pagination')
   pagination(@Query() query: Record<string, unknown>): Promise<TranscriptUploadsPaginationResponse> {
     return this.service.pagination(query);
   }
 
-  @ApiOperation({ summary: 'Count' })
+  @ApiOperation({ summary: 'Count transcript upload sessions' })
   @Get('count')
   count(@Query() query: Record<string, unknown>): Promise<{ count: number }> {
     return this.service.count(query);

@@ -179,6 +179,19 @@ export class UserService {
     return result.rows[0];
   }
 
+  async findByEmailWithPassword(email: string): Promise<UserEntity | null> {
+    const result = await this.pool.query<UserEntity>(
+      `
+        SELECT id, email, password_hash, role, created_at, updated_at
+        FROM users
+        WHERE email = $1
+      `,
+      [email.toLowerCase()],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
   async update(id: string, payload: UpdateUsersDto): Promise<UserResponse> {
     if (!payload.email && !payload.password && !payload.role) {
       throw new BadRequestException('at least one field is required');

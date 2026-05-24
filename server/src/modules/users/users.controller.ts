@@ -1,4 +1,5 @@
 import {
+  UseGuards,
   Body,
   Controller,
   Delete,
@@ -17,6 +18,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateUsersDto } from './dto/create_users.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { QuerryUsersDto } from './dto/querry_users.dto';
 import { UpdateUsersDto } from './dto/update_users.dto';
 import {
@@ -26,6 +29,7 @@ import {
 import { UserService } from './user.service';
 
 @ApiTags('Users')
+@UseGuards(RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UserService) {}
@@ -33,6 +37,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Create user' })
   @ApiBody({ type: CreateUsersDto })
   @ApiOkResponse({ description: 'User created' })
+  @Roles('ADMIN')
   @Post()
   create(@Body() payload: CreateUsersDto): Promise<UserResponse> {
     return this.usersService.create(payload);
@@ -93,6 +98,7 @@ export class UsersController {
   @ApiParam({ name: 'id', example: '9df8ca89-38f4-4d95-a44b-cd91a461d413' })
   @ApiBody({ type: UpdateUsersDto })
   @ApiOkResponse({ description: 'User updated' })
+  @Roles('ADMIN')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -104,6 +110,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user by id (hard delete)' })
   @ApiParam({ name: 'id', example: '9df8ca89-38f4-4d95-a44b-cd91a461d413' })
   @ApiOkResponse({ description: 'Delete result' })
+  @Roles('ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.usersService.remove(id);

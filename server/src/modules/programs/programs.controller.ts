@@ -1,4 +1,5 @@
 import {
+  UseGuards,
   Body,
   Controller,
   Delete,
@@ -17,6 +18,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateProgramsDto } from './dto/create_programs.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { QuerryProgramsDto } from './dto/querry_programs.dto';
 import { UpdateProgramsDto } from './dto/update_programs.dto';
 import {
@@ -26,6 +29,7 @@ import {
 import { ProgramsService } from './programs.service';
 
 @ApiTags('Programs')
+@UseGuards(RolesGuard)
 @Controller('programs')
 export class ProgramsController {
   constructor(private readonly programsService: ProgramsService) {}
@@ -33,6 +37,7 @@ export class ProgramsController {
   @ApiOperation({ summary: 'Create program' })
   @ApiBody({ type: CreateProgramsDto })
   @ApiOkResponse({ description: 'Program created' })
+  @Roles('ADMIN')
   @Post()
   create(@Body() payload: CreateProgramsDto): Promise<ProgramResponse> {
     return this.programsService.create(payload);
@@ -92,6 +97,7 @@ export class ProgramsController {
   @ApiParam({ name: 'id', example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622' })
   @ApiBody({ type: UpdateProgramsDto })
   @ApiOkResponse({ description: 'Program updated' })
+  @Roles('ADMIN')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -103,6 +109,7 @@ export class ProgramsController {
   @ApiOperation({ summary: 'Delete program by id (hard delete)' })
   @ApiParam({ name: 'id', example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622' })
   @ApiOkResponse({ description: 'Delete result' })
+  @Roles('ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.programsService.remove(id);

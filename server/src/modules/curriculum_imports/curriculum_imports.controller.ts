@@ -6,31 +6,31 @@ import {
 } from './interfaces/curriculum_imports.interfaces';
 import { CurriculumImportsService } from './curriculum_imports.service';
 
-@ApiTags('Curriculum Importss')
+@ApiTags('Import - Curriculum (Excel)')
 @Controller('curriculum_imports')
 export class CurriculumImportsController {
   constructor(private readonly service: CurriculumImportsService) {}
 
-  @ApiOperation({ summary: 'Create' })
+  @ApiOperation({ summary: 'Import curriculum Excel (create import session)' })
   @ApiBody({ schema: { type: 'object' } })
   @Post()
   create(@Body() payload: Record<string, unknown>): Promise<CurriculumImportResponse> {
     return this.service.create(payload);
   }
 
-  @ApiOperation({ summary: 'Find all' })
+  @ApiOperation({ summary: 'List curriculum import sessions' })
   @Get()
   findAll(@Query() query: Record<string, unknown>): Promise<CurriculumImportResponse[]> {
     return this.service.findAll(query);
   }
 
-  @ApiOperation({ summary: 'Pagination' })
+  @ApiOperation({ summary: 'Paginate curriculum import sessions' })
   @Get('pagination')
   pagination(@Query() query: Record<string, unknown>): Promise<CurriculumImportsPaginationResponse> {
     return this.service.pagination(query);
   }
 
-  @ApiOperation({ summary: 'Count' })
+  @ApiOperation({ summary: 'Count curriculum import sessions' })
   @Get('count')
   count(@Query() query: Record<string, unknown>): Promise<{ count: number }> {
     return this.service.count(query);

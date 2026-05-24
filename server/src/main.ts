@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import type { Pool } from 'pg';
@@ -57,6 +57,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const env = envConfig();
   const swagger = swaggerConfig();
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
 
   if (swagger.enabled) {
     const document = SwaggerModule.createDocument(app, swagger.document);

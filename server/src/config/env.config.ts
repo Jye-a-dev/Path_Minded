@@ -6,6 +6,8 @@ export type EnvConfig = {
   DB_PASSWORD: string;
   DB_NAME: string;
   DB_SSL: boolean;
+  JWT_SECRET: string;
+  JWT_EXPIRES_IN: string;
 };
 
 const toNumber = (value: string | undefined, fallback: number): number => {
@@ -26,4 +28,6 @@ export const envConfig = (): EnvConfig => ({
   DB_PASSWORD: process.env.DB_PASSWORD ?? 'postgres',
   DB_NAME: process.env.DB_NAME ?? 'PathMinded_DB',
   DB_SSL: toBoolean(process.env.DB_SSL, false),
+  JWT_SECRET: process.env.JWT_SECRET ?? 'dev_jwt_secret_change_me',
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '1d',
 });
