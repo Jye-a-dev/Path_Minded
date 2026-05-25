@@ -14,4 +14,3 @@ export type ParseWarningsPaginationResponse = {
     totalPages: number;
   };
 };
-

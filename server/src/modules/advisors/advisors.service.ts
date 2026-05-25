@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
-import { CreateAdvisorsDto } from './dto/create_advisors.dto';
-import { QuerryAdvisorsDto } from './dto/querry_advisors.dto';
-import { UpdateAdvisorsDto } from './dto/update_advisors.dto';
+import { CreateAdvisorsDto } from './dto/create-advisors.dto';
+import { QueryAdvisorsDto } from './dto/query-advisors.dto';
+import { UpdateAdvisorsDto } from './dto/update-advisors.dto';
 import {
   AdvisorEntity,
   AdvisorsPaginationResponse,
@@ -47,7 +47,7 @@ export class AdvisorsService {
     }
   }
 
-  async findAll(query: QuerryAdvisorsDto): Promise<AdvisorResponse[]> {
+  async findAll(query: QueryAdvisorsDto): Promise<AdvisorResponse[]> {
     const clauses: string[] = [];
     const values: Array<string | number> = [];
     let idx = 1;
@@ -87,7 +87,7 @@ export class AdvisorsService {
   }
 
   async pagination(
-    query: QuerryAdvisorsDto,
+    query: QueryAdvisorsDto,
   ): Promise<AdvisorsPaginationResponse> {
     const clauses: string[] = [];
     const values: Array<string | number> = [];
@@ -138,7 +138,7 @@ export class AdvisorsService {
     };
   }
 
-  async countAdvisors(query: QuerryAdvisorsDto): Promise<{ count: number }> {
+  async countAdvisors(query: QueryAdvisorsDto): Promise<{ count: number }> {
     const clauses: string[] = [];
     const values: Array<string | number> = [];
     let idx = 1;

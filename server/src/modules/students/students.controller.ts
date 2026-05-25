@@ -16,9 +16,9 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateStudentsDto } from './dto/create_students.dto';
-import { QuerryStudentsDto } from './dto/querry_students.dto';
-import { UpdateStudentsDto } from './dto/update_students.dto';
+import { CreateStudentsDto } from './dto/create-students.dto';
+import { QueryStudentsDto } from './dto/query-students.dto';
+import { UpdateStudentsDto } from './dto/update-students.dto';
 import {
   StudentsPaginationResponse,
   StudentResponse,
@@ -32,7 +32,16 @@ export class StudentsController {
 
   @ApiOperation({ summary: 'Create student' })
   @ApiBody({ type: CreateStudentsDto })
-  @ApiOkResponse({ description: 'Student created' })
+  @ApiOkResponse({
+    description: 'Student created',
+    schema: {
+      example: {
+        id: '2e8205c7-f683-41fa-bfdb-fb531bf0999f',
+        student_code: 'SE170001',
+        full_name: 'Nguyen Van C',
+      },
+    },
+  })
   @Post()
   create(@Body() payload: CreateStudentsDto): Promise<StudentResponse> {
     return this.studentsService.create(payload);
@@ -64,9 +73,20 @@ export class StudentsController {
   })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({ name: 'offset', required: false, example: 0 })
-  @ApiOkResponse({ description: 'Students list' })
+  @ApiOkResponse({
+    description: 'Students list',
+    schema: {
+      example: [
+        {
+          id: '2e8205c7-f683-41fa-bfdb-fb531bf0999f',
+          student_code: 'SE170001',
+          full_name: 'Nguyen Van C',
+        },
+      ],
+    },
+  })
   @Get()
-  findAll(@Query() query: QuerryStudentsDto): Promise<StudentResponse[]> {
+  findAll(@Query() query: QueryStudentsDto): Promise<StudentResponse[]> {
     return this.studentsService.findAll(query);
   }
 
@@ -96,10 +116,26 @@ export class StudentsController {
     required: false,
     enum: ['ACTIVE', 'GRADUATED', 'DROPPED'],
   })
-  @ApiOkResponse({ description: 'Paginated students data' })
+  @ApiOkResponse({
+    description: 'Paginated students data',
+    schema: {
+      example: {
+        data: [
+          {
+            id: '2e8205c7-f683-41fa-bfdb-fb531bf0999f',
+            student_code: 'SE170001',
+            full_name: 'Nguyen Van C',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      },
+    },
+  })
   @Get('pagination')
   pagination(
-    @Query() query: QuerryStudentsDto,
+    @Query() query: QueryStudentsDto,
   ): Promise<StudentsPaginationResponse> {
     return this.studentsService.pagination(query);
   }
@@ -128,15 +164,27 @@ export class StudentsController {
     required: false,
     enum: ['ACTIVE', 'GRADUATED', 'DROPPED'],
   })
-  @ApiOkResponse({ description: 'Students count' })
+  @ApiOkResponse({
+    description: 'Students count',
+    schema: { example: { count: 1 } },
+  })
   @Get('count')
-  count(@Query() query: QuerryStudentsDto): Promise<{ count: number }> {
+  count(@Query() query: QueryStudentsDto): Promise<{ count: number }> {
     return this.studentsService.countStudents(query);
   }
 
   @ApiOperation({ summary: 'Get student by id' })
   @ApiParam({ name: 'id', example: '2e8205c7-f683-41fa-bfdb-fb531bf0999f' })
-  @ApiOkResponse({ description: 'Student detail' })
+  @ApiOkResponse({
+    description: 'Student detail',
+    schema: {
+      example: {
+        id: '2e8205c7-f683-41fa-bfdb-fb531bf0999f',
+        student_code: 'SE170001',
+        full_name: 'Nguyen Van C',
+      },
+    },
+  })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<StudentResponse> {
     return this.studentsService.findOne(id);
@@ -145,7 +193,16 @@ export class StudentsController {
   @ApiOperation({ summary: 'Update student by id' })
   @ApiParam({ name: 'id', example: '2e8205c7-f683-41fa-bfdb-fb531bf0999f' })
   @ApiBody({ type: UpdateStudentsDto })
-  @ApiOkResponse({ description: 'Student updated' })
+  @ApiOkResponse({
+    description: 'Student updated',
+    schema: {
+      example: {
+        id: '2e8205c7-f683-41fa-bfdb-fb531bf0999f',
+        student_code: 'SE170002',
+        full_name: 'Nguyen Van D',
+      },
+    },
+  })
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -156,7 +213,10 @@ export class StudentsController {
 
   @ApiOperation({ summary: 'Delete student by id (hard delete)' })
   @ApiParam({ name: 'id', example: '2e8205c7-f683-41fa-bfdb-fb531bf0999f' })
-  @ApiOkResponse({ description: 'Delete result' })
+  @ApiOkResponse({
+    description: 'Delete result',
+    schema: { example: { message: 'Deleted successfully' } },
+  })
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.studentsService.remove(id);

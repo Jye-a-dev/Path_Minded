@@ -1,6 +1,12 @@
 export type TranscriptUploadEntity = {
   id: string;
-  [key: string]: unknown;
+  student_id: string;
+  raw_text: string;
+  source_type: 'PASTE' | 'FILE';
+  parse_status: 'PENDING' | 'SUCCESS' | 'FAILED';
+  parse_error: string | null;
+  uploaded_at: Date;
+  parsed_at: Date | null;
 };
 
 export type TranscriptUploadResponse = TranscriptUploadEntity;

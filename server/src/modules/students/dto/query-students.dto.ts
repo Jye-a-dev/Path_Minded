@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import type { StudentStatus } from '../interfaces/students.interfaces';
 
-export class QuerryStudentsDto {
+export class QueryStudentsDto {
   @ApiPropertyOptional({ example: 'SE17' })
   student_code?: string;
 

@@ -17,7 +17,9 @@ import {
 export class CurriculumCoursesService {
   constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
 
-  async create(payload: Record<string, unknown>): Promise<CurriculumCourseResponse> {
+  async create(
+    payload: Record<string, unknown>,
+  ): Promise<CurriculumCourseResponse> {
     const keys = Object.keys(payload);
     if (keys.length === 0) {
       throw new BadRequestException('payload is required');
@@ -55,7 +57,12 @@ export class CurriculumCoursesService {
     let idx = 1;
 
     Object.entries(query).forEach(([key, value]) => {
-      if (value === undefined || key === 'page' || key === 'limit' || key === 'offset') {
+      if (
+        value === undefined ||
+        key === 'page' ||
+        key === 'limit' ||
+        key === 'offset'
+      ) {
         return;
       }
 
@@ -70,7 +77,9 @@ export class CurriculumCoursesService {
     };
   }
 
-  async findAll(query: Record<string, unknown>): Promise<CurriculumCourseResponse[]> {
+  async findAll(
+    query: Record<string, unknown>,
+  ): Promise<CurriculumCourseResponse[]> {
     const { where, values, idx } = this.buildFilter(query);
     const limit = Number(query.limit ?? 20);
     const offset = Number(query.offset ?? 0);
@@ -83,7 +92,9 @@ export class CurriculumCoursesService {
     return result.rows;
   }
 
-  async pagination(query: Record<string, unknown>): Promise<CurriculumCoursesPaginationResponse> {
+  async pagination(
+    query: Record<string, unknown>,
+  ): Promise<CurriculumCoursesPaginationResponse> {
     const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
@@ -131,7 +142,10 @@ export class CurriculumCoursesService {
     return result.rows[0];
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<CurriculumCourseResponse> {
+  async update(
+    id: string,
+    payload: Record<string, unknown>,
+  ): Promise<CurriculumCourseResponse> {
     const keys = Object.keys(payload);
     if (keys.length === 0) {
       throw new BadRequestException('at least one field is required');
@@ -164,7 +178,10 @@ export class CurriculumCoursesService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.pool.query(`DELETE FROM curriculum_courses WHERE id = $1`, [id]);
+    const result = await this.pool.query(
+      `DELETE FROM curriculum_courses WHERE id = $1`,
+      [id],
+    );
 
     if (result.rowCount === 0) {
       throw new NotFoundException('curriculum_courses not found');

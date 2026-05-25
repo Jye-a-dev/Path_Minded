@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class QuerryClassesDto {
+export class QueryClassesDto {
   @ApiPropertyOptional({ example: 'SE17' })
   class_code?: string;
 

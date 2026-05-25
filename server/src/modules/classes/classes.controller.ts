@@ -17,9 +17,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ClassesService } from './classes.service';
-import { CreateClassesDto } from './dto/create_classes.dto';
-import { QuerryClassesDto } from './dto/querry_classes.dto';
-import { UpdateClassesDto } from './dto/update_classes.dto';
+import { CreateClassesDto } from './dto/create-classes.dto';
+import { QueryClassesDto } from './dto/query-classes.dto';
+import { UpdateClassesDto } from './dto/update-classes.dto';
 import {
   ClassesPaginationResponse,
   ClassResponse,
@@ -32,7 +32,16 @@ export class ClassesController {
 
   @ApiOperation({ summary: 'Create class' })
   @ApiBody({ type: CreateClassesDto })
-  @ApiOkResponse({ description: 'Class created' })
+  @ApiOkResponse({
+    description: 'Class created',
+    schema: {
+      example: {
+        id: '0d8a4b17-4642-4204-95b2-7e238f1f3af2',
+        class_code: 'SE17A',
+        class_name: 'Software Engineering K17A',
+      },
+    },
+  })
   @Post()
   create(@Body() payload: CreateClassesDto): Promise<ClassResponse> {
     return this.classesService.create(payload);
@@ -54,9 +63,20 @@ export class ClassesController {
   })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({ name: 'offset', required: false, example: 0 })
-  @ApiOkResponse({ description: 'Classes list' })
+  @ApiOkResponse({
+    description: 'Classes list',
+    schema: {
+      example: [
+        {
+          id: '0d8a4b17-4642-4204-95b2-7e238f1f3af2',
+          class_code: 'SE17A',
+          class_name: 'Software Engineering K17A',
+        },
+      ],
+    },
+  })
   @Get()
-  findAll(@Query() query: QuerryClassesDto): Promise<ClassResponse[]> {
+  findAll(@Query() query: QueryClassesDto): Promise<ClassResponse[]> {
     return this.classesService.findAll(query);
   }
 
@@ -76,10 +96,26 @@ export class ClassesController {
     required: false,
     example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
   })
-  @ApiOkResponse({ description: 'Paginated classes data' })
+  @ApiOkResponse({
+    description: 'Paginated classes data',
+    schema: {
+      example: {
+        data: [
+          {
+            id: '0d8a4b17-4642-4204-95b2-7e238f1f3af2',
+            class_code: 'SE17A',
+            class_name: 'Software Engineering K17A',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      },
+    },
+  })
   @Get('pagination')
   pagination(
-    @Query() query: QuerryClassesDto,
+    @Query() query: QueryClassesDto,
   ): Promise<ClassesPaginationResponse> {
     return this.classesService.pagination(query);
   }
@@ -98,15 +134,27 @@ export class ClassesController {
     required: false,
     example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
   })
-  @ApiOkResponse({ description: 'Classes count' })
+  @ApiOkResponse({
+    description: 'Classes count',
+    schema: { example: { count: 1 } },
+  })
   @Get('count')
-  count(@Query() query: QuerryClassesDto): Promise<{ count: number }> {
+  count(@Query() query: QueryClassesDto): Promise<{ count: number }> {
     return this.classesService.countClasses(query);
   }
 
   @ApiOperation({ summary: 'Get class by id' })
   @ApiParam({ name: 'id', example: '0d8a4b17-4642-4204-95b2-7e238f1f3af2' })
-  @ApiOkResponse({ description: 'Class detail' })
+  @ApiOkResponse({
+    description: 'Class detail',
+    schema: {
+      example: {
+        id: '0d8a4b17-4642-4204-95b2-7e238f1f3af2',
+        class_code: 'SE17A',
+        class_name: 'Software Engineering K17A',
+      },
+    },
+  })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<ClassResponse> {
     return this.classesService.findOne(id);
@@ -115,7 +163,16 @@ export class ClassesController {
   @ApiOperation({ summary: 'Update class by id' })
   @ApiParam({ name: 'id', example: '0d8a4b17-4642-4204-95b2-7e238f1f3af2' })
   @ApiBody({ type: UpdateClassesDto })
-  @ApiOkResponse({ description: 'Class updated' })
+  @ApiOkResponse({
+    description: 'Class updated',
+    schema: {
+      example: {
+        id: '0d8a4b17-4642-4204-95b2-7e238f1f3af2',
+        class_code: 'SE18A',
+        class_name: 'Software Engineering K18A',
+      },
+    },
+  })
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -126,7 +183,10 @@ export class ClassesController {
 
   @ApiOperation({ summary: 'Delete class by id (hard delete)' })
   @ApiParam({ name: 'id', example: '0d8a4b17-4642-4204-95b2-7e238f1f3af2' })
-  @ApiOkResponse({ description: 'Delete result' })
+  @ApiOkResponse({
+    description: 'Delete result',
+    schema: { example: { message: 'Deleted successfully' } },
+  })
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.classesService.remove(id);

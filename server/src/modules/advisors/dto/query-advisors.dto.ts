@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class QuerryAdvisorsDto {
+export class QueryAdvisorsDto {
   @ApiPropertyOptional({ example: 'Nguyen' })
   full_name?: string;
 

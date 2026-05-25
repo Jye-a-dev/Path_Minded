@@ -16,9 +16,9 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateAdvisorsDto } from './dto/create_advisors.dto';
-import { QuerryAdvisorsDto } from './dto/querry_advisors.dto';
-import { UpdateAdvisorsDto } from './dto/update_advisors.dto';
+import { CreateAdvisorsDto } from './dto/create-advisors.dto';
+import { QueryAdvisorsDto } from './dto/query-advisors.dto';
+import { UpdateAdvisorsDto } from './dto/update-advisors.dto';
 import {
   AdvisorsPaginationResponse,
   AdvisorResponse,
@@ -32,7 +32,16 @@ export class AdvisorsController {
 
   @ApiOperation({ summary: 'Create advisor' })
   @ApiBody({ type: CreateAdvisorsDto })
-  @ApiOkResponse({ description: 'Advisor created' })
+  @ApiOkResponse({
+    description: 'Advisor created',
+    schema: {
+      example: {
+        id: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9',
+        full_name: 'Nguyen Van A',
+        department: 'Computer Science',
+      },
+    },
+  })
   @Post()
   create(@Body() payload: CreateAdvisorsDto): Promise<AdvisorResponse> {
     return this.advisorsService.create(payload);
@@ -52,9 +61,20 @@ export class AdvisorsController {
   })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({ name: 'offset', required: false, example: 0 })
-  @ApiOkResponse({ description: 'Advisors list' })
+  @ApiOkResponse({
+    description: 'Advisors list',
+    schema: {
+      example: [
+        {
+          id: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9',
+          full_name: 'Nguyen Van A',
+          department: 'Computer Science',
+        },
+      ],
+    },
+  })
   @Get()
-  findAll(@Query() query: QuerryAdvisorsDto): Promise<AdvisorResponse[]> {
+  findAll(@Query() query: QueryAdvisorsDto): Promise<AdvisorResponse[]> {
     return this.advisorsService.findAll(query);
   }
 
@@ -72,10 +92,26 @@ export class AdvisorsController {
     required: false,
     example: '9df8ca89-38f4-4d95-a44b-cd91a461d413',
   })
-  @ApiOkResponse({ description: 'Paginated advisors data' })
+  @ApiOkResponse({
+    description: 'Paginated advisors data',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9',
+            full_name: 'Nguyen Van A',
+            department: 'Computer Science',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      },
+    },
+  })
   @Get('pagination')
   pagination(
-    @Query() query: QuerryAdvisorsDto,
+    @Query() query: QueryAdvisorsDto,
   ): Promise<AdvisorsPaginationResponse> {
     return this.advisorsService.pagination(query);
   }
@@ -92,15 +128,27 @@ export class AdvisorsController {
     required: false,
     example: '9df8ca89-38f4-4d95-a44b-cd91a461d413',
   })
-  @ApiOkResponse({ description: 'Advisors count' })
+  @ApiOkResponse({
+    description: 'Advisors count',
+    schema: { example: { count: 1 } },
+  })
   @Get('count')
-  count(@Query() query: QuerryAdvisorsDto): Promise<{ count: number }> {
+  count(@Query() query: QueryAdvisorsDto): Promise<{ count: number }> {
     return this.advisorsService.countAdvisors(query);
   }
 
   @ApiOperation({ summary: 'Get advisor by id' })
   @ApiParam({ name: 'id', example: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9' })
-  @ApiOkResponse({ description: 'Advisor detail' })
+  @ApiOkResponse({
+    description: 'Advisor detail',
+    schema: {
+      example: {
+        id: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9',
+        full_name: 'Nguyen Van A',
+        department: 'Computer Science',
+      },
+    },
+  })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<AdvisorResponse> {
     return this.advisorsService.findOne(id);
@@ -109,7 +157,16 @@ export class AdvisorsController {
   @ApiOperation({ summary: 'Update advisor by id' })
   @ApiParam({ name: 'id', example: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9' })
   @ApiBody({ type: UpdateAdvisorsDto })
-  @ApiOkResponse({ description: 'Advisor updated' })
+  @ApiOkResponse({
+    description: 'Advisor updated',
+    schema: {
+      example: {
+        id: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9',
+        full_name: 'Nguyen Van B',
+        department: 'Data Science',
+      },
+    },
+  })
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -120,7 +177,10 @@ export class AdvisorsController {
 
   @ApiOperation({ summary: 'Delete advisor by id (hard delete)' })
   @ApiParam({ name: 'id', example: 'b2303a71-f0ad-4ffb-8ac2-c46087debcc9' })
-  @ApiOkResponse({ description: 'Delete result' })
+  @ApiOkResponse({
+    description: 'Delete result',
+    schema: { example: { message: 'Deleted successfully' } },
+  })
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.advisorsService.remove(id);

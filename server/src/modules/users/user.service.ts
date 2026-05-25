@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
-import { CreateUsersDto } from './dto/create_users.dto';
-import { QuerryUsersDto } from './dto/querry_users.dto';
-import { UpdateUsersDto } from './dto/update_users.dto';
+import { CreateUsersDto } from './dto/create-users.dto';
+import { QueryUsersDto } from './dto/query-users.dto';
+import { UpdateUsersDto } from './dto/update-users.dto';
 import {
   UserEntity,
   UserResponse,
@@ -45,27 +45,43 @@ export class UserService {
     }
   }
 
-  async findAll(query: QuerryUsersDto): Promise<UserResponse[]> {
+  private buildFilter(query: QueryUsersDto): {
+    where: string;
+    values: Array<string | number>;
+    idx: number;
+  } {
     const clauses: string[] = [];
     const values: Array<string | number> = [];
     let idx = 1;
 
-    if (query.email) {
+    const { email, role } = query;
+
+    if (email) {
       clauses.push(`email ILIKE $${idx++}`);
-      values.push(`%${query.email}%`);
+      values.push(`%${email}%`);
     }
 
-    if (query.role) {
+    if (role) {
       clauses.push(`role = $${idx++}::user_role`);
-      values.push(query.role);
+      values.push(role);
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-    const limit = Number(query.limit ?? 20);
-    const offset = Number(query.offset ?? 0);
+    return { where, values, idx };
+  }
 
-    values.push(limit);
-    values.push(offset);
+  async findAll(query: QueryUsersDto): Promise<UserResponse[]> {
+    const filter = this.buildFilter(query);
+    const where = filter.where;
+    const values = filter.values;
+    let idx = filter.idx;
+
+    const { limit = 20, offset = 0 } = query;
+    const parsedLimit = Number(limit);
+    const parsedOffset = Number(offset);
+
+    values.push(parsedLimit);
+    values.push(parsedOffset);
 
     const result = await this.pool.query<UserResponse>(
       `
@@ -82,24 +98,15 @@ export class UserService {
     return result.rows;
   }
 
-  async pagination(query: QuerryUsersDto): Promise<UsersPaginationResponse> {
-    const clauses: string[] = [];
-    const values: Array<string | number> = [];
-    let idx = 1;
+  async pagination(query: QueryUsersDto): Promise<UsersPaginationResponse> {
+    const filter = this.buildFilter(query);
+    const where = filter.where;
+    const values = filter.values;
+    let idx = filter.idx;
 
-    if (query.email) {
-      clauses.push(`email ILIKE $${idx++}`);
-      values.push(`%${query.email}%`);
-    }
-
-    if (query.role) {
-      clauses.push(`role = $${idx++}::user_role`);
-      values.push(query.role);
-    }
-
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-    const page = Math.max(1, Number(query.page ?? 1));
-    const limit = Math.max(1, Number(query.limit ?? 20));
+    const { page: qPage = 1, limit: qLimit = 20 } = query;
+    const page = Math.max(1, Number(qPage));
+    const limit = Math.max(1, Number(qLimit));
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
@@ -138,22 +145,8 @@ export class UserService {
     };
   }
 
-  async countUsers(query: QuerryUsersDto): Promise<{ count: number }> {
-    const clauses: string[] = [];
-    const values: Array<string | number> = [];
-    let idx = 1;
-
-    if (query.email) {
-      clauses.push(`email ILIKE $${idx++}`);
-      values.push(`%${query.email}%`);
-    }
-
-    if (query.role) {
-      clauses.push(`role = $${idx++}::user_role`);
-      values.push(query.role);
-    }
-
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+  async countUsers(query: QueryUsersDto): Promise<{ count: number }> {
+    const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM users ${where}`,
       values,

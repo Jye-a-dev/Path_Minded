@@ -55,7 +55,12 @@ export class ExportLogsService {
     let idx = 1;
 
     Object.entries(query).forEach(([key, value]) => {
-      if (value === undefined || key === 'page' || key === 'limit' || key === 'offset') {
+      if (
+        value === undefined ||
+        key === 'page' ||
+        key === 'limit' ||
+        key === 'offset'
+      ) {
         return;
       }
 
@@ -83,7 +88,9 @@ export class ExportLogsService {
     return result.rows;
   }
 
-  async pagination(query: Record<string, unknown>): Promise<ExportLogsPaginationResponse> {
+  async pagination(
+    query: Record<string, unknown>,
+  ): Promise<ExportLogsPaginationResponse> {
     const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
@@ -131,7 +138,10 @@ export class ExportLogsService {
     return result.rows[0];
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<ExportLogResponse> {
+  async update(
+    id: string,
+    payload: Record<string, unknown>,
+  ): Promise<ExportLogResponse> {
     const keys = Object.keys(payload);
     if (keys.length === 0) {
       throw new BadRequestException('at least one field is required');
@@ -164,7 +174,10 @@ export class ExportLogsService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.pool.query(`DELETE FROM export_logs WHERE id = $1`, [id]);
+    const result = await this.pool.query(
+      `DELETE FROM export_logs WHERE id = $1`,
+      [id],
+    );
 
     if (result.rowCount === 0) {
       throw new NotFoundException('export_logs not found');
@@ -173,4 +186,3 @@ export class ExportLogsService {
     return { message: 'deleted' };
   }
 }
-

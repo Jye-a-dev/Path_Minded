@@ -8,4 +8,3 @@ import { CurriculumImportsService } from './curriculum_imports.service';
   exports: [CurriculumImportsService],
 })
 export class CurriculumImportsModule {}
-

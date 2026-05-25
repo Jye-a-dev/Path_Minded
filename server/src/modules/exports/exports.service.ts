@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import {
   BadRequestException,
   ConflictException,
@@ -12,10 +13,110 @@ import {
   ExportEntity,
   ExportResponse,
 } from './interfaces/exports.interfaces';
+import { handleDatabaseError } from '../../common/utils/database-error.util';
+import { QueryExportsDto } from './dto/query-exports.dto';
 
 @Injectable()
 export class ExportsService {
   constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
+
+  async exportMatrix(classId: string, advisorId?: string): Promise<Buffer> {
+    const classResult = await this.pool.query(
+      `SELECT * FROM classes WHERE id = $1`,
+      [classId],
+    );
+
+    if (classResult.rowCount === 0) {
+      throw new NotFoundException('Class not found');
+    }
+
+    const classData = classResult.rows[0];
+    const programId = classData.program_id;
+
+    if (!programId) {
+      throw new BadRequestException('Class has no program assigned');
+    }
+
+    // Load students
+    const studentsResult = await this.pool.query(
+      `SELECT id, student_code, full_name FROM students WHERE class_id = $1 ORDER BY student_code`,
+      [classId],
+    );
+    const students = studentsResult.rows;
+
+    // Load curriculum courses
+    const coursesResult = await this.pool.query(
+      `SELECT course_code, course_name, expected_semester, credits 
+       FROM curriculum_courses 
+       WHERE program_id = $1 
+       ORDER BY expected_semester, course_code`,
+      [programId],
+    );
+    const courses = coursesResult.rows;
+
+    // Load student course results
+    const resultsResult = await this.pool.query(
+      `SELECT scr.student_id, scr.course_code, scr.status, scr.semester_number 
+       FROM student_course_results scr
+       INNER JOIN students s ON s.id = scr.student_id
+       WHERE s.class_id = $1 AND scr.is_latest = true`,
+      [classId],
+    );
+    const results = resultsResult.rows;
+
+    // Generate Excel using pipeline server
+    const pipelineUrl =
+      process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
+
+    const response = await fetch(`${pipelineUrl}/exports/matrix`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        students,
+        courses,
+        results: results.map((r) => ({
+          studentId: r.student_id,
+          courseCode: r.course_code,
+          status: r.status,
+          semesterNumber: r.semester_number,
+        })),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new BadRequestException(
+        'Pipeline server error: ' + response.statusText,
+      );
+    }
+
+    const parsedData = (await response.json()) as {
+      buffer: string;
+      successCount: number;
+      warningCount: number;
+    };
+    const buffer = Buffer.from(parsedData.buffer, 'base64');
+    const successCount = parsedData.successCount;
+    const warningCount = parsedData.warningCount;
+
+    // Log Export
+    const fileName = `Matrix_${classData.class_code}_${Date.now()}.xlsx`;
+    const insertExport = await this.pool.query(
+      `INSERT INTO exports (advisor_id, class_id, program_id, file_name, export_type)
+       VALUES ($1, $2, $3, $4, 'MATRIX') RETURNING id`,
+      [advisorId || null, classId, programId, fileName],
+    );
+
+    const exportId = insertExport.rows[0].id;
+    await this.pool.query(
+      `INSERT INTO export_logs (export_id, student_count, course_count, success_count, warning_count)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [exportId, students.length, courses.length, successCount, warningCount],
+    );
+
+    return buffer;
+  }
 
   async create(payload: Record<string, unknown>): Promise<ExportResponse> {
     const keys = Object.keys(payload);
@@ -45,45 +146,43 @@ export class ExportsService {
     }
   }
 
-  private buildFilter(query: Record<string, unknown>): {
+  private buildFilter(query: QueryExportsDto): {
     where: string;
-    values: Array<string | number | boolean>;
+    values: Array<string | number>;
     idx: number;
   } {
     const clauses: string[] = [];
-    const values: Array<string | number | boolean> = [];
+    const values: Array<string | number> = [];
     let idx = 1;
 
-    Object.entries(query).forEach(([key, value]) => {
-      if (value === undefined || key === 'page' || key === 'limit' || key === 'offset') {
-        return;
-      }
+    if (query.export_type) {
+      clauses.push(`export_type = $${idx++}`);
+      values.push(query.export_type);
+    }
+    if (query.class_id) {
+      clauses.push(`class_id = $${idx++}`);
+      values.push(query.class_id);
+    }
 
-      clauses.push(`${key} = $${idx++}`);
-      values.push(value as string | number | boolean);
-    });
-
-    return {
-      where: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '',
-      values,
-      idx,
-    };
+    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    return { where, values, idx };
   }
 
-  async findAll(query: Record<string, unknown>): Promise<ExportResponse[]> {
+  async findAll(query: QueryExportsDto): Promise<ExportResponse[]> {
     const { where, values, idx } = this.buildFilter(query);
     const limit = Number(query.limit ?? 20);
     const offset = Number(query.offset ?? 0);
+    values.push(limit, offset);
 
     const result = await this.pool.query<ExportEntity>(
-      `SELECT * FROM exports ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
-      [...values, limit, offset],
+      `SELECT * FROM exports ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      values,
     );
 
     return result.rows;
   }
 
-  async pagination(query: Record<string, unknown>): Promise<ExportsPaginationResponse> {
+  async pagination(query: QueryExportsDto): Promise<ExportsPaginationResponse> {
     const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
@@ -96,10 +195,11 @@ export class ExportsService {
 
     const total = Number(countResult.rows[0]?.total ?? 0);
     const totalPages = Math.max(1, Math.ceil(total / limit));
+    values.push(limit, offset);
 
     const result = await this.pool.query<ExportEntity>(
-      `SELECT * FROM exports ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
-      [...values, limit, offset],
+      `SELECT * FROM exports ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      values,
     );
 
     return {
@@ -108,7 +208,7 @@ export class ExportsService {
     };
   }
 
-  async count(query: Record<string, unknown>): Promise<{ count: number }> {
+  async count(query: QueryExportsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM exports ${where}`,
@@ -131,8 +231,11 @@ export class ExportsService {
     return result.rows[0];
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<ExportResponse> {
-    const keys = Object.keys(payload);
+  async update(
+    id: string,
+    payload: Record<string, unknown>,
+  ): Promise<ExportResponse> {
+    const keys = Object.keys(payload).filter((k) => k !== 'id');
     if (keys.length === 0) {
       throw new BadRequestException('at least one field is required');
     }
@@ -152,19 +255,14 @@ export class ExportsService {
 
       return result.rows[0];
     } catch (error: unknown) {
-      const code = (error as { code?: string })?.code;
-      if (code === '23505') {
-        throw new ConflictException('duplicate key');
-      }
-      if (code === '23503') {
-        throw new BadRequestException('invalid foreign key');
-      }
-      throw error;
+      handleDatabaseError(error, 'exports');
     }
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.pool.query(`DELETE FROM exports WHERE id = $1`, [id]);
+    const result = await this.pool.query(`DELETE FROM exports WHERE id = $1`, [
+      id,
+    ]);
 
     if (result.rowCount === 0) {
       throw new NotFoundException('exports not found');
@@ -173,4 +271,3 @@ export class ExportsService {
     return { message: 'deleted' };
   }
 }
-

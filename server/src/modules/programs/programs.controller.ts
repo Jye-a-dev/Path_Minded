@@ -17,11 +17,11 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateProgramsDto } from './dto/create_programs.dto';
+import { CreateProgramsDto } from './dto/create-programs.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { QuerryProgramsDto } from './dto/querry_programs.dto';
-import { UpdateProgramsDto } from './dto/update_programs.dto';
+import { QueryProgramsDto } from './dto/query-programs.dto';
+import { UpdateProgramsDto } from './dto/update-programs.dto';
 import {
   ProgramsPaginationResponse,
   ProgramResponse,
@@ -36,7 +36,16 @@ export class ProgramsController {
 
   @ApiOperation({ summary: 'Create program' })
   @ApiBody({ type: CreateProgramsDto })
-  @ApiOkResponse({ description: 'Program created' })
+  @ApiOkResponse({
+    description: 'Program created',
+    schema: {
+      example: {
+        id: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
+        program_code: 'SE2023',
+        program_name: 'Software Engineering Program',
+      },
+    },
+  })
   @Roles('ADMIN')
   @Post()
   create(@Body() payload: CreateProgramsDto): Promise<ProgramResponse> {
@@ -51,9 +60,20 @@ export class ProgramsController {
   @ApiQuery({ name: 'total_credits', required: false, example: 150 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({ name: 'offset', required: false, example: 0 })
-  @ApiOkResponse({ description: 'Programs list' })
+  @ApiOkResponse({
+    description: 'Programs list',
+    schema: {
+      example: [
+        {
+          id: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
+          program_code: 'SE2023',
+          program_name: 'Software Engineering Program',
+        },
+      ],
+    },
+  })
   @Get()
-  findAll(@Query() query: QuerryProgramsDto): Promise<ProgramResponse[]> {
+  findAll(@Query() query: QueryProgramsDto): Promise<ProgramResponse[]> {
     return this.programsService.findAll(query);
   }
 
@@ -65,10 +85,26 @@ export class ProgramsController {
   @ApiQuery({ name: 'major_name', required: false, example: 'Engineering' })
   @ApiQuery({ name: 'version', required: false, example: '2023.1' })
   @ApiQuery({ name: 'total_credits', required: false, example: 150 })
-  @ApiOkResponse({ description: 'Paginated programs data' })
+  @ApiOkResponse({
+    description: 'Paginated programs data',
+    schema: {
+      example: {
+        data: [
+          {
+            id: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
+            program_code: 'SE2023',
+            program_name: 'Software Engineering Program',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+      },
+    },
+  })
   @Get('pagination')
   pagination(
-    @Query() query: QuerryProgramsDto,
+    @Query() query: QueryProgramsDto,
   ): Promise<ProgramsPaginationResponse> {
     return this.programsService.pagination(query);
   }
@@ -79,15 +115,27 @@ export class ProgramsController {
   @ApiQuery({ name: 'major_name', required: false, example: 'Engineering' })
   @ApiQuery({ name: 'version', required: false, example: '2023.1' })
   @ApiQuery({ name: 'total_credits', required: false, example: 150 })
-  @ApiOkResponse({ description: 'Programs count' })
+  @ApiOkResponse({
+    description: 'Programs count',
+    schema: { example: { count: 1 } },
+  })
   @Get('count')
-  count(@Query() query: QuerryProgramsDto): Promise<{ count: number }> {
+  count(@Query() query: QueryProgramsDto): Promise<{ count: number }> {
     return this.programsService.countPrograms(query);
   }
 
   @ApiOperation({ summary: 'Get program by id' })
   @ApiParam({ name: 'id', example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622' })
-  @ApiOkResponse({ description: 'Program detail' })
+  @ApiOkResponse({
+    description: 'Program detail',
+    schema: {
+      example: {
+        id: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
+        program_code: 'SE2023',
+        program_name: 'Software Engineering Program',
+      },
+    },
+  })
   @Get(':id')
   findOne(@Param('id') id: string): Promise<ProgramResponse> {
     return this.programsService.findOne(id);
@@ -96,7 +144,16 @@ export class ProgramsController {
   @ApiOperation({ summary: 'Update program by id' })
   @ApiParam({ name: 'id', example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622' })
   @ApiBody({ type: UpdateProgramsDto })
-  @ApiOkResponse({ description: 'Program updated' })
+  @ApiOkResponse({
+    description: 'Program updated',
+    schema: {
+      example: {
+        id: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622',
+        program_code: 'SE2024',
+        program_name: 'Software Engineering Program Updated',
+      },
+    },
+  })
   @Roles('ADMIN')
   @Patch(':id')
   update(
@@ -108,7 +165,10 @@ export class ProgramsController {
 
   @ApiOperation({ summary: 'Delete program by id (hard delete)' })
   @ApiParam({ name: 'id', example: '5f74d7f7-ecbc-43fb-85b8-7d53ea06c622' })
-  @ApiOkResponse({ description: 'Delete result' })
+  @ApiOkResponse({
+    description: 'Delete result',
+    schema: { example: { message: 'Deleted successfully' } },
+  })
   @Roles('ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {

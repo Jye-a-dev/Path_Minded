@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
-import { CreateClassesDto } from './dto/create_classes.dto';
-import { QuerryClassesDto } from './dto/querry_classes.dto';
-import { UpdateClassesDto } from './dto/update_classes.dto';
+import { CreateClassesDto } from './dto/create-classes.dto';
+import { QueryClassesDto } from './dto/query-classes.dto';
+import { UpdateClassesDto } from './dto/update-classes.dto';
 import {
   ClassEntity,
   ClassesPaginationResponse,
@@ -55,7 +55,7 @@ export class ClassesService {
     }
   }
 
-  private buildFilter(query: QuerryClassesDto): {
+  private buildFilter(query: QueryClassesDto): {
     where: string;
     values: Array<string | number>;
     idx: number;
@@ -89,7 +89,7 @@ export class ClassesService {
     return { where, values, idx };
   }
 
-  async findAll(query: QuerryClassesDto): Promise<ClassResponse[]> {
+  async findAll(query: QueryClassesDto): Promise<ClassResponse[]> {
     const { where, values, idx } = this.buildFilter(query);
     const limit = Number(query.limit ?? 20);
     const offset = Number(query.offset ?? 0);
@@ -110,9 +110,7 @@ export class ClassesService {
     return result.rows;
   }
 
-  async pagination(
-    query: QuerryClassesDto,
-  ): Promise<ClassesPaginationResponse> {
+  async pagination(query: QueryClassesDto): Promise<ClassesPaginationResponse> {
     const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
@@ -145,7 +143,7 @@ export class ClassesService {
     };
   }
 
-  async countClasses(query: QuerryClassesDto): Promise<{ count: number }> {
+  async countClasses(query: QueryClassesDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM classes ${where}`,

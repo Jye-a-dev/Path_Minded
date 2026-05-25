@@ -14,4 +14,3 @@ export type ExportLogsPaginationResponse = {
     totalPages: number;
   };
 };
-

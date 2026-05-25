@@ -8,4 +8,3 @@ import { ExportLogsService } from './export_logs.service';
   exports: [ExportLogsService],
 })
 export class ExportLogsModule {}
-

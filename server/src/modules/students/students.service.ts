@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
-import { CreateStudentsDto } from './dto/create_students.dto';
-import { QuerryStudentsDto } from './dto/querry_students.dto';
-import { UpdateStudentsDto } from './dto/update_students.dto';
+import { CreateStudentsDto } from './dto/create-students.dto';
+import { QueryStudentsDto } from './dto/query-students.dto';
+import { UpdateStudentsDto } from './dto/update-students.dto';
 import {
   StudentEntity,
   StudentsPaginationResponse,
@@ -65,7 +65,7 @@ export class StudentsService {
     }
   }
 
-  private buildFilter(query: QuerryStudentsDto): {
+  private buildFilter(query: QueryStudentsDto): {
     where: string;
     values: Array<string | number>;
     idx: number;
@@ -107,7 +107,7 @@ export class StudentsService {
     return { where, values, idx };
   }
 
-  async findAll(query: QuerryStudentsDto): Promise<StudentResponse[]> {
+  async findAll(query: QueryStudentsDto): Promise<StudentResponse[]> {
     const { where, values, idx } = this.buildFilter(query);
     const limit = Number(query.limit ?? 20);
     const offset = Number(query.offset ?? 0);
@@ -128,7 +128,7 @@ export class StudentsService {
   }
 
   async pagination(
-    query: QuerryStudentsDto,
+    query: QueryStudentsDto,
   ): Promise<StudentsPaginationResponse> {
     const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
@@ -161,7 +161,7 @@ export class StudentsService {
     };
   }
 
-  async countStudents(query: QuerryStudentsDto): Promise<{ count: number }> {
+  async countStudents(query: QueryStudentsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM students ${where}`,

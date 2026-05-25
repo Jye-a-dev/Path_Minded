@@ -1,22 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import type { UserRole } from '../interfaces/users.interfaces';
+import { IsInt, IsOptional, Min } from 'class-validator';
 
-export class QuerryUsersDto {
-  @ApiPropertyOptional({ example: 'example@gmail.com' })
-  @IsOptional()
-  @IsString()
-  email?: string;
-
-  @ApiPropertyOptional({
-    enum: ['STUDENT', 'ADVISOR', 'ADMIN'],
-    example: 'STUDENT',
-  })
-  @IsOptional()
-  @IsIn(['STUDENT', 'ADVISOR', 'ADMIN'])
-  role?: UserRole;
-
+export class BaseQueryDto {
   @ApiPropertyOptional({ example: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)

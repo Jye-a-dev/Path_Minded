@@ -1,3 +1,5 @@
+import type { StringValue } from 'ms';
+
 export type EnvConfig = {
   PORT: number;
   DB_HOST: string;
@@ -7,7 +9,7 @@ export type EnvConfig = {
   DB_NAME: string;
   DB_SSL: boolean;
   JWT_SECRET: string;
-  JWT_EXPIRES_IN: string;
+  JWT_EXPIRES_IN: number | StringValue;
 };
 
 const toNumber = (value: string | undefined, fallback: number): number => {
@@ -29,5 +31,6 @@ export const envConfig = (): EnvConfig => ({
   DB_NAME: process.env.DB_NAME ?? 'PathMinded_DB',
   DB_SSL: toBoolean(process.env.DB_SSL, false),
   JWT_SECRET: process.env.JWT_SECRET ?? 'dev_jwt_secret_change_me',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '1d',
+  JWT_EXPIRES_IN:
+    (process.env.JWT_EXPIRES_IN as StringValue | undefined) ?? '1d',
 });

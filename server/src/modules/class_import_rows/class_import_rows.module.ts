@@ -8,4 +8,3 @@ import { ClassImportRowsService } from './class_import_rows.service';
   exports: [ClassImportRowsService],
 })
 export class ClassImportRowsModule {}
-

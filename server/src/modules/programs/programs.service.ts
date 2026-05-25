@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
-import { CreateProgramsDto } from './dto/create_programs.dto';
-import { QuerryProgramsDto } from './dto/querry_programs.dto';
-import { UpdateProgramsDto } from './dto/update_programs.dto';
+import { CreateProgramsDto } from './dto/create-programs.dto';
+import { QueryProgramsDto } from './dto/query-programs.dto';
+import { UpdateProgramsDto } from './dto/update-programs.dto';
 import {
   ProgramEntity,
   ProgramsPaginationResponse,
@@ -66,37 +66,56 @@ export class ProgramsService {
     }
   }
 
-  async findAll(query: QuerryProgramsDto): Promise<ProgramResponse[]> {
+  private buildFilter(query: QueryProgramsDto): {
+    where: string;
+    values: Array<string | number>;
+    idx: number;
+  } {
     const clauses: string[] = [];
     const values: Array<string | number> = [];
     let idx = 1;
 
-    if (query.program_code) {
+    if (
+      typeof query.program_code === 'string' &&
+      query.program_code.length > 0
+    ) {
       clauses.push(`program_code ILIKE $${idx++}`);
       values.push(`%${query.program_code}%`);
     }
-    if (query.program_name) {
+    if (
+      typeof query.program_name === 'string' &&
+      query.program_name.length > 0
+    ) {
       clauses.push(`program_name ILIKE $${idx++}`);
       values.push(`%${query.program_name}%`);
     }
-    if (query.major_name) {
+    if (typeof query.major_name === 'string' && query.major_name.length > 0) {
       clauses.push(`major_name ILIKE $${idx++}`);
       values.push(`%${query.major_name}%`);
     }
-    if (query.version) {
+    if (typeof query.version === 'string' && query.version.length > 0) {
       clauses.push(`version = $${idx++}`);
       values.push(query.version);
     }
-    if (query.total_credits !== undefined) {
+    if (typeof query.total_credits === 'number') {
       clauses.push(`total_credits = $${idx++}`);
-      values.push(Number(query.total_credits));
+      values.push(query.total_credits);
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-    const limit = Number(query.limit ?? 20);
-    const offset = Number(query.offset ?? 0);
-    values.push(limit);
-    values.push(offset);
+    return { where, values, idx };
+  }
+
+  async findAll(query: QueryProgramsDto): Promise<ProgramResponse[]> {
+    const filter = this.buildFilter(query);
+    const where = filter.where;
+    const values = filter.values;
+    let idx = filter.idx;
+    const parsedLimit = Number(query.limit ?? 20);
+    const parsedOffset = Number(query.offset ?? 0);
+
+    values.push(parsedLimit);
+    values.push(parsedOffset);
 
     const result = await this.pool.query<ProgramResponse>(
       `
@@ -121,34 +140,12 @@ export class ProgramsService {
   }
 
   async pagination(
-    query: QuerryProgramsDto,
+    query: QueryProgramsDto,
   ): Promise<ProgramsPaginationResponse> {
-    const clauses: string[] = [];
-    const values: Array<string | number> = [];
-    let idx = 1;
-
-    if (query.program_code) {
-      clauses.push(`program_code ILIKE $${idx++}`);
-      values.push(`%${query.program_code}%`);
-    }
-    if (query.program_name) {
-      clauses.push(`program_name ILIKE $${idx++}`);
-      values.push(`%${query.program_name}%`);
-    }
-    if (query.major_name) {
-      clauses.push(`major_name ILIKE $${idx++}`);
-      values.push(`%${query.major_name}%`);
-    }
-    if (query.version) {
-      clauses.push(`version = $${idx++}`);
-      values.push(query.version);
-    }
-    if (query.total_credits !== undefined) {
-      clauses.push(`total_credits = $${idx++}`);
-      values.push(Number(query.total_credits));
-    }
-
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const filter = this.buildFilter(query);
+    const where = filter.where;
+    const values = filter.values;
+    let idx = filter.idx;
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
     const offset = (page - 1) * limit;
@@ -187,33 +184,8 @@ export class ProgramsService {
     };
   }
 
-  async countPrograms(query: QuerryProgramsDto): Promise<{ count: number }> {
-    const clauses: string[] = [];
-    const values: Array<string | number> = [];
-    let idx = 1;
-
-    if (query.program_code) {
-      clauses.push(`program_code ILIKE $${idx++}`);
-      values.push(`%${query.program_code}%`);
-    }
-    if (query.program_name) {
-      clauses.push(`program_name ILIKE $${idx++}`);
-      values.push(`%${query.program_name}%`);
-    }
-    if (query.major_name) {
-      clauses.push(`major_name ILIKE $${idx++}`);
-      values.push(`%${query.major_name}%`);
-    }
-    if (query.version) {
-      clauses.push(`version = $${idx++}`);
-      values.push(query.version);
-    }
-    if (query.total_credits !== undefined) {
-      clauses.push(`total_credits = $${idx++}`);
-      values.push(Number(query.total_credits));
-    }
-
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+  async countPrograms(query: QueryProgramsDto): Promise<{ count: number }> {
+    const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM programs ${where}`,
       values,
