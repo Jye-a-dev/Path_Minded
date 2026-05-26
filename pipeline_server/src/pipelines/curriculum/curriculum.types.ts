@@ -20,6 +20,8 @@ export type CurriculumWarning = {
 export type CurriculumParseResult = {
   preview: ParsedCurriculumCourse[];
   warnings: CurriculumWarning[];
+  sheets: string[];
+  activeSheetIndex: number;
 };
 
 export type RawCurriculumInput = {
@@ -27,4 +29,5 @@ export type RawCurriculumInput = {
   fileBuffer?: Buffer;
   fileMimetype?: string;
   fileName?: string;
+  sheetIndex?: number;
 };

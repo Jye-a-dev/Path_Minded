@@ -138,7 +138,7 @@ export default function ExportLogs() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lịch sử xuất</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Lịch sử xuất</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm tra các dòng cơ sở dữ liệu xuất bản ghi theo dõi sinh viên được xử lý, số lượng đề cương và cờ cảnh báo ma trận.
           </p>

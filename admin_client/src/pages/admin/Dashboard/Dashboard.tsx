@@ -97,7 +97,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Title Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-white m-0">Tổng quan Bảng điều khiển</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight !text-white m-0">Tổng quan Bảng điều khiển</h1>
         <p className="mt-2 text-sm text-slate-400">
           Số liệu thời gian thực và trạng thái của hệ thống cơ sở dữ liệu ma trận cố vấn học tập.
         </p>
@@ -148,7 +148,7 @@ export default function Dashboard() {
               <div className="mt-6 space-y-3">
                 <Link
                   to="/admin/curriculum_imports"
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
+                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
                 >
                   <div className="flex items-center gap-3">
                     <UploadCloud className="h-5 w-5 text-indigo-400" />
@@ -162,7 +162,7 @@ export default function Dashboard() {
 
                 <Link
                   to="/admin/transcript_uploads"
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
+                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
                 >
                   <div className="flex items-center gap-3">
                     <FileUp className="h-5 w-5 text-indigo-400" />
@@ -188,7 +188,7 @@ export default function Dashboard() {
               <div className="mt-6 space-y-3">
                 <Link
                   to="/admin/exports"
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
+                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
                 >
                   <div className="flex items-center gap-3">
                     <DownloadCloud className="h-5 w-5 text-emerald-400" />
@@ -202,7 +202,7 @@ export default function Dashboard() {
 
                 <Link
                   to="/admin/export_logs"
-                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
+                  className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
                 >
                   <div className="flex items-center gap-3">
                     <Users className="h-5 w-5 text-emerald-400" />

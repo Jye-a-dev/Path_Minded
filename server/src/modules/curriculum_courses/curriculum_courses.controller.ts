@@ -148,6 +148,36 @@ export class CurriculumCoursesController {
     return this.service.update(id, payload);
   }
 
+  @ApiOperation({ summary: 'Delete all' })
+  @ApiOkResponse({
+    description: 'Delete all result',
+    schema: { example: { message: 'all deleted', count: 100 } },
+  })
+  @Delete('all')
+  removeAll(): Promise<{ message: string; count: number }> {
+    return this.service.removeAll();
+  }
+
+  @ApiOperation({ summary: 'Delete bulk' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        ids: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Delete bulk result',
+    schema: { example: { message: 'bulk deleted', count: 5 } },
+  })
+  @Delete('bulk')
+  removeBulk(
+    @Body('ids') ids: string[],
+  ): Promise<{ message: string; count: number }> {
+    return this.service.removeBulk(ids);
+  }
+
   @ApiOperation({ summary: 'Delete by id' })
   @ApiParam({ name: 'id', example: '11111111-1111-1111-1111-111111111111' })
   @ApiOkResponse({

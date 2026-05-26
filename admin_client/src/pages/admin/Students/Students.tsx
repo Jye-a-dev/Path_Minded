@@ -169,7 +169,7 @@ export default function Students() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Danh bạ Sinh viên</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Danh bạ Sinh viên</h1>
           <p className="mt-1 text-xs text-slate-400">
             Xem, tạo, sửa, xóa các hàng cơ sở dữ liệu sinh viên, bản đồ chương trình học và liên kết với tài khoản người dùng hệ thống.
           </p>
@@ -201,10 +201,10 @@ export default function Students() {
             onChange={(e) => updateFilters({ status: e.target.value || undefined })}
             className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="ACTIVE">ĐANG HỌC</option>
-            <option value="GRADUATED">TỐT NGHIỆP</option>
-            <option value="DROPPED">THÔI HỌC</option>
+            <option className="bg-slate-900 text-slate-100" value="">Tất cả trạng thái</option>
+            <option className="bg-slate-900 text-slate-100" value="ACTIVE">ĐANG HỌC</option>
+            <option className="bg-slate-900 text-slate-100" value="GRADUATED">TỐT NGHIỆP</option>
+            <option className="bg-slate-900 text-slate-100" value="DROPPED">THÔI HỌC</option>
           </select>
         }
         rightActions={

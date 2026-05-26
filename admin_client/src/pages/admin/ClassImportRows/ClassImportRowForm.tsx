@@ -119,11 +119,11 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
             value={formImportId}
             required
             onChange={(e) => setFormImportId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn phiên nhập --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn phiên nhập --</option>
             {importsList.map((i) => (
-              <option key={i.id} value={i.id}>
+              <option className="bg-slate-900 text-slate-100" key={i.id} value={i.id}>
                 {i.label}
               </option>
             ))}
@@ -141,7 +141,7 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
             placeholder="Ví dụ: 2"
             value={formRowNo}
             onChange={(e) => setFormRowNo(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -154,7 +154,7 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
             placeholder="Ví dụ: SE170001"
             value={formCode}
             onChange={(e) => setFormCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -169,7 +169,7 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
             placeholder="Ví dụ: Nguyễn Văn A"
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -182,7 +182,7 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
             placeholder="Ví dụ: a@gmail.com"
             value={formEmail}
             onChange={(e) => setFormEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -195,11 +195,11 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
           <select
             value={formStatus}
             onChange={(e) => setFormStatus(e.target.value as "PENDING" | "SUCCESS" | "FAILED")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="PENDING">CHỜ XỬ LÝ</option>
-            <option value="SUCCESS">THÀNH CÔNG</option>
-            <option value="FAILED">THẤT BẠI</option>
+            <option className="bg-slate-900 text-slate-100" value="PENDING">CHỜ XỬ LÝ</option>
+            <option className="bg-slate-900 text-slate-100" value="SUCCESS">THÀNH CÔNG</option>
+            <option className="bg-slate-900 text-slate-100" value="FAILED">THẤT BẠI</option>
           </select>
         </div>
 
@@ -212,7 +212,7 @@ export const ClassImportRowForm: React.FC<ClassImportRowFormProps> = ({
             placeholder="Chi tiết thông báo lỗi..."
             value={formErrorDetails}
             onChange={(e) => setFormErrorDetails(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>

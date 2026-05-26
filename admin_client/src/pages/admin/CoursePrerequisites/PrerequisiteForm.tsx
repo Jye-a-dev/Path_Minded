@@ -102,11 +102,11 @@ export const PrerequisiteForm: React.FC<PrerequisiteFormProps> = ({
             value={formProgramId}
             required
             onChange={(e) => setFormProgramId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn chương trình đào tạo --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn chương trình đào tạo --</option>
             {programsList.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
                 {p.label}
               </option>
             ))}
@@ -125,7 +125,7 @@ export const PrerequisiteForm: React.FC<PrerequisiteFormProps> = ({
             placeholder="Ví dụ: CS102"
             value={formCourseCode}
             onChange={(e) => setFormCourseCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all uppercase font-mono font-semibold"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all uppercase font-mono font-semibold"
           />
         </div>
 
@@ -139,7 +139,7 @@ export const PrerequisiteForm: React.FC<PrerequisiteFormProps> = ({
             placeholder="Ví dụ: CS101"
             value={formPrereqCode}
             onChange={(e) => setFormPrereqCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all uppercase font-mono font-semibold"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all uppercase font-mono font-semibold"
           />
         </div>
       </div>
@@ -151,10 +151,10 @@ export const PrerequisiteForm: React.FC<PrerequisiteFormProps> = ({
         <select
           value={formType}
           onChange={(e) => setFormType(e.target.value as "REQUIRED" | "RECOMMENDED")}
-          className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
         >
-          <option value="REQUIRED">BẮT BUỘC (Khóa cứng)</option>
-          <option value="RECOMMENDED">KHUYẾN NGHỊ (Chỉ cảnh báo thông tin)</option>
+          <option className="bg-slate-900 text-slate-100" value="REQUIRED">BẮT BUỘC (Khóa cứng)</option>
+          <option className="bg-slate-900 text-slate-100" value="RECOMMENDED">KHUYẾN NGHỊ (Chỉ cảnh báo thông tin)</option>
         </select>
       </div>
 

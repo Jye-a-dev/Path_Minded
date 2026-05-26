@@ -98,11 +98,11 @@ export const ExportForm: React.FC<ExportFormProps> = ({
               value={formClassId}
               required
               onChange={(e) => setFormClassId(e.target.value)}
-              className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
             >
-              <option value="">-- Chọn lớp học --</option>
+              <option className="bg-slate-900 text-slate-100" value="">-- Chọn lớp học --</option>
               {classesList.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option className="bg-slate-900 text-slate-100" key={c.id} value={c.id}>
                   {c.label}
                 </option>
               ))}
@@ -117,11 +117,11 @@ export const ExportForm: React.FC<ExportFormProps> = ({
               <select
                 value={formProgramId}
                 onChange={(e) => setFormProgramId(e.target.value)}
-                className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
               >
-                <option value="">-- Tất cả chương trình trong lớp --</option>
+                <option className="bg-slate-900 text-slate-100" value="">-- Tất cả chương trình trong lớp --</option>
                 {programsList.map((p) => (
-                  <option key={p.id} value={p.id}>
+                  <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
                     {p.label}
                   </option>
                 ))}
@@ -135,11 +135,11 @@ export const ExportForm: React.FC<ExportFormProps> = ({
               <select
                 value={formAdvisorId}
                 onChange={(e) => setFormAdvisorId(e.target.value)}
-                className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
               >
-                <option value="">-- Không chỉ định cố vấn --</option>
+                <option className="bg-slate-900 text-slate-100" value="">-- Không chỉ định cố vấn --</option>
                 {advisorsList.map((a) => (
-                  <option key={a.id} value={a.id}>
+                  <option className="bg-slate-900 text-slate-100" key={a.id} value={a.id}>
                     {a.label}
                   </option>
                 ))}

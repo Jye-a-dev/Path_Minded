@@ -15,11 +15,11 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100 antialiased font-sans">
+    <div className="flex min-h-screen bg-slate-900 text-slate-100 antialiased font-sans">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/80 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -47,7 +47,7 @@ export default function AdminLayout() {
               </button>
               
               {/* Notched Status Indicator */}
-              <div className="hidden items-center gap-2 rounded-full bg-slate-950/60 px-3 py-1 border border-slate-800 text-[10px] uppercase font-bold tracking-wider text-slate-400 sm:flex select-none">
+              <div className="hidden items-center gap-2 rounded-full bg-slate-900/60 px-3 py-1 border border-slate-800 text-[10px] uppercase font-bold tracking-wider text-slate-400 sm:flex select-none">
                 <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                 <span>Hệ thống điều khiển đang hoạt động</span>
               </div>
@@ -75,7 +75,7 @@ export default function AdminLayout() {
         </div>
 
         {/* Content Outlet wrapper */}
-        <main className="flex-1 overflow-y-auto bg-slate-950 p-6 md:p-8 flex flex-col justify-between">
+        <main className="flex-1 overflow-y-auto bg-slate-900 p-6 md:p-8 flex flex-col justify-between">
           <div className="flex-1 max-w-5xl w-full mx-auto pb-8">
             <Outlet />
           </div>

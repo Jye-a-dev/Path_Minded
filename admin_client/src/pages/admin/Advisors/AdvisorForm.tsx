@@ -88,7 +88,7 @@ export const AdvisorForm: React.FC<AdvisorFormProps> = ({ editingItem, onSubmit,
           placeholder="Ví dụ: TS. Nguyễn Văn A"
           value={formFullName}
           onChange={(e) => setFormFullName(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 
@@ -101,7 +101,7 @@ export const AdvisorForm: React.FC<AdvisorFormProps> = ({ editingItem, onSubmit,
           placeholder="Ví dụ: Khoa Công nghệ thông tin"
           value={formDepartment}
           onChange={(e) => setFormDepartment(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 
@@ -118,11 +118,11 @@ export const AdvisorForm: React.FC<AdvisorFormProps> = ({ editingItem, onSubmit,
           <select
             value={formUserId}
             onChange={(e) => setFormUserId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Không liên kết tài khoản --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Không liên kết tài khoản --</option>
             {advisorUsers.map((u) => (
-              <option key={u.id} value={u.id}>
+              <option className="bg-slate-900 text-slate-100" key={u.id} value={u.id}>
                 {u.email}
               </option>
             ))}

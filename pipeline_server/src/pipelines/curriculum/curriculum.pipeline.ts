@@ -4,6 +4,8 @@ import { CurriculumValidator } from './curriculum.validator';
 import type {
   RawCurriculumInput,
   CurriculumParseResult,
+  ParsedCurriculumCourse,
+  CurriculumWarning,
 } from './curriculum.types';
 
 /**
@@ -29,19 +31,31 @@ export class CurriculumPipeline {
   async parse(input: RawCurriculumInput): Promise<CurriculumParseResult> {
     this.logger.log('Starting curriculum parse pipeline');
 
-    let parsedResult: ReturnType<typeof this.parser.mapRows>;
+    let parsedResult: {
+      courses: ParsedCurriculumCourse[];
+      warnings: CurriculumWarning[];
+      sheets?: string[];
+      activeSheetIndex?: number;
+    };
 
     if (input.fileBuffer) {
-      const rows = await this.parser.parseExcel(input.fileBuffer);
-      parsedResult = this.parser.mapRows(rows);
+      parsedResult = await this.parser.parseExcel(
+        input.fileBuffer,
+        input.sheetIndex,
+      );
     } else if (input.textContent) {
       const rows = this.parser.parseText(input.textContent);
       parsedResult = this.parser.mapRows(rows);
     } else {
-      return { preview: [], warnings: [] };
+      return { preview: [], warnings: [], sheets: [], activeSheetIndex: 0 };
     }
 
-    const { courses, warnings: parseWarnings } = parsedResult;
+    const {
+      courses,
+      warnings: parseWarnings,
+      sheets = [],
+      activeSheetIndex = 0,
+    } = parsedResult;
     this.logger.log(`Parsed ${courses.length} courses from curriculum input`);
 
     // Validate parsed courses
@@ -50,6 +64,8 @@ export class CurriculumPipeline {
     return {
       preview: courses,
       warnings: [...parseWarnings, ...validationWarnings],
+      sheets,
+      activeSheetIndex,
     };
   }
 }

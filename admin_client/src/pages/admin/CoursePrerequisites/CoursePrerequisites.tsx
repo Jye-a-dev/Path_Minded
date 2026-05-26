@@ -139,7 +139,7 @@ export default function CoursePrerequisites() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Điều kiện môn học</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Điều kiện môn học</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa các yêu cầu trong đó việc hoàn thành các môn học tiên quyết cụ thể là điều kiện bắt buộc.
           </p>

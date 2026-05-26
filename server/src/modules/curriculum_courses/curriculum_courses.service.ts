@@ -189,4 +189,22 @@ export class CurriculumCoursesService {
 
     return { message: 'deleted' };
   }
+
+  async removeAll(): Promise<{ message: string; count: number }> {
+    const result = await this.pool.query(
+      `DELETE FROM curriculum_courses`,
+    );
+    return { message: 'all deleted', count: result.rowCount ?? 0 };
+  }
+
+  async removeBulk(ids: string[]): Promise<{ message: string; count: number }> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('ids array is required');
+    }
+    const result = await this.pool.query(
+      `DELETE FROM curriculum_courses WHERE id = ANY($1::uuid[])`,
+      [ids],
+    );
+    return { message: 'bulk deleted', count: result.rowCount ?? 0 };
+  }
 }

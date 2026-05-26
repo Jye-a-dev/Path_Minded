@@ -130,7 +130,7 @@ export default function Advisors() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Danh sách Cố vấn</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Danh sách Cố vấn</h1>
           <p className="mt-1 text-xs text-slate-400">
             Quản lý cố vấn học tập, nhóm khoa ban và liên kết họ với tài khoản đăng nhập hệ thống.
           </p>

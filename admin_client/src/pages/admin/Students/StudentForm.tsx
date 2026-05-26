@@ -133,7 +133,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: SE170001"
             value={formCode}
             onChange={(e) => setFormCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -147,7 +147,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: Nguyễn Văn C"
             value={formFullName}
             onChange={(e) => setFormFullName(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -162,7 +162,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: 2023"
             value={formCohortYear}
             onChange={(e) => setFormCohortYear(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -173,11 +173,11 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
           <select
             value={formStatus}
             onChange={(e) => setFormStatus(e.target.value as "ACTIVE" | "GRADUATED" | "DROPPED")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="ACTIVE">ĐANG HỌC</option>
-            <option value="GRADUATED">TỐT NGHIỆP</option>
-            <option value="DROPPED">THÔI HỌC</option>
+            <option className="bg-slate-900 text-slate-100" value="ACTIVE">ĐANG HỌC</option>
+            <option className="bg-slate-900 text-slate-100" value="GRADUATED">TỐT NGHIỆP</option>
+            <option className="bg-slate-900 text-slate-100" value="DROPPED">THÔI HỌC</option>
           </select>
         </div>
       </div>
@@ -190,17 +190,17 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
       ) : (
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="block min-h-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Liên kết tài khoản đăng nhập
             </label>
             <select
               value={formUserId}
               onChange={(e) => setFormUserId(e.target.value)}
-              className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
             >
-              <option value="">-- Chưa liên kết tài khoản --</option>
+              <option className="bg-slate-900 text-slate-100" value="">-- Chưa liên kết tài khoản --</option>
               {studentUsers.map((u) => (
-                <option key={u.id} value={u.id}>
+                <option className="bg-slate-900 text-slate-100" key={u.id} value={u.id}>
                   {u.label}
                 </option>
               ))}
@@ -208,17 +208,17 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="block min-h-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Chọn lớp học
             </label>
             <select
               value={formClassId}
               onChange={(e) => setFormClassId(e.target.value)}
-              className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
             >
-              <option value="">-- Chưa phân lớp --</option>
+              <option className="bg-slate-900 text-slate-100" value="">-- Chưa phân lớp --</option>
               {classesList.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option className="bg-slate-900 text-slate-100" key={c.id} value={c.id}>
                   {c.label}
                 </option>
               ))}
@@ -226,17 +226,17 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="block min-h-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Chọn chương trình
             </label>
             <select
               value={formProgramId}
               onChange={(e) => setFormProgramId(e.target.value)}
-              className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
             >
-              <option value="">-- Chưa chỉ định chương trình --</option>
+              <option className="bg-slate-900 text-slate-100" value="">-- Chưa chỉ định chương trình --</option>
               {programsList.map((p) => (
-                <option key={p.id} value={p.id}>
+                <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
                   {p.label}
                 </option>
               ))}

@@ -117,11 +117,11 @@ export const ExportLogForm: React.FC<ExportLogFormProps> = ({
             value={formExportId}
             required
             onChange={(e) => setFormExportId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn tệp xuất dữ liệu --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn tệp xuất dữ liệu --</option>
             {exportsList.map((e) => (
-              <option key={e.id} value={e.id}>
+              <option className="bg-slate-900 text-slate-100" key={e.id} value={e.id}>
                 {e.label}
               </option>
             ))}
@@ -139,7 +139,7 @@ export const ExportLogForm: React.FC<ExportLogFormProps> = ({
             placeholder="Ví dụ: 50"
             value={formStudentCount}
             onChange={(e) => setFormStudentCount(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -152,7 +152,7 @@ export const ExportLogForm: React.FC<ExportLogFormProps> = ({
             placeholder="Ví dụ: 40"
             value={formCourseCount}
             onChange={(e) => setFormCourseCount(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -167,7 +167,7 @@ export const ExportLogForm: React.FC<ExportLogFormProps> = ({
             placeholder="Ví dụ: 45"
             value={formSuccessCount}
             onChange={(e) => setFormSuccessCount(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -180,7 +180,7 @@ export const ExportLogForm: React.FC<ExportLogFormProps> = ({
             placeholder="Ví dụ: 5"
             value={formWarningCount}
             onChange={(e) => setFormWarningCount(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>

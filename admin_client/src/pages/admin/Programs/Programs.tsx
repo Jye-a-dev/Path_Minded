@@ -138,7 +138,7 @@ export default function Programs() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Chương trình đào tạo</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Chương trình đào tạo</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa các ma trận đề cương học thuật, trình độ học vị và ngưỡng tín chỉ tốt nghiệp.
           </p>

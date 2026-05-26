@@ -54,12 +54,14 @@ export class AppController {
   @UseInterceptors(FileInterceptor('file'))
   async parseCurriculum(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: ParseBody,
+    @Body() body: { textContent?: string; sheetIndex?: string | number },
   ) {
+    const sheetIdx = body.sheetIndex !== undefined ? Number(body.sheetIndex) : 0;
     return this.curriculumPipeline.parse({
       fileBuffer: file?.buffer,
       textContent: body.textContent,
       fileName: file?.originalname,
+      sheetIndex: sheetIdx,
     });
   }
 

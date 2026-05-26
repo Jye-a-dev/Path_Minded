@@ -3,8 +3,25 @@ import { usePaginatedApi } from "../../../hooks/useApi";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { api } from "../../../services/api";
-import { CheckCircle2, Trash2, Plus, Loader2 } from "lucide-react";
+import { CheckCircle2, Trash2, Plus } from "lucide-react";
 import { CurriculumImportForm } from "./CurriculumImportForm";
+import { CurriculumImportPreview } from "./CurriculumImportPreview";
+
+interface CoursePreviewItem {
+  courseCode: string;
+  courseName: string;
+  credits: number | null;
+  expectedSemester: number | null;
+  courseGroup: string | null;
+  courseType: string;
+}
+
+interface WarningItem {
+  rowNumber: number | null;
+  code: string;
+  message: string;
+  rawValue: string;
+}
 
 interface ImportItem {
   id: string;
@@ -34,7 +51,12 @@ export default function CurriculumImports() {
   } = usePaginatedApi<ImportItem>("/curriculum_imports");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  const [previewData, setPreviewData] = useState<CoursePreviewItem[] | null>(null);
+  const [previewWarnings, setPreviewWarnings] = useState<WarningItem[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [sheetsList, setSheetsList] = useState<string[]>([]);
+  const [activeSheetIndex, setActiveSheetIndex] = useState<number>(0);
 
   const handleOpenCreate = () => {
     setModalOpen(true);
@@ -42,30 +64,83 @@ export default function CurriculumImports() {
 
   const handleCloseModal = () => {
     setModalOpen(false);
+    setPreviewData(null);
+    setPreviewWarnings([]);
+    setActiveSessionId(null);
+    setSheetsList([]);
+    setActiveSheetIndex(0);
   };
 
   const handleSubmit = async (formData: FormData) => {
-    await api.post("/curriculum_imports", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    refresh();
-    setModalOpen(false);
-  };
-
-  const handleConfirmImport = async (id: string) => {
-    setConfirmingId(id);
     try {
-      await api.post(`/curriculum_imports/${id}/confirm`, {});
-      alert("Nhập chương trình học đã được xác nhận và xử lý thành công!");
+      const response = await api.post("/curriculum_imports", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (response.data) {
+        setPreviewData(response.data.preview ?? []);
+        setPreviewWarnings(response.data.warnings ?? []);
+        setActiveSessionId(response.data.importSession?.id ?? null);
+        setSheetsList(response.data.sheets ?? []);
+        setActiveSheetIndex(response.data.activeSheetIndex ?? 0);
+      }
       refresh();
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(errObj.response?.data?.message || errObj.message || "Xác nhận nhập dữ liệu thất bại.");
-    } finally {
-      setConfirmingId(null);
+      alert(errObj.response?.data?.message || errObj.message || "Tải lên tệp thất bại.");
     }
+  };
+
+  const handleConfirmPreview = async (selectedCourses: CoursePreviewItem[]) => {
+    if (!activeSessionId) return;
+    try {
+      await api.post(`/curriculum_imports/${activeSessionId}/confirm`, {
+        courses: selectedCourses,
+      });
+      alert("Xác nhận phiên nhập chương trình học và lưu vào DB thành công!");
+      handleCloseModal();
+      refresh();
+    } catch (err) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      alert(errObj.response?.data?.message || errObj.message || "Xác nhận phiên nhập thất bại.");
+    }
+  };
+
+  const handleCancelPreview = async () => {
+    if (activeSessionId) {
+      try {
+        await api.delete(`/curriculum_imports/${activeSessionId}`);
+      } catch (e) {
+        console.error("Failed to delete draft session:", e);
+      }
+    }
+    handleCloseModal();
+    refresh();
+  };
+
+  const handleSheetChange = async (idx: number) => {
+    if (!activeSessionId) return;
+    try {
+      const response = await api.post(`/curriculum_imports/${activeSessionId}/reparse`, {
+        sheetIndex: idx,
+      });
+      if (response.data) {
+        setPreviewData(response.data.preview ?? []);
+        setPreviewWarnings(response.data.warnings ?? []);
+        setSheetsList(response.data.sheets ?? []);
+        setActiveSheetIndex(response.data.activeSheetIndex ?? 0);
+      }
+    } catch (err) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      alert(errObj.response?.data?.message || errObj.message || "Chuyển đổi trang tính thất bại.");
+    }
+  };
+
+  const handleConfirmImport = () => {
+    alert(
+      "Phiên nhập này chưa được xác nhận hoàn tất. Vui lòng bấm '+ Phiên nhập mới' để tải lên lại và nhấn 'Xác nhận Nhập vào DB' ở bảng xem trước."
+    );
   };
 
   const handleDelete = async (id: string) => {
@@ -138,15 +213,10 @@ export default function CurriculumImports() {
         <div className="flex items-center gap-2">
           {row.import_status === "PENDING" && (
             <button
-              onClick={() => handleConfirmImport(row.id)}
-              disabled={confirmingId !== null}
-              className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-2 py-1 text-xs font-bold text-white shadow-lg disabled:opacity-50 transition cursor-pointer"
+              onClick={() => handleConfirmImport()}
+              className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-2 py-1 text-xs font-bold text-white shadow-lg transition cursor-pointer"
             >
-              {confirmingId === row.id ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <CheckCircle2 size={12} />
-              )}
+              <CheckCircle2 size={12} />
               Xác nhận
             </button>
           )}
@@ -166,7 +236,7 @@ export default function CurriculumImports() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Nhập chương trình học</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Nhập chương trình học</h1>
           <p className="mt-1 text-xs text-slate-400">
             Thu thập chi tiết đề cương môn học, đăng ký các môn điều kiện và lập bản đồ bảng tính chương trình học.
           </p>
@@ -207,13 +277,30 @@ export default function CurriculumImports() {
       <Modal
         isOpen={modalOpen}
         onClose={handleCloseModal}
-        title="Bắt đầu phiên nhập chương trình học mới"
+        title={
+          previewData
+            ? "Xem trước cấu trúc Chương trình đào tạo học phần"
+            : "Bắt đầu phiên nhập chương trình học mới"
+        }
         size="lg"
       >
-        <CurriculumImportForm
-          onSubmit={handleSubmit}
-          onCancel={handleCloseModal}
-        />
+        {previewData ? (
+          <CurriculumImportPreview
+            key={`${activeSessionId}-${activeSheetIndex}`}
+            courses={previewData}
+            warnings={previewWarnings}
+            sheets={sheetsList}
+            activeSheetIndex={activeSheetIndex}
+            onConfirm={handleConfirmPreview}
+            onCancel={handleCancelPreview}
+            onSheetChange={handleSheetChange}
+          />
+        ) : (
+          <CurriculumImportForm
+            onSubmit={handleSubmit}
+            onCancel={handleCloseModal}
+          />
+        )}
       </Modal>
     </div>
   );

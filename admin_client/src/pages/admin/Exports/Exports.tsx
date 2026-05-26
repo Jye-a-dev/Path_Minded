@@ -135,7 +135,7 @@ export default function Exports() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Xuất dữ liệu</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Xuất dữ liệu</h1>
           <p className="mt-1 text-xs text-slate-400">
             Xuất bảng tính ma trận kiểm định học tập để kiểm tra tiến trình học tập theo niên khóa và lớp học.
           </p>

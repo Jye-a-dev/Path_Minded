@@ -133,11 +133,11 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             value={formProgramId}
             required
             onChange={(e) => setFormProgramId(e.target.value)}
-            className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn chương trình --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn chương trình --</option>
             {programsList.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
                 {p.label}
               </option>
             ))}
@@ -156,7 +156,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: CS101"
             value={formCode}
             onChange={(e) => setFormCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -170,7 +170,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: Nhập môn Khoa học Máy tính"
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -185,7 +185,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: 3"
             value={formCredits}
             onChange={(e) => setFormCredits(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -198,7 +198,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: 1"
             value={formSemester}
             onChange={(e) => setFormSemester(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -211,7 +211,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: 10"
             value={formSortOrder}
             onChange={(e) => setFormSortOrder(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -224,14 +224,14 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
           <select
             value={formType}
             onChange={(e) => setFormType(e.target.value as "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="REQUIRED">BẮT BUỘC</option>
-            <option value="ELECTIVE">TỰ CHỌN</option>
-            <option value="PE">THỂ CHẤT</option>
-            <option value="ENGLISH">TIẾNG ANH</option>
-            <option value="DEFENSE">QUỐC PHÒNG</option>
-            <option value="OTHER">KHÁC</option>
+            <option className="bg-slate-900 text-slate-100" value="REQUIRED">BẮT BUỘC</option>
+            <option className="bg-slate-900 text-slate-100" value="ELECTIVE">TỰ CHỌN</option>
+            <option className="bg-slate-900 text-slate-100" value="PE">THỂ CHẤT</option>
+            <option className="bg-slate-900 text-slate-100" value="ENGLISH">TIẾNG ANH</option>
+            <option className="bg-slate-900 text-slate-100" value="DEFENSE">QUỐC PHÒNG</option>
+            <option className="bg-slate-900 text-slate-100" value="OTHER">KHÁC</option>
           </select>
         </div>
 
@@ -244,7 +244,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: Giáo dục đại cương"
             value={formGroup}
             onChange={(e) => setFormGroup(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -254,7 +254,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
               type="checkbox"
               checked={formIsRequired}
               onChange={(e) => setFormIsRequired(e.target.checked)}
-              className="rounded border-slate-850 text-indigo-600 focus:ring-indigo-500 h-4.5 w-4.5 bg-slate-950"
+              className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-500 h-4.5 w-4.5 bg-slate-900"
             />
             Là môn học bắt buộc
           </label>

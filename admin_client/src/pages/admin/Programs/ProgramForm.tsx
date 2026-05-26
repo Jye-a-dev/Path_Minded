@@ -75,7 +75,7 @@ export const ProgramForm: React.FC<ProgramFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: SE_2026"
             value={formCode}
             onChange={(e) => setFormCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -88,7 +88,7 @@ export const ProgramForm: React.FC<ProgramFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: v1.0"
             value={formVersion}
             onChange={(e) => setFormVersion(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -103,7 +103,7 @@ export const ProgramForm: React.FC<ProgramFormProps> = ({ editingItem, onSubmit,
           placeholder="Ví dụ: Khung chương trình Kỹ thuật phần mềm"
           value={formName}
           onChange={(e) => setFormName(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 
@@ -117,7 +117,7 @@ export const ProgramForm: React.FC<ProgramFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: Kỹ thuật phần mềm"
             value={formMajorName}
             onChange={(e) => setFormMajorName(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -130,7 +130,7 @@ export const ProgramForm: React.FC<ProgramFormProps> = ({ editingItem, onSubmit,
             placeholder="Ví dụ: 145"
             value={formTotalCredits}
             onChange={(e) => setFormTotalCredits(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>

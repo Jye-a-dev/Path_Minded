@@ -7,6 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Pool } from 'pg';
+import * as fs from 'fs';
+import * as path from 'path';
 import { DB_PROVIDER } from '../../constants/app.constant';
 import {
   CurriculumImportsPaginationResponse,
@@ -29,11 +31,22 @@ export class CurriculumImportsService {
 
     const fileName = file ? file.originalname : 'Pasted Text';
 
+    let savedPath: string | null = null;
+    if (file) {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'curriculum');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      const uniqueFileName = `${Date.now()}-${file.originalname}`;
+      savedPath = path.join(uploadDir, uniqueFileName);
+      fs.writeFileSync(savedPath, file.buffer);
+    }
+
     // Insert into DB as PENDING
     const insertResult = await this.pool.query<CurriculumImportEntity>(
-      `INSERT INTO curriculum_imports (advisor_id, program_id, file_name, import_status) 
-       VALUES ($1, $2, $3, 'PENDING') RETURNING *`,
-      [advisorId || null, programId || null, fileName],
+      `INSERT INTO curriculum_imports (advisor_id, program_id, file_name, file_path, import_status) 
+       VALUES ($1, $2, $3, $4, 'PENDING') RETURNING *`,
+      [advisorId || null, programId || null, fileName, savedPath],
     );
     const importRecord = insertResult.rows[0];
 
@@ -61,6 +74,8 @@ export class CurriculumImportsService {
       const parsedData = (await response.json()) as {
         preview?: any[];
         warnings?: any[];
+        sheets?: string[];
+        activeSheetIndex?: number;
       };
 
       // Save warnings to parse_warnings if any
@@ -84,6 +99,8 @@ export class CurriculumImportsService {
         importSession: importRecord,
         preview: parsedData.preview ?? [],
         warnings: parsedData.warnings ?? [],
+        sheets: parsedData.sheets ?? [],
+        activeSheetIndex: parsedData.activeSheetIndex ?? 0,
       };
     } catch (error: any) {
       // Update status to FAILED
@@ -93,6 +110,95 @@ export class CurriculumImportsService {
       );
       throw new BadRequestException(
         'Failed to process with pipeline server: ' + error.message,
+      );
+    }
+  }
+
+  async reparse(
+    id: string,
+    payload: Record<string, unknown>,
+  ): Promise<any> {
+    const sheetIndex = payload.sheetIndex !== undefined ? Number(payload.sheetIndex) : 0;
+
+    // 1. Fetch import session
+    const importResult = await this.pool.query<CurriculumImportEntity>(
+      `SELECT * FROM curriculum_imports WHERE id = $1`,
+      [id],
+    );
+
+    if (importResult.rowCount === 0) {
+      throw new NotFoundException('curriculum_imports not found');
+    }
+
+    const importRecord = importResult.rows[0];
+    if (importRecord.import_status !== 'PENDING') {
+      throw new BadRequestException('Import is not in PENDING state');
+    }
+
+    if (!importRecord.file_path) {
+      throw new BadRequestException('No Excel file uploaded for this session');
+    }
+
+    if (!fs.existsSync(importRecord.file_path)) {
+      throw new NotFoundException('Uploaded Excel file not found on server disk');
+    }
+
+    // Load file buffer
+    const fileBuffer = fs.readFileSync(importRecord.file_path);
+
+    const pipelineUrl =
+      process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
+    const formData = new FormData();
+    
+    const blob = new Blob([new Uint8Array(fileBuffer)], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    formData.append('file', blob, importRecord.file_name);
+    formData.append('sheetIndex', String(sheetIndex));
+
+    try {
+      const response = await fetch(`${pipelineUrl}/parse/curriculum`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Pipeline error: ${response.statusText}`);
+      }
+      const parsedData = (await response.json()) as any;
+
+      // Update warnings in database (clear old warnings for this session first)
+      await this.pool.query(
+        `DELETE FROM parse_warnings WHERE source_type = 'CURRICULUM' AND source_id = $1`,
+        [id],
+      );
+
+      if (parsedData.warnings && parsedData.warnings.length > 0) {
+        for (const warning of parsedData.warnings) {
+          await this.pool.query(
+            `INSERT INTO parse_warnings (source_type, source_id, row_number, warning_code, warning_message, raw_value)
+             VALUES ('CURRICULUM', $1, $2, $3, $4, $5)`,
+            [
+              id,
+              warning.rowNumber || null,
+              warning.code || 'UNKNOWN',
+              warning.message || '',
+              warning.rawValue || '',
+            ],
+          );
+        }
+      }
+
+      return {
+        importSession: importRecord,
+        preview: parsedData.preview ?? [],
+        warnings: parsedData.warnings ?? [],
+        sheets: parsedData.sheets ?? [],
+        activeSheetIndex: parsedData.activeSheetIndex ?? 0,
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        'Failed to reparse with pipeline server: ' + error.message,
       );
     }
   }
@@ -201,7 +307,7 @@ export class CurriculumImportsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<CurriculumImportEntity>(
-      `SELECT * FROM curriculum_imports ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT * FROM curriculum_imports ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -227,7 +333,7 @@ export class CurriculumImportsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<CurriculumImportEntity>(
-      `SELECT * FROM curriculum_imports ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT * FROM curriculum_imports ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 

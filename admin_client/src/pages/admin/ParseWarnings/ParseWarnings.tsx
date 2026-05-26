@@ -146,7 +146,7 @@ export default function ParseWarnings() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Cảnh báo phân tích</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Cảnh báo phân tích</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm định các cờ cảnh báo định dạng và các lỗi phân tích cú pháp gặp phải trong quá trình nhập bảng điểm.
           </p>

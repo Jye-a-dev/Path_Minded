@@ -67,7 +67,7 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
           placeholder="user@example.com"
           value={formEmail}
           onChange={(e) => setFormEmail(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 
@@ -81,7 +81,7 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
           required={!editingItem}
           value={formPassword}
           onChange={(e) => setFormPassword(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 
@@ -92,11 +92,11 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
         <select
           value={formRole}
           onChange={(e) => setFormRole(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
         >
-          <option value="STUDENT">SINH VIÊN</option>
-          <option value="ADVISOR">CỐ VẤN HỌC TẬP</option>
-          <option value="ADMIN">QUẢN TRỊ VIÊN</option>
+          <option className="bg-slate-900 text-slate-100" value="STUDENT">SINH VIÊN</option>
+          <option className="bg-slate-900 text-slate-100" value="ADVISOR">CỐ VẤN HỌC TẬP</option>
+          <option className="bg-slate-900 text-slate-100" value="ADMIN">QUẢN TRỊ VIÊN</option>
         </select>
       </div>
 

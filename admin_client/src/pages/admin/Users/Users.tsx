@@ -138,7 +138,7 @@ export default function Users() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Danh sách người dùng</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Danh sách người dùng</h1>
           <p className="mt-1 text-xs text-slate-400">
             Tạo, cập nhật và quản lý tài khoản hệ thống của sinh viên, cố vấn học tập và quản trị viên.
           </p>
@@ -170,10 +170,10 @@ export default function Users() {
             onChange={(e) => updateFilters({ role: e.target.value || undefined })}
             className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="">Tất cả vai trò</option>
-            <option value="STUDENT">Sinh viên</option>
-            <option value="ADVISOR">Cố vấn học tập</option>
-            <option value="ADMIN">Quản trị viên</option>
+            <option className="bg-slate-900 text-slate-100" value="">Tất cả vai trò</option>
+            <option className="bg-slate-900 text-slate-100" value="STUDENT">Sinh viên</option>
+            <option className="bg-slate-900 text-slate-100" value="ADVISOR">Cố vấn học tập</option>
+            <option className="bg-slate-900 text-slate-100" value="ADMIN">Quản trị viên</option>
           </select>
         }
         rightActions={

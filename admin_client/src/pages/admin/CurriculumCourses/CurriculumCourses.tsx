@@ -4,6 +4,7 @@ import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { CurriculumCourseForm } from "./CurriculumCourseForm";
 import { Plus, Edit2, Trash2, Bookmark } from "lucide-react";
+import { api } from "../../../services/api";
 
 interface CourseItem {
   id: string;
@@ -33,8 +34,10 @@ export default function CurriculumCourses() {
     createItem,
     updateItem,
     deleteItem,
+    refresh,
   } = usePaginatedApi<CourseItem>("/curriculum_courses");
 
+  const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CourseItem | null>(null);
 
@@ -75,9 +78,42 @@ export default function CurriculumCourses() {
     if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn môn học này?")) {
       try {
         await deleteItem(id);
+        setSelectedIds((prev) => prev.filter((item) => item !== id));
       } catch (err) {
         alert(err instanceof Error ? err.message : "Xóa môn học thất bại");
       }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} môn học đã chọn?`)) {
+      try {
+        await api.delete("/curriculum_courses/bulk", { data: { ids: selectedIds } });
+        setSelectedIds([]);
+        alert("Đã xóa các môn học đã chọn thành công!");
+        await refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Xóa các môn học thất bại");
+      }
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmation = window.prompt(
+      "CẢNH BÁO CỰC KỲ QUAN TRỌNG: Bạn đang chuẩn bị xóa TOÀN BỘ môn học trong khung chương trình!\nHành động này không thể hoàn tác.\nHãy gõ chữ 'DELETE' để xác nhận xóa vĩnh viễn:"
+    );
+    if (confirmation === "DELETE") {
+      try {
+        await api.delete("/curriculum_courses/all");
+        setSelectedIds([]);
+        alert("Đã xóa toàn bộ môn học trong khung chương trình thành công!");
+        await refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Xóa toàn bộ môn học thất bại");
+      }
+    } else if (confirmation !== null) {
+      alert("Xác nhận không khớp. Không thực hiện xóa.");
     }
   };
 
@@ -157,13 +193,13 @@ export default function CurriculumCourses() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleOpenEdit(row)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
           >
             <Edit2 size={14} />
           </button>
           <button
             onClick={() => handleDelete(row.id)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors cursor-pointer"
           >
             <Trash2 size={14} />
           </button>
@@ -177,7 +213,7 @@ export default function CurriculumCourses() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Học phần khung</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Học phần khung</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa chi tiết đề cương môn học, phân bổ học kỳ và mô hình tín chỉ của chương trình đào tạo.
           </p>
@@ -203,14 +239,37 @@ export default function CurriculumCourses() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Tìm kiếm mã môn hoặc tên môn..."
+        enableSelection={true}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
         rightActions={
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
-          >
-            <Plus size={16} />
-            Tạo Môn học
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-1.5 rounded-lg bg-rose-600/20 px-3.5 py-2 text-sm font-semibold text-rose-400 border border-rose-500/30 hover:bg-rose-600/30 hover:text-white transition-all cursor-pointer"
+              >
+                <Trash2 size={16} />
+                Xóa đã chọn ({selectedIds.length})
+              </button>
+            )}
+
+            <button
+              onClick={handleDeleteAll}
+              className="flex items-center gap-1.5 rounded-lg bg-amber-600/10 px-3.5 py-2 text-sm font-semibold text-amber-400 border border-amber-500/20 hover:bg-amber-600/20 hover:text-amber-300 transition-all cursor-pointer"
+            >
+              <Trash2 size={16} />
+              Xóa tất cả môn học
+            </button>
+
+            <button
+              onClick={handleOpenCreate}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+            >
+              <Plus size={16} />
+              Tạo Môn học
+            </button>
+          </div>
         }
       />
 

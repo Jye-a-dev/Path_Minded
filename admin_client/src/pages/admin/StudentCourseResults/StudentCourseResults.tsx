@@ -185,7 +185,7 @@ export default function StudentCourseResults() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Kết quả học tập</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Kết quả học tập</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm tra các điểm số môn học cụ thể, điểm chữ, số lần học và trạng thái tiến độ học tập.
           </p>

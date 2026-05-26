@@ -144,11 +144,11 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             value={formStudentId}
             required
             onChange={(e) => setFormStudentId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn sinh viên --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn sinh viên --</option>
             {studentsList.map((s) => (
-              <option key={s.id} value={s.id}>
+              <option className="bg-slate-900 text-slate-100" key={s.id} value={s.id}>
                 {s.label}
               </option>
             ))}
@@ -167,7 +167,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: CS101"
             value={formCourseCode}
             onChange={(e) => setFormCourseCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -180,7 +180,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: Nhập môn Khoa học Máy tính"
             value={formCourseName}
             onChange={(e) => setFormCourseName(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -195,7 +195,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: 3"
             value={formCredits}
             onChange={(e) => setFormCredits(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -208,7 +208,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: 2023-2024"
             value={formSchoolYear}
             onChange={(e) => setFormSchoolYear(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -221,7 +221,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: FALL"
             value={formSemCode}
             onChange={(e) => setFormSemCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -234,7 +234,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: 1"
             value={formSemNumber}
             onChange={(e) => setFormSemNumber(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-605 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-605 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -250,7 +250,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: 8.5"
             value={formScore10}
             onChange={(e) => setFormScore10(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -264,7 +264,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: 3.5"
             value={formScore4}
             onChange={(e) => setFormScore4(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -277,7 +277,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: A"
             value={formLetter}
             onChange={(e) => setFormLetter(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-606 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -290,7 +290,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             placeholder="Ví dụ: 1"
             value={formAttemptNo}
             onChange={(e) => setFormAttemptNo(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -303,11 +303,11 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
           <select
             value={formStatus}
             onChange={(e) => setFormStatus(e.target.value as "PASSED" | "FAILED" | "STUDYING")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="PASSED">ĐẠT</option>
-            <option value="FAILED">TRƯỢT</option>
-            <option value="STUDYING">ĐANG HỌC</option>
+            <option className="bg-slate-900 text-slate-100" value="PASSED">ĐẠT</option>
+            <option className="bg-slate-900 text-slate-100" value="FAILED">TRƯỢT</option>
+            <option className="bg-slate-900 text-slate-100" value="STUDYING">ĐANG HỌC</option>
           </select>
         </div>
 
@@ -317,7 +317,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
               type="checkbox"
               checked={formIsLatest}
               onChange={(e) => setFormIsLatest(e.target.checked)}
-              className="rounded border-slate-855 text-indigo-600 focus:ring-indigo-500 h-4.5 w-4.5 bg-slate-955"
+              className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-500 h-4.5 w-4.5 bg-slate-900"
             />
             Là lần học gần nhất
           </label>

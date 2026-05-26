@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer/User Info Section */}
       <div className="border-t border-slate-800/80 bg-slate-900/40 p-4">
-        <div className="flex items-center justify-between rounded-xl bg-slate-950/45 p-3 border border-slate-800/50">
+        <div className="flex items-center justify-between rounded-xl bg-slate-900/45 p-3 border border-slate-800/50">
           <div className="flex items-center gap-2 overflow-hidden">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-200">
               <User size={18} />

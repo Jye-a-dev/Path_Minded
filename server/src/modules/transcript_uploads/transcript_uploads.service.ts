@@ -170,7 +170,7 @@ export class TranscriptUploadsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<TranscriptUploadEntity>(
-      `SELECT * FROM transcript_uploads ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT * FROM transcript_uploads ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -195,7 +195,7 @@ export class TranscriptUploadsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<TranscriptUploadEntity>(
-      `SELECT * FROM transcript_uploads ${where} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT * FROM transcript_uploads ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 

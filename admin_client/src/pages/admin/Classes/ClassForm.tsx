@@ -109,7 +109,7 @@ export const ClassForm: React.FC<ClassFormProps> = ({ editingItem, onSubmit, onC
             placeholder="Ví dụ: SE17A"
             value={formCode}
             onChange={(e) => setFormCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -122,7 +122,7 @@ export const ClassForm: React.FC<ClassFormProps> = ({ editingItem, onSubmit, onC
             placeholder="Ví dụ: 2023"
             value={formCohortYear}
             onChange={(e) => setFormCohortYear(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>
@@ -136,7 +136,7 @@ export const ClassForm: React.FC<ClassFormProps> = ({ editingItem, onSubmit, onC
           placeholder="Ví dụ: Kỹ thuật phần mềm K17A"
           value={formName}
           onChange={(e) => setFormName(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 
@@ -148,17 +148,17 @@ export const ClassForm: React.FC<ClassFormProps> = ({ editingItem, onSubmit, onC
       ) : (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="block min-h-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Phân công Cố vấn lớp học
             </label>
             <select
               value={formAdvisorId}
               onChange={(e) => setFormAdvisorId(e.target.value)}
-              className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
             >
-              <option value="">-- Chưa phân công Cố vấn --</option>
+              <option className="bg-slate-900 text-slate-100" value="">-- Chưa phân công Cố vấn --</option>
               {advisors.map((adv) => (
-                <option key={adv.id} value={adv.id}>
+                <option className="bg-slate-900 text-slate-100" key={adv.id} value={adv.id}>
                   {adv.full_name}
                 </option>
               ))}
@@ -166,17 +166,17 @@ export const ClassForm: React.FC<ClassFormProps> = ({ editingItem, onSubmit, onC
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="block min-h-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Phân công Chương trình đào tạo
             </label>
             <select
               value={formProgramId}
               onChange={(e) => setFormProgramId(e.target.value)}
-              className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
             >
-              <option value="">-- Chưa phân công Chương trình --</option>
+              <option className="bg-slate-900 text-slate-100" value="">-- Chưa phân công Chương trình --</option>
               {programs.map((prog) => (
-                <option key={prog.id} value={prog.id}>
+                <option className="bg-slate-900 text-slate-100" key={prog.id} value={prog.id}>
                   {prog.program_code} - {prog.program_name}
                 </option>
               ))}

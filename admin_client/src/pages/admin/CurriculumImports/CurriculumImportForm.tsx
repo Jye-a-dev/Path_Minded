@@ -56,7 +56,7 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
     try {
       const formData = new FormData();
       formData.append("sourceType", sourceType);
-      formData.append("program_id", formProgramId);
+      formData.append("programId", formProgramId);
       formData.append("note", formNote);
 
       if (sourceType === "file" && formFile) {
@@ -100,11 +100,11 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
             value={formProgramId}
             required
             onChange={(e) => setFormProgramId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn chương trình --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn chương trình --</option>
             {programsList.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
                 {p.label}
               </option>
             ))}
@@ -123,7 +123,7 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
             className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition cursor-pointer ${
               sourceType === "text"
                 ? "border-indigo-500 bg-indigo-500/10 text-indigo-400"
-                : "border-slate-800 bg-slate-955 text-slate-400 hover:text-slate-200"
+                : "border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200"
             }`}
           >
             <FileText size={16} />
@@ -131,12 +131,15 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
           </button>
           <button
             type="button"
-            disabled // Node server usually reads direct uploads, but keeping it elegant
             onClick={() => setSourceType("file")}
-            className="flex items-center justify-center gap-2 rounded-lg border border-slate-800 bg-slate-955 px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-40 select-none"
+            className={`flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition cursor-pointer ${
+              sourceType === "file"
+                ? "border-indigo-500 bg-indigo-500/10 text-indigo-400"
+                : "border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200"
+            }`}
           >
             <UploadCloud size={16} />
-            Tải tệp Excel lên (Đã vô hiệu hóa)
+            Tải tệp Excel lên
           </button>
         </div>
       </div>
@@ -152,7 +155,7 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
             value={formTextContent}
             required
             onChange={(e) => setFormTextContent(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-xs text-slate-100 placeholder-slate-650 focus:border-indigo-500 focus:outline-none transition-all h-36 font-mono resize-none"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-100 placeholder-slate-650 focus:border-indigo-500 focus:outline-none transition-all h-36 font-mono resize-none"
           />
         </div>
       ) : (
@@ -163,8 +166,9 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
           <input
             type="file"
             accept=".xlsx, .xls"
+            required
             onChange={(e) => setFormFile(e.target.files?.[0] || null)}
-            className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-400 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-400 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       )}
@@ -178,7 +182,7 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
           placeholder="Ví dụ: Nhập ma trận đề cương chuẩn v1.0"
           value={formNote}
           onChange={(e) => setFormNote(e.target.value)}
-          className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
         />
       </div>
 

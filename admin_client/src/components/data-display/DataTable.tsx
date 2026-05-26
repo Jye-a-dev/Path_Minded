@@ -21,6 +21,9 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   filters?: React.ReactNode;
   rightActions?: React.ReactNode;
+  enableSelection?: boolean;
+  selectedIds?: (string | number)[];
+  onSelectionChange?: (ids: (string | number)[]) => void;
 }
 
 export function DataTable<T extends { id?: string | number }>({
@@ -37,8 +40,34 @@ export function DataTable<T extends { id?: string | number }>({
   searchPlaceholder = "Tìm kiếm...",
   filters,
   rightActions,
+  enableSelection = false,
+  selectedIds = [],
+  onSelectionChange,
 }: DataTableProps<T>) {
   const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  const allPageIds = data.map((row) => row.id).filter((id): id is string | number => id !== undefined);
+  const isAllPageSelected = allPageIds.length > 0 && allPageIds.every((id) => selectedIds.includes(id));
+
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      const merged = Array.from(new Set([...selectedIds, ...allPageIds]));
+      onSelectionChange(merged);
+    } else {
+      const filtered = selectedIds.filter((id) => !allPageIds.includes(id));
+      onSelectionChange(filtered);
+    }
+  };
+
+  const handleSelectRow = (id: string | number, checked: boolean) => {
+    if (!onSelectionChange) return;
+    if (checked) {
+      onSelectionChange([...selectedIds, id]);
+    } else {
+      onSelectionChange(selectedIds.filter((item) => item !== id));
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -68,6 +97,16 @@ export function DataTable<T extends { id?: string | number }>({
           <table className="w-full border-collapse text-left text-sm text-slate-300">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/60">
+                {enableSelection && (
+                  <th className="w-12 px-6 py-3.5">
+                    <input
+                      type="checkbox"
+                      checked={isAllPageSelected}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 h-4 w-4 cursor-pointer"
+                    />
+                  </th>
+                )}
                 {columns.map((col, idx) => (
                   <th
                     key={idx}
@@ -83,6 +122,11 @@ export function DataTable<T extends { id?: string | number }>({
                 // Skeleton Loader
                 Array.from({ length: limit }).map((_, rIdx) => (
                   <tr key={rIdx} className="animate-pulse">
+                    {enableSelection && (
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-4 rounded bg-slate-800"></div>
+                      </td>
+                    )}
                     {columns.map((_, cIdx) => (
                       <td key={cIdx} className="px-6 py-4">
                         <div className="h-4 rounded bg-slate-800 w-3/4"></div>
@@ -93,7 +137,7 @@ export function DataTable<T extends { id?: string | number }>({
               ) : data.length === 0 ? (
                 // Empty State
                 <tr>
-                  <td colSpan={columns.length} className="px-6 py-12 text-center">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="rounded-full bg-slate-900/80 p-3 text-slate-500 border border-slate-800">
                         <Loader2 className="h-6 w-6 animate-spin text-slate-600 hidden" />
@@ -108,22 +152,37 @@ export function DataTable<T extends { id?: string | number }>({
                 </tr>
               ) : (
                 // Rows Data
-                data.map((row, rIdx) => (
-                  <tr
-                    key={row.id ?? rIdx}
-                    className="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors"
-                  >
-                    {columns.map((col, cIdx) => (
-                      <td key={cIdx} className="px-6 py-4 whitespace-nowrap text-slate-300 font-medium">
-                        {col.render
-                          ? col.render(row)
-                          : col.accessorKey
-                          ? String(row[col.accessorKey as keyof T] ?? "")
-                          : ""}
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                data.map((row, rIdx) => {
+                  const isSelected = row.id !== undefined && selectedIds.includes(row.id);
+                  return (
+                    <tr
+                      key={row.id ?? rIdx}
+                      className={`border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors ${
+                        isSelected ? "bg-indigo-500/5 hover:bg-indigo-500/10" : ""
+                      }`}
+                    >
+                      {enableSelection && (
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => row.id !== undefined && handleSelectRow(row.id, e.target.checked)}
+                            className="rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900 h-4 w-4 cursor-pointer"
+                          />
+                        </td>
+                      )}
+                      {columns.map((col, cIdx) => (
+                        <td key={cIdx} className="px-6 py-4 whitespace-nowrap text-slate-300 font-medium">
+                          {col.render
+                            ? col.render(row)
+                            : col.accessorKey
+                            ? String(row[col.accessorKey as keyof T] ?? "")
+                            : ""}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -142,19 +201,24 @@ export function DataTable<T extends { id?: string | number }>({
               className="rounded-md border border-slate-800 bg-slate-900 px-2 py-1 text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               {[10, 20, 50, 100].map((size) => (
-                <option key={size} value={size}>
+                <option className="bg-slate-900 text-slate-100" key={size} value={size}>
                   {size} dòng
                 </option>
               ))}
             </select>
             <span>trong tổng số {total} bản ghi</span>
+            {selectedIds.length > 0 && (
+              <span className="ml-2 font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                Đã chọn {selectedIds.length} bản ghi
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1">
             <button
               onClick={() => onPageChange(Math.max(1, page - 1))}
               disabled={page === 1 || loading}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white disabled:pointer-events-none disabled:opacity-30 transition-colors"
+              className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white disabled:pointer-events-none disabled:opacity-30 transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} />
             </button>
@@ -164,7 +228,7 @@ export function DataTable<T extends { id?: string | number }>({
             <button
               onClick={() => onPageChange(Math.min(totalPages, page + 1))}
               disabled={page === totalPages || loading}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white disabled:pointer-events-none disabled:opacity-30 transition-colors"
+              className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white disabled:pointer-events-none disabled:opacity-30 transition-colors cursor-pointer"
             >
               <ChevronRight size={16} />
             </button>

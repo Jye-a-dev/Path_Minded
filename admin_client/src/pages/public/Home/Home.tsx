@@ -15,7 +15,7 @@ export default function MainpageIndex() {
             Cổng thông tin PathMinded v1.0
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:!text-white leading-none">
             Quản lý Ma trận <span className="text-indigo-600 dark:text-indigo-400">Cố vấn Học tập</span>
           </h1>
           
@@ -25,19 +25,19 @@ export default function MainpageIndex() {
 
           {/* Core Feature Cards */}
           <div className="grid gap-4 mt-8 w-full sm:grid-cols-3">
-            <div className="rounded-xl border border-zinc-200/60 bg-white/40 p-5 dark:border-slate-800/60 dark:bg-slate-950/20">
+            <div className="rounded-xl border border-zinc-200/60 bg-white/40 p-5 dark:border-slate-800/60 dark:bg-slate-900/20">
               <Cpu className="h-6 w-6 mx-auto text-indigo-500" />
               <h3 className="mt-2 text-sm font-bold text-zinc-800 dark:text-white">Đường ống Phân tích</h3>
               <p className="text-xs text-zinc-550 dark:text-slate-500 mt-1">Tự động phân tích bảng điểm</p>
             </div>
             
-            <div className="rounded-xl border border-zinc-200/60 bg-white/40 p-5 dark:border-slate-800/60 dark:bg-slate-950/20">
+            <div className="rounded-xl border border-zinc-200/60 bg-white/40 p-5 dark:border-slate-800/60 dark:bg-slate-900/20">
               <BookOpen className="h-6 w-6 mx-auto text-indigo-500" />
               <h3 className="mt-2 text-sm font-bold text-zinc-800 dark:text-white">Khung Đề cương</h3>
               <p className="text-xs text-zinc-550 dark:text-slate-500 mt-1">Bản đồ đề cương & kiểm tra môn tiên quyết</p>
             </div>
             
-            <div className="rounded-xl border border-zinc-200/60 bg-white/40 p-5 dark:border-slate-800/60 dark:bg-slate-950/20">
+            <div className="rounded-xl border border-zinc-200/60 bg-white/40 p-5 dark:border-slate-800/60 dark:bg-slate-900/20">
               <ShieldAlert className="h-6 w-6 mx-auto text-indigo-500" />
               <h3 className="mt-2 text-sm font-bold text-zinc-800 dark:text-white">Thư mục Vai trò</h3>
               <p className="text-xs text-zinc-550 dark:text-slate-500 mt-1">Kiểm soát truy cập cố vấn & quản trị viên</p>

@@ -95,6 +95,16 @@ export class CurriculumImportsController {
     return this.service.confirm(id, payload);
   }
 
+  @ApiOperation({ summary: 'Reparse curriculum Excel sheet' })
+  @ApiOkResponse({ description: 'Reparsed successfully' })
+  @Post(':id/reparse')
+  reparse(
+    @Param('id') id: string,
+    @Body() payload: Record<string, unknown>,
+  ): Promise<any> {
+    return this.service.reparse(id, payload);
+  }
+
   @ApiOperation({ summary: 'List curriculum import sessions' })
   @ApiOkResponse({
     description: 'List data',

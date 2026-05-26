@@ -107,11 +107,11 @@ export const CourseEquivalencyForm: React.FC<CourseEquivalencyFormProps> = ({
             value={formProgramId}
             required
             onChange={(e) => setFormProgramId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option value="">-- Chọn chương trình --</option>
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn chương trình --</option>
             {programsList.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
                 {p.label}
               </option>
             ))}
@@ -130,7 +130,7 @@ export const CourseEquivalencyForm: React.FC<CourseEquivalencyFormProps> = ({
             placeholder="Ví dụ: MATH101"
             value={formOriginalCode}
             onChange={(e) => setFormOriginalCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -144,7 +144,7 @@ export const CourseEquivalencyForm: React.FC<CourseEquivalencyFormProps> = ({
             placeholder="Ví dụ: MATH101_ALT"
             value={formEquivalentCode}
             onChange={(e) => setFormEquivalentCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -157,7 +157,7 @@ export const CourseEquivalencyForm: React.FC<CourseEquivalencyFormProps> = ({
           placeholder="Cung cấp ghi chú ngắn gọn lý do tại sao môn này tương đương..."
           value={formNote}
           onChange={(e) => setFormNote(e.target.value)}
-          className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all h-20 resize-none"
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all h-20 resize-none"
         />
       </div>
 

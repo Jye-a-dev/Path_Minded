@@ -161,7 +161,7 @@ export default function ClassImportRows() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Chi tiết hàng nhập lớp</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Chi tiết hàng nhập lớp</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm tra từng dòng hồ sơ được phân tích cú pháp bên trong các tệp lô CSV nhập sinh viên lớp học.
           </p>

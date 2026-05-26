@@ -81,7 +81,7 @@ export const ParseWarningForm: React.FC<ParseWarningFormProps> = ({
             placeholder="Ví dụ: TRANSCRIPT"
             value={formSourceType}
             onChange={(e) => setFormSourceType(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all uppercase font-semibold"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all uppercase font-semibold"
           />
         </div>
 
@@ -95,7 +95,7 @@ export const ParseWarningForm: React.FC<ParseWarningFormProps> = ({
             placeholder="Nhập UUID của bản ghi nguồn"
             value={formSourceId}
             onChange={(e) => setFormSourceId(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -110,7 +110,7 @@ export const ParseWarningForm: React.FC<ParseWarningFormProps> = ({
             placeholder="Ví dụ: 5"
             value={formRowNo}
             onChange={(e) => setFormRowNo(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -124,7 +124,7 @@ export const ParseWarningForm: React.FC<ParseWarningFormProps> = ({
             placeholder="Ví dụ: INVALID_LETTER_GRADE"
             value={formCode}
             onChange={(e) => setFormCode(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
       </div>
@@ -139,7 +139,7 @@ export const ParseWarningForm: React.FC<ParseWarningFormProps> = ({
             placeholder="Ví dụ: B++"
             value={formValue}
             onChange={(e) => setFormValue(e.target.value)}
-            className="w-full rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all font-mono"
           />
         </div>
 
@@ -153,7 +153,7 @@ export const ParseWarningForm: React.FC<ParseWarningFormProps> = ({
             placeholder="Cung cấp mô tả rõ ràng về cảnh báo..."
             value={formMessage}
             onChange={(e) => setFormMessage(e.target.value)}
-            className="w-full rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>
       </div>

@@ -3,9 +3,15 @@ import { api } from "../services/api";
 
 interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  limit: number;
+  total?: number;
+  page?: number;
+  limit?: number;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<string, unknown> = {}) {
@@ -40,7 +46,8 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
       
       if (response.data) {
         setData(response.data.data ?? []);
-        setTotal(response.data.total ?? 0);
+        const totalCount = response.data.pagination?.total ?? response.data.total ?? 0;
+        setTotal(totalCount);
       }
     } catch (err) {
       console.error(`Error fetching paginated data for ${endpoint}:`, err);

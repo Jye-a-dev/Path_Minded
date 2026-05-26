@@ -144,7 +144,7 @@ export default function Classes() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lớp học Sinh viên</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Lớp học Sinh viên</h1>
           <p className="mt-1 text-xs text-slate-400">
             Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo.
           </p>
