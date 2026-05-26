@@ -57,6 +57,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const env = envConfig();
   const swagger = swaggerConfig();
+  app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -274,7 +275,12 @@ async function bootstrap() {
       logger.error('Failed to load foreign keys for Swagger dropdowns', e);
     }
 
-    SwaggerModule.setup(swagger.route, app, document);
+    // Apply bearer auth globally to all endpoints
+    document.security = [{ 'access-token': [] }];
+
+    SwaggerModule.setup(swagger.route, app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    });
   }
 
   try {

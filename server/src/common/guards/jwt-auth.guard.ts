@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import type { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+const SWAGGER_ROUTE = process.env.SWAGGER_ROUTE ?? '/docs';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -20,6 +23,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     ]);
 
     if (isPublic) {
+      return true;
+    }
+
+    // Skip auth for requests coming from Swagger UI
+    const request = context.switchToHttp().getRequest<Request>();
+    const referer = request.headers['referer'] ?? '';
+    if (referer.includes(SWAGGER_ROUTE)) {
       return true;
     }
 

@@ -26,11 +26,14 @@ export class UserService {
     }
 
     try {
-      const result = await this.pool.query<UserEntity>(
+      const result = await this.pool.query<UserResponse>(
         `
           INSERT INTO users (email, password_hash, role)
           VALUES ($1, $2, $3::user_role)
-          RETURNING id, email, role, created_at, updated_at
+          RETURNING id, email, role,
+            ms_id, user_principal_name, display_name, given_name, surname,
+            mail, job_title, mobile_phone, business_phones, office_location,
+            preferred_language, created_at, updated_at
         `,
         [payload.email.toLowerCase(), payload.password, payload.role],
       );
@@ -85,7 +88,10 @@ export class UserService {
 
     const result = await this.pool.query<UserResponse>(
       `
-        SELECT id, email, role, created_at, updated_at
+        SELECT id, email, role,
+          ms_id, user_principal_name, display_name, given_name, surname,
+          mail, job_title, mobile_phone, business_phones, office_location,
+          preferred_language, created_at, updated_at
         FROM users
         ${where}
         ORDER BY created_at DESC
@@ -124,7 +130,10 @@ export class UserService {
     const dataValues = [...values, limit, offset];
     const result = await this.pool.query<UserResponse>(
       `
-        SELECT id, email, role, created_at, updated_at
+        SELECT id, email, role,
+          ms_id, user_principal_name, display_name, given_name, surname,
+          mail, job_title, mobile_phone, business_phones, office_location,
+          preferred_language, created_at, updated_at
         FROM users
         ${where}
         ORDER BY created_at DESC
@@ -158,7 +167,10 @@ export class UserService {
   async findOne(id: string): Promise<UserResponse> {
     const result = await this.pool.query<UserResponse>(
       `
-        SELECT id, email, role, created_at, updated_at
+        SELECT id, email, role,
+          ms_id, user_principal_name, display_name, given_name, surname,
+          mail, job_title, mobile_phone, business_phones, office_location,
+          preferred_language, created_at, updated_at
         FROM users
         WHERE id = $1
       `,
@@ -186,12 +198,31 @@ export class UserService {
   }
 
   async update(id: string, payload: UpdateUsersDto): Promise<UserResponse> {
-    if (!payload.email && !payload.password && !payload.role) {
+    const MS_FIELDS = [
+      'ms_id',
+      'user_principal_name',
+      'display_name',
+      'given_name',
+      'surname',
+      'mail',
+      'job_title',
+      'mobile_phone',
+      'business_phones',
+      'office_location',
+      'preferred_language',
+    ] as const;
+
+    const hasCore = payload.email || payload.password || payload.role;
+    const hasMs = MS_FIELDS.some(
+      (f) => payload[f as keyof UpdateUsersDto] !== undefined,
+    );
+
+    if (!hasCore && !hasMs) {
       throw new BadRequestException('at least one field is required');
     }
 
     const fields: string[] = [];
-    const values: Array<string> = [];
+    const values: Array<string | string[]> = [];
     let idx = 1;
 
     if (payload.email) {
@@ -209,6 +240,14 @@ export class UserService {
       values.push(payload.role);
     }
 
+    for (const field of MS_FIELDS) {
+      const val = payload[field as keyof UpdateUsersDto];
+      if (val !== undefined) {
+        fields.push(`${field} = $${idx++}`);
+        values.push(val);
+      }
+    }
+
     values.push(id);
 
     try {
@@ -217,7 +256,10 @@ export class UserService {
           UPDATE users
           SET ${fields.join(', ')}
           WHERE id = $${idx}
-          RETURNING id, email, role, created_at, updated_at
+          RETURNING id, email, role,
+            ms_id, user_principal_name, display_name, given_name, surname,
+            mail, job_title, mobile_phone, business_phones, office_location,
+            preferred_language, created_at, updated_at
         `,
         values,
       );

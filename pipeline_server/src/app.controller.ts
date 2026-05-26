@@ -11,6 +11,21 @@ import { CurriculumPipeline } from './pipelines/curriculum/curriculum.pipeline';
 import { ClassImportPipeline } from './pipelines/class-import/class-import.pipeline';
 import { MatrixPipeline } from './pipelines/exports/matrix.pipeline';
 import { ExcelBuilder } from './pipelines/exports/excel.builder';
+import type {
+  ExportStudent,
+  ExportCourse,
+  ExportCourseResult,
+} from './pipelines/exports/exports.types';
+
+interface ParseBody {
+  textContent?: string;
+}
+
+interface ExportMatrixBody {
+  students: ExportStudent[];
+  courses: ExportCourse[];
+  results: ExportCourseResult[];
+}
 
 @Controller()
 export class AppController {
@@ -26,7 +41,7 @@ export class AppController {
   @UseInterceptors(FileInterceptor('file'))
   async parseTranscript(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
+    @Body() body: ParseBody,
   ) {
     return this.transcriptPipeline.parse({
       fileBuffer: file?.buffer,
@@ -39,7 +54,7 @@ export class AppController {
   @UseInterceptors(FileInterceptor('file'))
   async parseCurriculum(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
+    @Body() body: ParseBody,
   ) {
     return this.curriculumPipeline.parse({
       fileBuffer: file?.buffer,
@@ -52,7 +67,7 @@ export class AppController {
   @UseInterceptors(FileInterceptor('file'))
   async parseClass(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any,
+    @Body() body: ParseBody,
   ) {
     return this.classImportPipeline.parse({
       fileBuffer: file?.buffer,
@@ -62,7 +77,7 @@ export class AppController {
   }
 
   @Post('exports/matrix')
-  async exportMatrix(@Body() body: any) {
+  async exportMatrix(@Body() body: ExportMatrixBody) {
     const { students, courses, results } = body;
     const matrixData = this.matrixPipeline.buildMatrix(
       students,

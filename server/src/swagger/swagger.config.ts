@@ -10,5 +10,14 @@ export const swaggerConfig = () => ({
         'API documentation for PathMinded backend',
     )
     .setVersion(process.env.SWAGGER_VERSION ?? '1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter your JWT access token (from POST /auth/login)',
+      },
+      'access-token',
+    )
     .build(),
 });

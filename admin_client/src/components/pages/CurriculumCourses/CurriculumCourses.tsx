@@ -1,0 +1,225 @@
+import { useState } from "react";
+import { usePaginatedApi } from "../../../hooks/useApi";
+import { DataTable } from "../../../components/ui/DataTable";
+import { Modal } from "../../../components/ui/Modal";
+import { CurriculumCourseForm } from "./CurriculumCourseForm";
+import { Plus, Edit2, Trash2, Bookmark } from "lucide-react";
+
+interface CourseItem {
+  id: string;
+  program_id: string;
+  course_code: string;
+  course_name: string;
+  credits?: number;
+  expected_semester?: number;
+  course_group?: string;
+  course_type: "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER";
+  is_required: boolean;
+  sort_order?: number;
+}
+
+export default function CurriculumCourses() {
+  const {
+    data,
+    total,
+    page,
+    limit,
+    loading,
+    error,
+    search,
+    setPage,
+    setLimit,
+    setSearch,
+    createItem,
+    updateItem,
+    deleteItem,
+  } = usePaginatedApi<CourseItem>("/curriculum_courses");
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<CourseItem | null>(null);
+
+  const handleOpenCreate = () => {
+    setEditingItem(null);
+    setModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: CourseItem) => {
+    setEditingItem(item);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+  };
+
+  const handleSubmit = async (payload: {
+    program_id: string;
+    course_code: string;
+    course_name: string;
+    credits: number | null;
+    expected_semester: number | null;
+    course_group: string | null;
+    course_type: "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER";
+    is_required: boolean;
+    sort_order: number | null;
+  }) => {
+    if (editingItem) {
+      await updateItem(editingItem.id, payload);
+    } else {
+      await createItem(payload);
+    }
+    setModalOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to permanently delete this course?")) {
+      try {
+        await deleteItem(id);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to delete course");
+      }
+    }
+  };
+
+  const columns = [
+    {
+      header: "Code",
+      accessorKey: "course_code",
+      render: (row: CourseItem) => (
+        <span className="font-mono text-xs font-bold text-slate-200">{row.course_code}</span>
+      ),
+    },
+    {
+      header: "Course Name",
+      accessorKey: "course_name",
+      render: (row: CourseItem) => (
+        <div className="flex items-center gap-2">
+          <Bookmark size={16} className="text-indigo-400" />
+          <span className="text-slate-200 font-bold whitespace-normal">{row.course_name}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Credits",
+      accessorKey: "credits",
+      render: (row: CourseItem) => (
+        <span className="text-slate-400 font-semibold">{row.credits ?? "N/A"}</span>
+      ),
+    },
+    {
+      header: "Semester",
+      accessorKey: "expected_semester",
+      render: (row: CourseItem) => (
+        <span className="text-slate-400 font-semibold">{row.expected_semester ?? "N/A"}</span>
+      ),
+    },
+    {
+      header: "Type",
+      accessorKey: "course_type",
+      render: (row: CourseItem) => {
+        const badges = {
+          REQUIRED: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+          ELECTIVE: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+          PE: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+          ENGLISH: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+          DEFENSE: "bg-pink-500/10 text-pink-400 border-pink-500/20",
+          OTHER: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+        };
+        return (
+          <span
+            className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${badges[row.course_type]}`}
+          >
+            {row.course_type}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Req.",
+      accessorKey: "is_required",
+      render: (row: CourseItem) => (
+        <span className={`text-xs font-semibold ${row.is_required ? "text-emerald-400" : "text-slate-500"}`}>
+          {row.is_required ? "Yes" : "No"}
+        </span>
+      ),
+    },
+    {
+      header: "Actions",
+      render: (row: CourseItem) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleOpenEdit(row)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            onClick={() => handleDelete(row.id)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Title Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Curriculum Courses</h1>
+          <p className="mt-1 text-xs text-slate-400">
+            Define course syllabi details, semester mappings and program credit models.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">
+          {error}
+        </div>
+      )}
+
+      {/* Data Table */}
+      <DataTable<CourseItem>
+        columns={columns}
+        data={data}
+        loading={loading}
+        total={total}
+        page={page}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search course code or name..."
+        rightActions={
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+          >
+            <Plus size={16} />
+            Create Course
+          </button>
+        }
+      />
+
+      {/* Modal Popup */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        title={editingItem ? "Edit Curriculum Course" : "Add Course to Curriculum"}
+        size="lg"
+      >
+        <CurriculumCourseForm
+          key={editingItem ? editingItem.id : "create"}
+          editingItem={editingItem}
+          onSubmit={handleSubmit}
+          onCancel={handleCloseModal}
+        />
+      </Modal>
+    </div>
+  );
+}

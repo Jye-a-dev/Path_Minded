@@ -5,6 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import type { UserRole } from '../../modules/users/interfaces/users.interfaces';
 
@@ -13,6 +14,8 @@ type AuthUser = {
   email: string;
   role: UserRole;
 };
+
+const SWAGGER_ROUTE = process.env.SWAGGER_ROUTE ?? '/docs';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -25,6 +28,13 @@ export class RolesGuard implements CanActivate {
     );
 
     if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
+
+    // Skip role check for requests coming from Swagger UI
+    const request = context.switchToHttp().getRequest<Request>();
+    const referer = request.headers['referer'] ?? '';
+    if (referer.includes(SWAGGER_ROUTE)) {
       return true;
     }
 

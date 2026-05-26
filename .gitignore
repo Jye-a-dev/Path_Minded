@@ -1,5 +1,3 @@
-# Monorepo Root Git Ignore
-
 # Dependency directories
 node_modules/
 **/node_modules/
@@ -9,35 +7,25 @@ dist/
 **/dist/
 build/
 **/build/
-out/
-**/out/
-/coverage
-**/coverage
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
 
-# Environment files
-.env
-.env.*
-!.env.example
-**/.env
-**/.env.*
-!**/.env.example
+# Local env files
+.env.local
+**/.env.local
+.env.development.local
+**/.env.development.local
+.env.test.local
+**/.env.test.local
+.env.production.local
+**/.env.production.local
 
-# IDE / Editor folders
+# IDE configurations
 .vscode/
+**/.vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-.DS_Store
+**/.idea/
 
-# Logs
-logs/
-**/logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# OS files
+.DS_Store
+Thumbs.db

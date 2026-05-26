@@ -45,8 +45,24 @@ export class AuthService {
       throw new UnauthorizedException('Microsoft account email not found');
     }
 
+    const msProfilePatch = {
+      ms_id: profile.id ?? undefined,
+      user_principal_name: profile.userPrincipalName ?? undefined,
+      display_name: profile.displayName ?? undefined,
+      given_name: profile.givenName ?? undefined,
+      surname: profile.surname ?? undefined,
+      mail: profile.mail ?? undefined,
+      job_title: profile.jobTitle ?? undefined,
+      mobile_phone: profile.mobilePhone ?? undefined,
+      business_phones: profile.businessPhones ?? undefined,
+      office_location: profile.officeLocation ?? undefined,
+      preferred_language: profile.preferredLanguage ?? undefined,
+    };
+
     const existedUser = await this.usersService.findByEmailWithPassword(email);
     if (existedUser) {
+      // Sync latest Microsoft profile data on every login
+      await this.usersService.update(existedUser.id, msProfilePatch);
       return this.buildAuthResponse(
         existedUser.id,
         existedUser.email,
@@ -61,6 +77,9 @@ export class AuthService {
       role: 'STUDENT',
     });
 
+    // Save Microsoft profile on first registration
+    await this.usersService.update(user.id, msProfilePatch);
+
     return this.buildAuthResponse(user.id, user.email, user.role);
   }
 
@@ -69,8 +88,17 @@ export class AuthService {
   }
 
   private async fetchMicrosoftProfile(accessToken: string): Promise<{
+    id?: string | null;
     mail?: string | null;
     userPrincipalName?: string | null;
+    displayName?: string | null;
+    givenName?: string | null;
+    surname?: string | null;
+    jobTitle?: string | null;
+    mobilePhone?: string | null;
+    businessPhones?: string[] | null;
+    officeLocation?: string | null;
+    preferredLanguage?: string | null;
   }> {
     const response = await fetch('https://graph.microsoft.com/v1.0/me', {
       method: 'GET',
@@ -84,8 +112,17 @@ export class AuthService {
     }
 
     return (await response.json()) as {
+      id?: string | null;
       mail?: string | null;
       userPrincipalName?: string | null;
+      displayName?: string | null;
+      givenName?: string | null;
+      surname?: string | null;
+      jobTitle?: string | null;
+      mobilePhone?: string | null;
+      businessPhones?: string[] | null;
+      officeLocation?: string | null;
+      preferredLanguage?: string | null;
     };
   }
 

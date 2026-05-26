@@ -61,6 +61,19 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     role user_role NOT NULL,
 
+    -- Microsoft Graph profile fields
+    ms_id                VARCHAR(255),
+    user_principal_name  VARCHAR(255),
+    display_name         VARCHAR(255),
+    given_name           VARCHAR(255),
+    surname              VARCHAR(255),
+    mail                 VARCHAR(255),
+    job_title            VARCHAR(255),
+    mobile_phone         VARCHAR(50),
+    business_phones      TEXT[],
+    office_location      VARCHAR(255),
+    preferred_language   VARCHAR(20),
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
