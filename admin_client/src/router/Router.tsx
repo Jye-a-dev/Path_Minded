@@ -1,29 +1,29 @@
-import PublicLayout from "../components/layouts/(public)/PublicLayout";
-import AdminLayout from "../components/layouts/(admin)/AdminLayout";
+import PublicLayout from "../components/layouts/PublicLayout";
+import AdminLayout from "../components/layouts/AdminLayout";
 import { PrivateRoute } from "../components/guards/PrivateRoute";
 
 // Public pages
-import Home from "../app/(public)/Home/Home";
-import Login from "../app/(public)/Login/Login";
+import Home from "../pages/public/Home/Home";
+import Login from "../pages/public/Login/Login";
 
 // Admin pages
-import Dashboard from "../app/(user)/Dashboard/Dashboard";
-import Users from "../app/(user)/Users/Users";
-import Advisors from "../app/(user)/Advisors/Advisors";
-import Programs from "../app/(user)/Programs/Programs";
-import Classes from "../app/(user)/Classes/Classes";
-import Students from "../app/(user)/Students/Students";
-import CurriculumCourses from "../app/(user)/CurriculumCourses/CurriculumCourses";
-import CoursePrerequisites from "../app/(user)/CoursePrerequisites/CoursePrerequisites";
-import CourseEquivalencies from "../app/(user)/CourseEquivalencies/CourseEquivalencies";
-import StudentCourseResults from "../app/(user)/StudentCourseResults/StudentCourseResults";
-import CurriculumImports from "../app/(user)/CurriculumImports/CurriculumImports";
-import TranscriptUploads from "../app/(user)/TranscriptUploads/TranscriptUploads";
-import ClassImports from "../app/(user)/ClassImports/ClassImports";
-import ClassImportRows from "../app/(user)/ClassImportRows/ClassImportRows";
-import Exports from "../app/(user)/Exports/Exports";
-import ExportLogs from "../app/(user)/ExportLogs/ExportLogs";
-import ParseWarnings from "../app/(user)/ParseWarnings/ParseWarnings";
+import Dashboard from "../pages/admin/Dashboard/Dashboard";
+import Users from "../pages/admin/Users/Users";
+import Advisors from "../pages/admin/Advisors/Advisors";
+import Programs from "../pages/admin/Programs/Programs";
+import Classes from "../pages/admin/Classes/Classes";
+import Students from "../pages/admin/Students/Students";
+import CurriculumCourses from "../pages/admin/CurriculumCourses/CurriculumCourses";
+import CoursePrerequisites from "../pages/admin/CoursePrerequisites/CoursePrerequisites";
+import CourseEquivalencies from "../pages/admin/CourseEquivalencies/CourseEquivalencies";
+import StudentCourseResults from "../pages/admin/StudentCourseResults/StudentCourseResults";
+import CurriculumImports from "../pages/admin/CurriculumImports/CurriculumImports";
+import TranscriptUploads from "../pages/admin/TranscriptUploads/TranscriptUploads";
+import ClassImports from "../pages/admin/ClassImports/ClassImports";
+import ClassImportRows from "../pages/admin/ClassImportRows/ClassImportRows";
+import Exports from "../pages/admin/Exports/Exports";
+import ExportLogs from "../pages/admin/ExportLogs/ExportLogs";
+import ParseWarnings from "../pages/admin/ParseWarnings/ParseWarnings";
 
 const routes = [
   // Public Routes
