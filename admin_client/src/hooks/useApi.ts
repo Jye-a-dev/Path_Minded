@@ -24,26 +24,37 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
   const [filters, setFilters] = useState<Record<string, unknown>>(initialFilters);
   const [search, setSearch] = useState("");
 
-  const prevFiltersRef = useRef<Record<string, unknown>>(initialFilters);
-  const prevSearchRef = useRef("");
+  // Debounced search - 300ms delay to avoid spamming API on every keystroke
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const fetchData = useCallback(async () => {
+  const prevFiltersRef = useRef<Record<string, unknown>>(initialFilters);
+  const prevDebouncedSearchRef = useRef("");
+
+  // Debounce: update debouncedSearch 300ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const fetchData = useCallback(async (currentPage: number) => {
     setLoading(true);
     setError(null);
     try {
       const activeFilters = { ...filters };
-      if (search.trim()) {
-        activeFilters.search = search;
+      if (debouncedSearch.trim()) {
+        activeFilters.search = debouncedSearch;
       }
-      
+
       const response = await api.get<PaginatedResponse<T>>(`${endpoint}/pagination`, {
         params: {
-          page,
+          page: currentPage,
           limit,
           ...activeFilters,
         },
       });
-      
+
       if (response.data) {
         setData(response.data.data ?? []);
         const totalCount = response.data.pagination?.total ?? response.data.total ?? 0;
@@ -58,26 +69,24 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
     } finally {
       setLoading(false);
     }
-  }, [endpoint, page, limit, filters, search]);
+  }, [endpoint, limit, filters, debouncedSearch]);
 
+  // Single unified effect: reset page when filters/search change, then fetch
   useEffect(() => {
-    // Reset page to 1 if filters or search changes to avoid blank pages
     const filtersChanged = JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current);
-    const searchChanged = search !== prevSearchRef.current;
-    
+    const searchChanged = debouncedSearch !== prevDebouncedSearchRef.current;
+
+    let targetPage = page;
     if (filtersChanged || searchChanged) {
+      targetPage = 1;
       setPage(1);
       prevFiltersRef.current = filters;
-      prevSearchRef.current = search;
+      prevDebouncedSearchRef.current = debouncedSearch;
     }
-  }, [filters, search]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchData]);
+    void fetchData(targetPage);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, filters, debouncedSearch]);
 
   const updateFilters = useCallback((newFilters: Record<string, unknown>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
@@ -88,12 +97,16 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
     setSearch("");
   }, [initialFilters]);
 
+  const refresh = useCallback(() => {
+    return fetchData(page);
+  }, [fetchData, page]);
+
   // CRUD operation wrappers that automatically refresh data
   const createItem = async (payload: unknown) => {
     setError(null);
     try {
       const response = await api.post(endpoint, payload);
-      await fetchData();
+      await fetchData(page);
       return response.data;
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
@@ -107,7 +120,7 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
     setError(null);
     try {
       const response = await api.patch(`${endpoint}/${id}`, payload);
-      await fetchData();
+      await fetchData(page);
       return response.data;
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
@@ -121,7 +134,7 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
     setError(null);
     try {
       const response = await api.delete(`${endpoint}/${id}`);
-      await fetchData();
+      await fetchData(page);
       return response.data;
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
@@ -145,7 +158,7 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
     setSearch,
     updateFilters,
     clearFilters,
-    refresh: fetchData,
+    refresh,
     createItem,
     updateItem,
     deleteItem,

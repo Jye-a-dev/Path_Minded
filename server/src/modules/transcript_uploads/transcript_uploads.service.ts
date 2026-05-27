@@ -156,6 +156,11 @@ export class TranscriptUploadsService {
       clauses.push(`student_id = $${idx++}`);
       values.push(query.student_id);
     }
+    if (query.search) {
+      clauses.push(`raw_text ILIKE $${idx}`);
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
     return { where, values, idx };

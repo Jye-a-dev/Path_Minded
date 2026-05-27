@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class BaseQueryDto {
   @ApiPropertyOptional({ example: 1, minimum: 1 })
@@ -23,4 +23,9 @@ export class BaseQueryDto {
   @IsInt()
   @Min(0)
   offset?: number;
+
+  @ApiPropertyOptional({ example: 'keyword' })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

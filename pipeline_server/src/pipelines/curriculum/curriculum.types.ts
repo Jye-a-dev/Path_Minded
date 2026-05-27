@@ -38,4 +38,5 @@ export type RawCurriculumInput = {
   fileName?: string;
   sheetIndex?: number;
   columnMappings?: Record<string, string[]>;
+  courseTypeMappings?: Record<string, string[]>;
 };

@@ -84,6 +84,11 @@ export class ClassesService {
       clauses.push(`program_id = $${idx++}`);
       values.push(query.program_id);
     }
+    if (query.search) {
+      clauses.push(`(class_code ILIKE $${idx} OR class_name ILIKE $${idx})`);
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
     return { where, values, idx };

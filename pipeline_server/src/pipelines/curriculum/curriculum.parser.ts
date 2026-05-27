@@ -84,6 +84,7 @@ export class CurriculumParser {
     buffer: Buffer,
     targetSheetIdx?: number,
     columnMappings?: Record<string, string[]>,
+    courseTypeMappings?: Record<string, string[]>,
   ): Promise<{
     courses: ParsedCurriculumCourse[];
     warnings: CurriculumWarning[];
@@ -108,6 +109,110 @@ export class CurriculumParser {
           : defaultPhrases;
       const lowerVal = cellVal.toLowerCase();
       return phrases.some((phrase) => lowerVal.includes(phrase.toLowerCase()));
+    };
+
+    // Helper to check if a text matches any course_type keyword from DB config
+    // Falls back to hardcoded defaults if no config found
+    const matchesCourseType = (
+      text: string,
+      courseType: string,
+      defaultPhrases: string[],
+    ): boolean => {
+      const phrases =
+        courseTypeMappings && Array.isArray(courseTypeMappings[courseType])
+          ? courseTypeMappings[courseType]
+          : defaultPhrases;
+      const lowerText = text.toLowerCase();
+      return phrases.some((phrase) => lowerText.includes(phrase.toLowerCase()));
+    };
+
+    // Determine courseType from name, code and raw cell value using dynamic config
+    const resolveCourseType = (
+      courseName: string,
+      courseCode: string,
+      courseTypeRaw: string,
+    ): ParsedCurriculumCourse['courseType'] => {
+      const lowerName = courseName.toLowerCase();
+      const lowerCode = courseCode.toLowerCase();
+      const lowerRaw = courseTypeRaw.toLowerCase();
+
+      // PE check: name, code, or raw cell value
+      if (
+        matchesCourseType(lowerName, 'PE', ['thể chất', 'thể dục']) ||
+        matchesCourseType(lowerCode, 'PE', ['gdtc', 'dgt']) ||
+        matchesCourseType(lowerRaw, 'PE', ['gdtc', 'thể dục', 'thể chất', 'pe'])
+      ) {
+        return 'PE';
+      }
+
+      // DEFENSE check
+      if (
+        matchesCourseType(lowerName, 'DEFENSE', [
+          'quốc phòng',
+          'quân sự',
+          'an ninh',
+        ]) ||
+        matchesCourseType(lowerCode, 'DEFENSE', ['gdqp', 'nad']) ||
+        matchesCourseType(lowerRaw, 'DEFENSE', [
+          'gdqp',
+          'quân sự',
+          'quốc phòng',
+          'defense',
+        ])
+      ) {
+        return 'DEFENSE';
+      }
+
+      // ENGLISH check
+      if (
+        matchesCourseType(lowerName, 'ENGLISH', [
+          'tiếng anh',
+          'anh văn',
+          'ngoại ngữ',
+        ]) ||
+        matchesCourseType(lowerRaw, 'ENGLISH', [
+          'tiếng anh',
+          'anh văn',
+          'english',
+        ])
+      ) {
+        return 'ENGLISH';
+      }
+
+      // ELECTIVE check (from raw cell value)
+      if (
+        matchesCourseType(lowerRaw, 'ELECTIVE', [
+          'tự chọn',
+          'tc',
+          'elective',
+          'elec',
+        ])
+      ) {
+        return 'ELECTIVE';
+      }
+
+      // REQUIRED check (from raw cell value)
+      if (
+        matchesCourseType(lowerRaw, 'REQUIRED', [
+          'bắt buộc',
+          'bb',
+          'required',
+          'req',
+        ])
+      ) {
+        return 'REQUIRED';
+      }
+
+      // Exact enum match fallback
+      const exactMap: Record<string, ParsedCurriculumCourse['courseType']> = {
+        required: 'REQUIRED',
+        elective: 'ELECTIVE',
+        pe: 'PE',
+        english: 'ENGLISH',
+        defense: 'DEFENSE',
+        other: 'OTHER',
+      };
+      return exactMap[lowerRaw] ?? 'OTHER';
     };
 
     // Helper to detect headers for a specific table slice
@@ -548,70 +653,10 @@ export class CurriculumParser {
 
           const courseTypeRaw =
             courseTypeIdx !== -1 && vals[courseTypeIdx] !== null
-              ? getCellString(vals[courseTypeIdx]).trim().toUpperCase()
-              : 'REQUIRED';
+              ? getCellString(vals[courseTypeIdx]).trim()
+              : '';
 
-          const lowerName = name.toLowerCase();
-          const lowerCode = code.toLowerCase();
-          let isPE = false;
-          let isDefense = false;
-
-          if (
-            lowerName.includes('thể chất') ||
-            lowerName.includes('thể dục') ||
-            lowerCode.includes('gdtc') ||
-            lowerCode.startsWith('dgt')
-          ) {
-            isPE = true;
-          } else if (
-            lowerName.includes('quốc phòng') ||
-            lowerName.includes('quân sự') ||
-            lowerCode.includes('gdqp') ||
-            lowerCode.startsWith('nad') ||
-            lowerName.includes('an ninh')
-          ) {
-            isDefense = true;
-          }
-
-          let courseType: ParsedCurriculumCourse['courseType'] = 'REQUIRED';
-          if (isPE) {
-            courseType = 'PE';
-          } else if (isDefense) {
-            courseType = 'DEFENSE';
-          } else if (
-            courseTypeRaw === 'TC' ||
-            courseTypeRaw.includes('TỰ CHỌN') ||
-            courseTypeRaw === 'ELECTIVE'
-          ) {
-            courseType = 'ELECTIVE';
-          } else if (
-            courseTypeRaw === 'BB' ||
-            courseTypeRaw.includes('BẤT BUỘC') ||
-            courseTypeRaw === 'REQUIRED'
-          ) {
-            courseType = 'REQUIRED';
-          } else if (
-            courseTypeRaw.includes('GDTC') ||
-            courseTypeRaw === 'PE' ||
-            courseTypeRaw.includes('THỂ DỤC') ||
-            courseTypeRaw.includes('THỂ CHẤT')
-          ) {
-            courseType = 'PE';
-          } else if (
-            courseTypeRaw.includes('ANH VĂN') ||
-            courseTypeRaw.includes('TIẾNG ANH') ||
-            courseTypeRaw === 'ENGLISH'
-          ) {
-            courseType = 'ENGLISH';
-          } else if (
-            courseTypeRaw.includes('GDQP') ||
-            courseTypeRaw.includes('QUÂN SỰ') ||
-            courseTypeRaw === 'DEFENSE'
-          ) {
-            courseType = 'DEFENSE';
-          } else {
-            courseType = this.mapCourseType(courseTypeRaw);
-          }
+          const courseType = resolveCourseType(name, code, courseTypeRaw);
 
           const theoryHours =
             theoryHoursIdx !== -1
@@ -768,37 +813,16 @@ export class CurriculumParser {
         : 'REQUIRED';
 
       const cleanCode = courseCode.toUpperCase().replace(/\s+/g, '');
-      const lowerName = courseName.toLowerCase();
       const lowerCode = cleanCode.toLowerCase();
-      let isPE = false;
-      let isDefense = false;
 
-      if (
-        lowerName.includes('thể chất') ||
-        lowerName.includes('thể dục') ||
-        lowerCode.includes('gdtc') ||
-        lowerCode.startsWith('dgt')
-      ) {
-        isPE = true;
-      } else if (
-        lowerName.includes('quốc phòng') ||
-        lowerName.includes('quân sự') ||
-        lowerCode.includes('gdqp') ||
-        lowerCode.startsWith('nad') ||
-        lowerName.includes('an ninh')
-      ) {
-        isDefense = true;
-      }
-
-      let courseType = this.mapCourseType(courseTypeRaw);
-      if (isPE) {
-        courseType = 'PE';
-      } else if (isDefense) {
-        courseType = 'DEFENSE';
-      }
+      const courseType = this.resolveCourseType(
+        courseName,
+        lowerCode,
+        courseTypeRaw,
+      );
 
       let finalGroup = courseGroup;
-      if (isPE || isDefense) {
+      if (courseType === 'PE' || courseType === 'DEFENSE') {
         finalGroup = 'Giáo dục thể chất và Giáo dục quốc phòng';
       }
 
@@ -827,17 +851,124 @@ export class CurriculumParser {
     return { courses, warnings };
   }
 
-  private mapCourseType(
-    raw: string,
-  ): 'REQUIRED' | 'ELECTIVE' | 'PE' | 'ENGLISH' | 'DEFENSE' | 'OTHER' {
-    const map: Record<string, ParsedCurriculumCourse['courseType']> = {
-      REQUIRED: 'REQUIRED',
-      ELECTIVE: 'ELECTIVE',
-      PE: 'PE',
-      ENGLISH: 'ENGLISH',
-      DEFENSE: 'DEFENSE',
+  private matchesCourseType(
+    text: string,
+    courseType: string,
+    defaultPhrases: string[],
+    courseTypeMappings?: Record<string, string[]>,
+  ): boolean {
+    const phrases =
+      courseTypeMappings && Array.isArray(courseTypeMappings[courseType])
+        ? courseTypeMappings[courseType]
+        : defaultPhrases;
+    const lowerText = text.toLowerCase();
+    return phrases.some((phrase) => lowerText.includes(phrase.toLowerCase()));
+  }
+
+  private resolveCourseType(
+    courseName: string,
+    courseCode: string,
+    courseTypeRaw: string,
+    courseTypeMappings?: Record<string, string[]>,
+  ): ParsedCurriculumCourse['courseType'] {
+    const lowerName = courseName.toLowerCase();
+    const lowerCode = courseCode.toLowerCase();
+    const lowerRaw = courseTypeRaw.toLowerCase();
+
+    if (
+      this.matchesCourseType(
+        lowerName,
+        'PE',
+        ['thể chất', 'thể dục'],
+        courseTypeMappings,
+      ) ||
+      this.matchesCourseType(
+        lowerCode,
+        'PE',
+        ['gdtc', 'dgt'],
+        courseTypeMappings,
+      ) ||
+      this.matchesCourseType(
+        lowerRaw,
+        'PE',
+        ['gdtc', 'thể dục', 'thể chất', 'pe'],
+        courseTypeMappings,
+      )
+    ) {
+      return 'PE';
+    }
+
+    if (
+      this.matchesCourseType(
+        lowerName,
+        'DEFENSE',
+        ['quốc phòng', 'quân sự', 'an ninh'],
+        courseTypeMappings,
+      ) ||
+      this.matchesCourseType(
+        lowerCode,
+        'DEFENSE',
+        ['gdqp', 'nad'],
+        courseTypeMappings,
+      ) ||
+      this.matchesCourseType(
+        lowerRaw,
+        'DEFENSE',
+        ['gdqp', 'quân sự', 'quốc phòng', 'defense'],
+        courseTypeMappings,
+      )
+    ) {
+      return 'DEFENSE';
+    }
+
+    if (
+      this.matchesCourseType(
+        lowerName,
+        'ENGLISH',
+        ['tiếng anh', 'anh văn', 'ngoại ngữ'],
+        courseTypeMappings,
+      ) ||
+      this.matchesCourseType(
+        lowerRaw,
+        'ENGLISH',
+        ['tiếng anh', 'anh văn', 'english'],
+        courseTypeMappings,
+      )
+    ) {
+      return 'ENGLISH';
+    }
+
+    if (
+      this.matchesCourseType(
+        lowerRaw,
+        'ELECTIVE',
+        ['tự chọn', 'tc', 'elective', 'elec'],
+        courseTypeMappings,
+      )
+    ) {
+      return 'ELECTIVE';
+    }
+
+    if (
+      this.matchesCourseType(
+        lowerRaw,
+        'REQUIRED',
+        ['bắt buộc', 'bb', 'required', 'req'],
+        courseTypeMappings,
+      )
+    ) {
+      return 'REQUIRED';
+    }
+
+    const exactMap: Record<string, ParsedCurriculumCourse['courseType']> = {
+      required: 'REQUIRED',
+      elective: 'ELECTIVE',
+      pe: 'PE',
+      english: 'ENGLISH',
+      defense: 'DEFENSE',
+      other: 'OTHER',
     };
-    return map[raw] ?? 'OTHER';
+    return exactMap[lowerRaw] ?? 'OTHER';
   }
 
   private parseNumber(val: unknown): number | null {

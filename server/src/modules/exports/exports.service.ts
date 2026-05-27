@@ -163,6 +163,11 @@ export class ExportsService {
       clauses.push(`class_id = $${idx++}`);
       values.push(query.class_id);
     }
+    if (query.search) {
+      clauses.push(`file_name ILIKE $${idx}`);
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
     return { where, values, idx };

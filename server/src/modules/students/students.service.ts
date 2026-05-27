@@ -102,6 +102,11 @@ export class StudentsService {
       clauses.push(`status = $${idx++}::student_status`);
       values.push(query.status);
     }
+    if (query.search) {
+      clauses.push(`(student_code ILIKE $${idx} OR full_name ILIKE $${idx})`);
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
     return { where, values, idx };

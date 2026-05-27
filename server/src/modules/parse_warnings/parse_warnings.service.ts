@@ -67,7 +67,9 @@ export class ParseWarningsService {
       }
 
       if (key === 'search') {
-        clauses.push(`(warning_message ILIKE $${idx} OR warning_code ILIKE $${idx})`);
+        clauses.push(
+          `(warning_message ILIKE $${idx} OR warning_code ILIKE $${idx})`,
+        );
         values.push(`%${value}%`);
         idx++;
         return;

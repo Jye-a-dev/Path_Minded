@@ -57,7 +57,7 @@ export class UserService {
     const values: Array<string | number> = [];
     let idx = 1;
 
-    const { email, role } = query;
+    const { email, role, search } = query;
 
     if (email) {
       clauses.push(`email ILIKE $${idx++}`);
@@ -67,6 +67,12 @@ export class UserService {
     if (role) {
       clauses.push(`role = $${idx++}::user_role`);
       values.push(role);
+    }
+
+    if (search) {
+      clauses.push(`(email ILIKE $${idx} OR display_name ILIKE $${idx})`);
+      values.push(`%${search}%`);
+      idx++;
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';

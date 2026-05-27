@@ -44,6 +44,9 @@ export default function ColumnMappings() {
     "prerequisite",
     "corequisite",
     "organizing_semester",
+    "student_code",
+    "full_name",
+    "email",
   ];
 
   // Helper to add phrase to mapping
@@ -115,9 +118,10 @@ export default function ColumnMappings() {
           </h1>
           <p className="mt-1.5 text-xs text-slate-400 max-w-2xl leading-relaxed">
             Định nghĩa các cụm từ khóa tiếng Việt/Anh dùng để khớp và tự động nhận diện
-            cột tiêu đề khi tải lên tệp Excel chương trình đào tạo của Khoa/Bộ môn.
+            cột tiêu đề khi tải lên tệp Excel chương trình đào tạo hoặc danh sách sinh viên lớp học.
           </p>
         </div>
+
         <button
           onClick={() => setCreateModalOpen(true)}
           className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer w-fit"

@@ -20,7 +20,8 @@ import {
   LogOut,
   X,
   LayoutDashboard,
-  User
+  User,
+  Tags
 } from "lucide-react";
 
 interface SidebarProps {
@@ -77,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { label: "Cảnh báo phân tích", to: "/admin/parse_warnings", icon: AlertTriangle },
         { label: "Cấu hình khớp cột", to: "/admin/column_mappings", icon: FileSpreadsheet },
+        { label: "Phân loại môn học", to: "/admin/course_type_mappings", icon: Tags },
       ],
     },
   ];

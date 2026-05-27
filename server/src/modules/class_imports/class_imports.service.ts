@@ -36,9 +36,20 @@ export class ClassImportsService {
     );
     const importRecord = insertResult.rows[0];
 
+    // Fetch active column mappings from database
+    const mappingResult = await this.pool.query<{
+      field_key: string;
+      phrases: string[];
+    }>('SELECT field_key, phrases FROM curriculum_column_mappings');
+    const mappingConfig: Record<string, string[]> = {};
+    mappingResult.rows.forEach((row) => {
+      mappingConfig[row.field_key] = row.phrases;
+    });
+
     const pipelineUrl =
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
+    formData.append('columnMappings', JSON.stringify(mappingConfig));
     if (file) {
       const blob = new Blob([new Uint8Array(file.buffer)], {
         type: file.mimetype,
@@ -189,6 +200,11 @@ export class ClassImportsService {
     if (query.class_id) {
       clauses.push(`class_id = $${idx++}`);
       values.push(query.class_id);
+    }
+    if (query.search) {
+      clauses.push(`file_name ILIKE $${idx}`);
+      values.push(`%${query.search}%`);
+      idx++;
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';

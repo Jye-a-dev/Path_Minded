@@ -23,4 +23,6 @@ export type RawClassImportInput = {
   fileBuffer?: Buffer;
   fileMimetype?: string;
   fileName?: string;
+  columnMappings?: Record<string, string[]>;
 };
+

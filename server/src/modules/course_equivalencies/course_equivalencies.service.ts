@@ -67,7 +67,9 @@ export class CourseEquivalenciesService {
       }
 
       if (key === 'search') {
-        clauses.push(`(course_code ILIKE $${idx} OR equivalent_code ILIKE $${idx})`);
+        clauses.push(
+          `(course_code ILIKE $${idx} OR equivalent_code ILIKE $${idx})`,
+        );
         values.push(`%${value}%`);
         idx++;
         return;

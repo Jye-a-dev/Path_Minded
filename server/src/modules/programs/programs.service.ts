@@ -101,6 +101,13 @@ export class ProgramsService {
       clauses.push(`total_credits = $${idx++}`);
       values.push(query.total_credits);
     }
+    if (typeof query.search === 'string' && query.search.length > 0) {
+      clauses.push(
+        `(program_code ILIKE $${idx} OR program_name ILIKE $${idx} OR major_name ILIKE $${idx})`,
+      );
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
     return { where, values, idx };

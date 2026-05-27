@@ -59,6 +59,7 @@ export class AppController {
       textContent?: string;
       sheetIndex?: string | number;
       columnMappings?: string;
+      courseTypeMappings?: string;
     },
   ) {
     const sheetIdx =
@@ -74,12 +75,24 @@ export class AppController {
         console.error('Failed to parse columnMappings JSON', e);
       }
     }
+    let courseTypeMappingsObj: Record<string, string[]> | undefined = undefined;
+    if (body.courseTypeMappings) {
+      try {
+        courseTypeMappingsObj = JSON.parse(body.courseTypeMappings) as Record<
+          string,
+          string[]
+        >;
+      } catch (e) {
+        console.error('Failed to parse courseTypeMappings JSON', e);
+      }
+    }
     return this.curriculumPipeline.parse({
       fileBuffer: file?.buffer,
       textContent: body.textContent,
       fileName: file?.originalname,
       sheetIndex: sheetIdx,
       columnMappings: columnMappingsObj,
+      courseTypeMappings: courseTypeMappingsObj,
     });
   }
 
@@ -87,14 +100,30 @@ export class AppController {
   @UseInterceptors(FileInterceptor('file'))
   async parseClass(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: ParseBody,
+    @Body()
+    body: ParseBody & {
+      columnMappings?: string;
+    },
   ) {
+    let columnMappingsObj: Record<string, string[]> | undefined = undefined;
+    if (body.columnMappings) {
+      try {
+        columnMappingsObj = JSON.parse(body.columnMappings) as Record<
+          string,
+          string[]
+        >;
+      } catch (e) {
+        console.error('Failed to parse columnMappings JSON in parseClass', e);
+      }
+    }
     return this.classImportPipeline.parse({
       fileBuffer: file?.buffer,
       textContent: body.textContent,
       fileName: file?.originalname,
+      columnMappings: columnMappingsObj,
     });
   }
+
 
   @Post('exports/matrix')
   async exportMatrix(@Body() body: ExportMatrixBody) {

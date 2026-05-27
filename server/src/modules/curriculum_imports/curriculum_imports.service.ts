@@ -7,8 +7,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Pool } from 'pg';
-import * as fs from 'fs';
-import * as path from 'path';
 import { DB_PROVIDER } from '../../constants/app.constant';
 import {
   CurriculumImportsPaginationResponse,
@@ -17,10 +15,14 @@ import {
 } from './interfaces/curriculum_imports.interfaces';
 import { handleDatabaseError } from '../../common/utils/database-error.util';
 import { QueryCurriculumImportsDto } from './dto/query-curriculum-imports.dto';
+import { CourseTypeMappingsService } from '../course_type_mappings/course_type_mappings.service';
 
 @Injectable()
 export class CurriculumImportsService {
-  constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
+  constructor(
+    @Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool,
+    private readonly courseTypeMappingsService: CourseTypeMappingsService,
+  ) {}
 
   async create(
     payload: Record<string, unknown>,
@@ -50,10 +52,15 @@ export class CurriculumImportsService {
       mappingConfig[row.field_key] = row.phrases;
     });
 
+    // Fetch course type mappings from database
+    const courseTypeMappingConfig =
+      await this.courseTypeMappingsService.getMappingConfig();
+
     const pipelineUrl =
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
     formData.append('columnMappings', JSON.stringify(mappingConfig));
+    formData.append('courseTypeMappings', JSON.stringify(courseTypeMappingConfig));
     if (file) {
       const blob = new Blob([new Uint8Array(file.buffer)], {
         type: file.mimetype,
@@ -152,10 +159,15 @@ export class CurriculumImportsService {
       mappingConfig[row.field_key] = row.phrases;
     });
 
+    // Fetch course type mappings from database
+    const courseTypeMappingConfig =
+      await this.courseTypeMappingsService.getMappingConfig();
+
     const pipelineUrl =
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
     formData.append('columnMappings', JSON.stringify(mappingConfig));
+    formData.append('courseTypeMappings', JSON.stringify(courseTypeMappingConfig));
 
     const blob = new Blob([new Uint8Array(fileBuffer)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -323,6 +335,11 @@ export class CurriculumImportsService {
     if (query.program_id) {
       clauses.push(`program_id = $${idx++}`);
       values.push(query.program_id);
+    }
+    if (query.search) {
+      clauses.push(`file_name ILIKE $${idx}`);
+      values.push(`%${query.search}%`);
+      idx++;
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';

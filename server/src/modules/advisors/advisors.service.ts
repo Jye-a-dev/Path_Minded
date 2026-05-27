@@ -47,7 +47,11 @@ export class AdvisorsService {
     }
   }
 
-  async findAll(query: QueryAdvisorsDto): Promise<AdvisorResponse[]> {
+  private buildFilter(query: QueryAdvisorsDto): {
+    where: string;
+    values: Array<string | number>;
+    idx: number;
+  } {
     const clauses: string[] = [];
     const values: Array<string | number> = [];
     let idx = 1;
@@ -64,12 +68,21 @@ export class AdvisorsService {
       clauses.push(`user_id = $${idx++}`);
       values.push(query.user_id);
     }
+    if (query.search) {
+      clauses.push(`(full_name ILIKE $${idx} OR department ILIKE $${idx})`);
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    return { where, values, idx };
+  }
+
+  async findAll(query: QueryAdvisorsDto): Promise<AdvisorResponse[]> {
+    const { where, values, idx } = this.buildFilter(query);
     const limit = Number(query.limit ?? 20);
     const offset = Number(query.offset ?? 0);
-    values.push(limit);
-    values.push(offset);
+    const params = [...values, limit, offset];
 
     const result = await this.pool.query<AdvisorResponse>(
       `
@@ -77,10 +90,10 @@ export class AdvisorsService {
         FROM advisors
         ${where}
         ORDER BY created_at DESC
-        LIMIT $${idx++}
-        OFFSET $${idx++}
+        LIMIT $${idx}
+        OFFSET $${idx + 1}
       `,
-      values,
+      params,
     );
 
     return result.rows;
@@ -89,24 +102,7 @@ export class AdvisorsService {
   async pagination(
     query: QueryAdvisorsDto,
   ): Promise<AdvisorsPaginationResponse> {
-    const clauses: string[] = [];
-    const values: Array<string | number> = [];
-    let idx = 1;
-
-    if (query.full_name) {
-      clauses.push(`full_name ILIKE $${idx++}`);
-      values.push(`%${query.full_name}%`);
-    }
-    if (query.department) {
-      clauses.push(`department ILIKE $${idx++}`);
-      values.push(`%${query.department}%`);
-    }
-    if (query.user_id) {
-      clauses.push(`user_id = $${idx++}`);
-      values.push(query.user_id);
-    }
-
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
     const offset = (page - 1) * limit;
@@ -118,7 +114,7 @@ export class AdvisorsService {
 
     const total = Number(countResult.rows[0]?.total ?? 0);
     const totalPages = Math.max(1, Math.ceil(total / limit));
-    const dataValues = [...values, limit, offset];
+    const params = [...values, limit, offset];
 
     const result = await this.pool.query<AdvisorResponse>(
       `
@@ -126,10 +122,10 @@ export class AdvisorsService {
         FROM advisors
         ${where}
         ORDER BY created_at DESC
-        LIMIT $${idx++}
-        OFFSET $${idx++}
+        LIMIT $${idx}
+        OFFSET $${idx + 1}
       `,
-      dataValues,
+      params,
     );
 
     return {
@@ -139,24 +135,7 @@ export class AdvisorsService {
   }
 
   async countAdvisors(query: QueryAdvisorsDto): Promise<{ count: number }> {
-    const clauses: string[] = [];
-    const values: Array<string | number> = [];
-    let idx = 1;
-
-    if (query.full_name) {
-      clauses.push(`full_name ILIKE $${idx++}`);
-      values.push(`%${query.full_name}%`);
-    }
-    if (query.department) {
-      clauses.push(`department ILIKE $${idx++}`);
-      values.push(`%${query.department}%`);
-    }
-    if (query.user_id) {
-      clauses.push(`user_id = $${idx++}`);
-      values.push(query.user_id);
-    }
-
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM advisors ${where}`,
       values,

@@ -43,6 +43,7 @@ export class CurriculumPipeline {
         input.fileBuffer,
         input.sheetIndex,
         input.columnMappings,
+        input.courseTypeMappings,
       );
     } else if (input.textContent) {
       const rows = this.parser.parseText(input.textContent);
