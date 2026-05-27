@@ -1,22 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useStudents } from "../../../hooks/useStudents";
+import type { StudentItem } from "../../../hooks/useStudents";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { StudentForm } from "./StudentForm";
 import { Plus, Edit2, Trash2, GraduationCap } from "lucide-react";
-
-interface StudentItem {
-  id: string;
-  student_code: string;
-  full_name: string;
-  cohort_year?: number;
-  status: "ACTIVE" | "GRADUATED" | "DROPPED";
-  user_id?: string;
-  class_id?: string;
-  program_id?: string;
-  class_code?: string;
-  program_code?: string;
-}
 
 export default function Students() {
   const {
@@ -35,7 +23,7 @@ export default function Students() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<StudentItem>("/students");
+  } = useStudents();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<StudentItem | null>(null);
@@ -169,7 +157,7 @@ export default function Students() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Danh bạ Sinh viên</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Danh bạ Sinh viên</h1>
           <p className="mt-1 text-xs text-slate-400">
             Xem, tạo, sửa, xóa các hàng cơ sở dữ liệu sinh viên, bản đồ chương trình học và liên kết với tài khoản người dùng hệ thống.
           </p>

@@ -4,10 +4,17 @@ export type ParsedCurriculumCourse = {
   courseCode: string;
   courseName: string;
   credits: number | null;
+  theoryHours: number | null;
+  practiceHours: number | null;
+  projectHours: number | null;
+  internshipHours: number | null;
   expectedSemester: number | null;
   courseGroup: string | null;
   courseType: 'REQUIRED' | 'ELECTIVE' | 'PE' | 'ENGLISH' | 'DEFENSE' | 'OTHER';
   isRequired: boolean;
+  prerequisite: string | null;
+  corequisite: string | null;
+  organizingSemester: string | null;
 };
 
 export type CurriculumWarning = {

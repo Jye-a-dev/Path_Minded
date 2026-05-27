@@ -1,20 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useClasses } from "../../../hooks/useClasses";
+import type { ClassItem } from "../../../hooks/useClasses";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ClassForm } from "./ClassForm";
 import { Plus, Edit2, Trash2, Building2 } from "lucide-react";
-
-interface ClassItem {
-  id: string;
-  class_code: string;
-  class_name?: string;
-  cohort_year?: number;
-  advisor_id?: string;
-  program_id?: string;
-  advisor_name?: string;
-  program_code?: string;
-}
 
 export default function Classes() {
   const {
@@ -31,7 +21,7 @@ export default function Classes() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<ClassItem>("/classes");
+  } = useClasses();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassItem | null>(null);
@@ -144,7 +134,7 @@ export default function Classes() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Lớp học Sinh viên</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Lớp học Sinh viên</h1>
           <p className="mt-1 text-xs text-slate-400">
             Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo.
           </p>

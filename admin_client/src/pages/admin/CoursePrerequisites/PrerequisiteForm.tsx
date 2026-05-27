@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api";
 import { Loader2 } from "lucide-react";
-
-interface PrereqItem {
-  id: string;
-  program_id: string;
-  course_code: string;
-  prerequisite_course_code: string;
-  prerequisite_type: "REQUIRED" | "RECOMMENDED";
-}
+import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 
 interface DropdownItem {
   id: string;
@@ -16,7 +9,7 @@ interface DropdownItem {
 }
 
 interface PrerequisiteFormProps {
-  editingItem: PrereqItem | null;
+  editingItem: PrerequisiteItem | null;
   onSubmit: (payload: {
     program_id: string;
     course_code: string;

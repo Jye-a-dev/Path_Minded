@@ -114,11 +114,9 @@ export class CurriculumImportsService {
     }
   }
 
-  async reparse(
-    id: string,
-    payload: Record<string, unknown>,
-  ): Promise<any> {
-    const sheetIndex = payload.sheetIndex !== undefined ? Number(payload.sheetIndex) : 0;
+  async reparse(id: string, payload: Record<string, unknown>): Promise<any> {
+    const sheetIndex =
+      payload.sheetIndex !== undefined ? Number(payload.sheetIndex) : 0;
 
     // 1. Fetch import session
     const importResult = await this.pool.query<CurriculumImportEntity>(
@@ -140,7 +138,9 @@ export class CurriculumImportsService {
     }
 
     if (!fs.existsSync(importRecord.file_path)) {
-      throw new NotFoundException('Uploaded Excel file not found on server disk');
+      throw new NotFoundException(
+        'Uploaded Excel file not found on server disk',
+      );
     }
 
     // Load file buffer
@@ -149,7 +149,7 @@ export class CurriculumImportsService {
     const pipelineUrl =
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
-    
+
     const blob = new Blob([new Uint8Array(fileBuffer)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
@@ -165,7 +165,12 @@ export class CurriculumImportsService {
       if (!response.ok) {
         throw new Error(`Pipeline error: ${response.statusText}`);
       }
-      const parsedData = (await response.json()) as any;
+      const parsedData = (await response.json()) as {
+        preview?: any[];
+        warnings?: any[];
+        sheets?: string[];
+        activeSheetIndex?: number;
+      };
 
       // Update warnings in database (clear old warnings for this session first)
       await this.pool.query(
@@ -233,8 +238,11 @@ export class CurriculumImportsService {
 
       for (const course of courses) {
         await client.query(
-          `INSERT INTO curriculum_courses (program_id, import_id, course_code, course_name, credits, expected_semester, course_group, course_type, is_required)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          `INSERT INTO curriculum_courses (
+             program_id, import_id, course_code, course_name, credits, expected_semester, course_group, course_type, is_required,
+             theory_hours, practice_hours, project_hours, internship_hours, prerequisite, corequisite, organizing_semester
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
            ON CONFLICT (program_id, course_code) 
            DO UPDATE SET 
              course_name = EXCLUDED.course_name,
@@ -243,6 +251,13 @@ export class CurriculumImportsService {
              course_group = EXCLUDED.course_group,
              course_type = EXCLUDED.course_type,
              is_required = EXCLUDED.is_required,
+             theory_hours = EXCLUDED.theory_hours,
+             practice_hours = EXCLUDED.practice_hours,
+             project_hours = EXCLUDED.project_hours,
+             internship_hours = EXCLUDED.internship_hours,
+             prerequisite = EXCLUDED.prerequisite,
+             corequisite = EXCLUDED.corequisite,
+             organizing_semester = EXCLUDED.organizing_semester,
              updated_at = CURRENT_TIMESTAMP`,
           [
             importRecord.program_id,
@@ -254,6 +269,13 @@ export class CurriculumImportsService {
             course.courseGroup || null,
             course.courseType || 'REQUIRED',
             course.isRequired !== undefined ? course.isRequired : true,
+            course.theoryHours != null ? Number(course.theoryHours) : null,
+            course.practiceHours != null ? Number(course.practiceHours) : null,
+            course.projectHours != null ? Number(course.projectHours) : null,
+            course.internshipHours != null ? Number(course.internshipHours) : null,
+            course.prerequisite || null,
+            course.corequisite || null,
+            course.organizingSemester || null,
           ],
         );
       }

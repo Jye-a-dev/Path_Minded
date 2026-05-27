@@ -189,4 +189,9 @@ export class ParseWarningsService {
 
     return { message: 'deleted' };
   }
+
+  async removeAll(): Promise<{ message: string; count: number }> {
+    const result = await this.pool.query('DELETE FROM parse_warnings');
+    return { message: 'all deleted', count: result.rowCount ?? 0 };
+  }
 }

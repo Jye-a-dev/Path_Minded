@@ -1,19 +1,28 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useCurriculumImports } from "../../../hooks/useCurriculumImports";
+import type { ImportItem } from "../../../hooks/useCurriculumImports";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
-import { api } from "../../../services/api";
-import { CheckCircle2, Trash2, Plus } from "lucide-react";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
+import { Plus } from "lucide-react";
 import { CurriculumImportForm } from "./CurriculumImportForm";
 import { CurriculumImportPreview } from "./CurriculumImportPreview";
+import { getCurriculumImportsColumns } from "./CurriculumImportsColumns";
 
 interface CoursePreviewItem {
   courseCode: string;
   courseName: string;
   credits: number | null;
+  theoryHours: number | null;
+  practiceHours: number | null;
+  projectHours: number | null;
+  internshipHours: number | null;
   expectedSemester: number | null;
   courseGroup: string | null;
   courseType: string;
+  prerequisite: string | null;
+  corequisite: string | null;
+  organizingSemester: string | null;
 }
 
 interface WarningItem {
@@ -21,17 +30,6 @@ interface WarningItem {
   code: string;
   message: string;
   rawValue: string;
-}
-
-interface ImportItem {
-  id: string;
-  advisor_id?: string;
-  program_id: string;
-  file_name: string;
-  import_status: "PENDING" | "SUCCESS" | "FAILED";
-  import_error?: string;
-  uploaded_at: string;
-  processed_at?: string;
 }
 
 export default function CurriculumImports() {
@@ -47,8 +45,11 @@ export default function CurriculumImports() {
     setLimit,
     setSearch,
     deleteItem,
-    refresh,
-  } = usePaginatedApi<ImportItem>("/curriculum_imports");
+    startImport,
+    confirmImport,
+    cancelImport,
+    changeSheet,
+  } = useCurriculumImports();
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -57,6 +58,32 @@ export default function CurriculumImports() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sheetsList, setSheetsList] = useState<string[]>([]);
   const [activeSheetIndex, setActiveSheetIndex] = useState<number>(0);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string | null;
+    isDanger?: boolean;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showNotification = (title: string, message: string, isDanger = false) => {
+    setConfirmState({
+      isOpen: true,
+      title,
+      message,
+      confirmText: "Đóng",
+      cancelText: null,
+      isDanger,
+      onConfirm: () => {},
+    });
+  };
 
   const handleOpenCreate = () => {
     setModalOpen(true);
@@ -73,163 +100,93 @@ export default function CurriculumImports() {
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      const response = await api.post("/curriculum_imports", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      if (response.data) {
-        setPreviewData(response.data.preview ?? []);
-        setPreviewWarnings(response.data.warnings ?? []);
-        setActiveSessionId(response.data.importSession?.id ?? null);
-        setSheetsList(response.data.sheets ?? []);
-        setActiveSheetIndex(response.data.activeSheetIndex ?? 0);
+      const data = await startImport(formData);
+      if (data) {
+        setPreviewData(data.preview ?? []);
+        setPreviewWarnings(data.warnings ?? []);
+        setActiveSessionId(data.importSession?.id ?? null);
+        setSheetsList(data.sheets ?? []);
+        setActiveSheetIndex(data.activeSheetIndex ?? 0);
       }
-      refresh();
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(errObj.response?.data?.message || errObj.message || "Tải lên tệp thất bại.");
+      showNotification("Lỗi", errObj.response?.data?.message || errObj.message || "Tải lên tệp thất bại.", true);
     }
   };
 
   const handleConfirmPreview = async (selectedCourses: CoursePreviewItem[]) => {
     if (!activeSessionId) return;
     try {
-      await api.post(`/curriculum_imports/${activeSessionId}/confirm`, {
-        courses: selectedCourses,
-      });
-      alert("Xác nhận phiên nhập chương trình học và lưu vào DB thành công!");
+      await confirmImport(activeSessionId, selectedCourses);
+      showNotification("Thành công", "Xác nhận phiên nhập chương trình học và lưu vào DB thành công!");
       handleCloseModal();
-      refresh();
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(errObj.response?.data?.message || errObj.message || "Xác nhận phiên nhập thất bại.");
+      showNotification("Lỗi", errObj.response?.data?.message || errObj.message || "Xác nhận phiên nhập thất bại.", true);
     }
   };
 
   const handleCancelPreview = async () => {
     if (activeSessionId) {
       try {
-        await api.delete(`/curriculum_imports/${activeSessionId}`);
+        await cancelImport(activeSessionId);
       } catch (e) {
         console.error("Failed to delete draft session:", e);
       }
     }
     handleCloseModal();
-    refresh();
   };
 
   const handleSheetChange = async (idx: number) => {
     if (!activeSessionId) return;
     try {
-      const response = await api.post(`/curriculum_imports/${activeSessionId}/reparse`, {
-        sheetIndex: idx,
-      });
-      if (response.data) {
-        setPreviewData(response.data.preview ?? []);
-        setPreviewWarnings(response.data.warnings ?? []);
-        setSheetsList(response.data.sheets ?? []);
-        setActiveSheetIndex(response.data.activeSheetIndex ?? 0);
+      const data = await changeSheet(activeSessionId, idx);
+      if (data) {
+        setPreviewData(data.preview ?? []);
+        setPreviewWarnings(data.warnings ?? []);
+        setSheetsList(data.sheets ?? []);
+        setActiveSheetIndex(data.activeSheetIndex ?? 0);
       }
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      alert(errObj.response?.data?.message || errObj.message || "Chuyển đổi trang tính thất bại.");
+      showNotification("Lỗi", errObj.response?.data?.message || errObj.message || "Chuyển đổi trang tính thất bại.", true);
     }
   };
 
   const handleConfirmImport = () => {
-    alert(
+    showNotification(
+      "Thông báo",
       "Phiên nhập này chưa được xác nhận hoàn tất. Vui lòng bấm '+ Phiên nhập mới' để tải lên lại và nhấn 'Xác nhận Nhập vào DB' ở bảng xem trước."
     );
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn phiên nhập này?")) {
-      try {
-        await deleteItem(id);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Xóa phiên thất bại");
-      }
-    }
+    setConfirmState({
+      isOpen: true,
+      title: "Xác nhận xóa phiên nhập",
+      message: "Bạn có chắc chắn muốn xóa vĩnh viễn phiên nhập này? Hành động này không thể hoàn tác.",
+      confirmText: "Xóa phiên nhập",
+      cancelText: "Hủy bỏ",
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          await deleteItem(id);
+        } catch (err) {
+          setConfirmState({
+            isOpen: true,
+            title: "Lỗi",
+            message: err instanceof Error ? err.message : "Xóa phiên nhập thất bại",
+            confirmText: "Đóng",
+            cancelText: null,
+            isDanger: true,
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
   };
 
-  const columns = [
-    {
-      header: "Tên tệp / Nguồn",
-      accessorKey: "file_name",
-      render: (row: ImportItem) => (
-        <div>
-          <span className="text-slate-200 font-bold block">{row.file_name}</span>
-          <span className="text-[10px] text-slate-500 font-mono block">ID: {row.id}</span>
-        </div>
-      ),
-    },
-    {
-      header: "Trạng thái",
-      accessorKey: "import_status",
-      render: (row: ImportItem) => {
-        const badges = {
-          PENDING: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-          SUCCESS: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-          FAILED: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-        };
-        const statusMap = {
-          PENDING: "CHỜ XỬ LÝ",
-          SUCCESS: "THÀNH CÔNG",
-          FAILED: "THẤT BẠI",
-        };
-        return (
-          <span
-            className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${badges[row.import_status]}`}
-          >
-            {statusMap[row.import_status]}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Thời gian Tải lên / Xử lý",
-      render: (row: ImportItem) => (
-        <div className="text-xs text-slate-400 font-mono">
-          <div>Tải lên: {new Date(row.uploaded_at).toLocaleString()}</div>
-          {row.processed_at && (
-            <div className="text-emerald-500">Xử lý: {new Date(row.processed_at).toLocaleString()}</div>
-          )}
-        </div>
-      ),
-    },
-    {
-      header: "Nhật ký lỗi",
-      accessorKey: "import_error",
-      render: (row: ImportItem) => (
-        <span className="text-xs text-rose-400 font-mono max-w-50 truncate block" title={row.import_error}>
-          {row.import_error || "Không có"}
-        </span>
-      ),
-    },
-    {
-      header: "Thao tác",
-      render: (row: ImportItem) => (
-        <div className="flex items-center gap-2">
-          {row.import_status === "PENDING" && (
-            <button
-              onClick={() => handleConfirmImport()}
-              className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-2 py-1 text-xs font-bold text-white shadow-lg transition cursor-pointer"
-            >
-              <CheckCircle2 size={12} />
-              Xác nhận
-            </button>
-          )}
-          <button
-            onClick={() => handleDelete(row.id)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      ),
-    },
-  ];
+  const columns = getCurriculumImportsColumns(handleConfirmImport, handleDelete);
 
   return (
     <div className="space-y-6">
@@ -302,6 +259,18 @@ export default function CurriculumImports() {
           />
         )}
       </Modal>
+
+      {/* Custom Confirm Dialog Webform Component */}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        isDanger={confirmState.isDanger}
+        onConfirm={confirmState.onConfirm}
+      />
     </div>
   );
 }

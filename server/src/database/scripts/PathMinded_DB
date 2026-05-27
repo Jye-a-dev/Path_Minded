@@ -195,6 +195,15 @@ CREATE TABLE curriculum_courses (
 
     is_required BOOLEAN DEFAULT TRUE,
 
+    theory_hours INT,
+    practice_hours INT,
+    project_hours INT,
+    internship_hours INT,
+
+    prerequisite TEXT,
+    corequisite TEXT,
+    organizing_semester VARCHAR(50),
+
     sort_order INT,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

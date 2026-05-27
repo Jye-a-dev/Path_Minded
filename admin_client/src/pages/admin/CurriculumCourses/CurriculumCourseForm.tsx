@@ -12,6 +12,13 @@ interface CourseItem {
   course_group?: string;
   course_type: "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER";
   is_required: boolean;
+  theory_hours?: number | null;
+  practice_hours?: number | null;
+  project_hours?: number | null;
+  internship_hours?: number | null;
+  prerequisite?: string | null;
+  corequisite?: string | null;
+  organizing_semester?: string | null;
   sort_order?: number;
 }
 
@@ -31,6 +38,13 @@ interface CurriculumCourseFormProps {
     course_group: string | null;
     course_type: "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER";
     is_required: boolean;
+    theory_hours: number | null;
+    practice_hours: number | null;
+    project_hours: number | null;
+    internship_hours: number | null;
+    prerequisite: string | null;
+    corequisite: string | null;
+    organizing_semester: string | null;
     sort_order: number | null;
   }) => Promise<void>;
   onCancel: () => void;
@@ -55,6 +69,23 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
     () => editingItem?.course_type || "REQUIRED"
   );
   const [formIsRequired, setFormIsRequired] = useState(() => editingItem?.is_required ?? true);
+  
+  const [formTheoryHours, setFormTheoryHours] = useState<number | "">(
+    () => editingItem?.theory_hours ?? ""
+  );
+  const [formPracticeHours, setFormPracticeHours] = useState<number | "">(
+    () => editingItem?.practice_hours ?? ""
+  );
+  const [formProjectHours, setFormProjectHours] = useState<number | "">(
+    () => editingItem?.project_hours ?? ""
+  );
+  const [formInternshipHours, setFormInternshipHours] = useState<number | "">(
+    () => editingItem?.internship_hours ?? ""
+  );
+  const [formPrerequisite, setFormPrerequisite] = useState(() => editingItem?.prerequisite || "");
+  const [formCorequisite, setFormCorequisite] = useState(() => editingItem?.corequisite || "");
+  const [formOrganizingSemester, setFormOrganizingSemester] = useState(() => editingItem?.organizing_semester || "");
+
   const [formSortOrder, setFormSortOrder] = useState<number | "">(
     () => editingItem?.sort_order ?? ""
   );
@@ -99,6 +130,13 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
       course_group: formGroup || null,
       course_type: formType,
       is_required: formIsRequired,
+      theory_hours: formTheoryHours !== "" ? Number(formTheoryHours) : null,
+      practice_hours: formPracticeHours !== "" ? Number(formPracticeHours) : null,
+      project_hours: formProjectHours !== "" ? Number(formProjectHours) : null,
+      internship_hours: formInternshipHours !== "" ? Number(formInternshipHours) : null,
+      prerequisite: formPrerequisite || null,
+      corequisite: formCorequisite || null,
+      organizing_semester: formOrganizingSemester || null,
       sort_order: formSortOrder !== "" ? Number(formSortOrder) : null,
     };
 
@@ -145,7 +183,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 ">
         <div className="space-y-1">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Mã môn học
@@ -211,6 +249,101 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             placeholder="Ví dụ: 10"
             value={formSortOrder}
             onChange={(e) => setFormSortOrder(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Giờ LT (Lý thuyết)
+          </label>
+          <input
+            type="number"
+            placeholder="Ví dụ: 30"
+            value={formTheoryHours}
+            onChange={(e) => setFormTheoryHours(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Giờ TH (Thực hành)
+          </label>
+          <input
+            type="number"
+            placeholder="Ví dụ: 15"
+            value={formPracticeHours}
+            onChange={(e) => setFormPracticeHours(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Giờ ĐA (Đồ án)
+          </label>
+          <input
+            type="number"
+            placeholder="Ví dụ: 0"
+            value={formProjectHours}
+            onChange={(e) => setFormProjectHours(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Giờ TT (Thực tập)
+          </label>
+          <input
+            type="number"
+            placeholder="Ví dụ: 0"
+            value={formInternshipHours}
+            onChange={(e) => setFormInternshipHours(e.target.value !== "" ? Number(e.target.value) : "")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            ĐK tiên quyết
+          </label>
+          <input
+            type="text"
+            placeholder="Mã môn học tiên quyết"
+            value={formPrerequisite}
+            onChange={(e) => setFormPrerequisite(e.target.value)}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Môn học trước
+          </label>
+          <input
+            type="text"
+            placeholder="Mã môn học trước"
+            value={formCorequisite}
+            onChange={(e) => setFormCorequisite(e.target.value)}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Học kỳ tổ chức
+          </label>
+          <input
+            type="text"
+            placeholder="Ví dụ: 1, 2, 3"
+            value={formOrganizingSemester}
+            onChange={(e) => setFormOrganizingSemester(e.target.value)}
             className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
           />
         </div>

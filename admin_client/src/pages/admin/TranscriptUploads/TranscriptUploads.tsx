@@ -1,21 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useTranscriptUploads } from "../../../hooks/useTranscriptUploads";
+import type { UploadItem } from "../../../hooks/useTranscriptUploads";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
-import { api } from "../../../services/api";
 import { Plus, Trash2 } from "lucide-react";
 import { TranscriptUploadForm } from "./TranscriptUploadForm";
-
-interface UploadItem {
-  id: string;
-  student_id: string;
-  raw_text: string;
-  source_type: "PASTE" | "FILE";
-  parse_status: "PENDING" | "SUCCESS" | "FAILED";
-  parse_error?: string;
-  uploaded_at: string;
-  parsed_at?: string;
-}
 
 export default function TranscriptUploads() {
   const {
@@ -30,8 +19,8 @@ export default function TranscriptUploads() {
     setLimit,
     setSearch,
     deleteItem,
-    refresh,
-  } = usePaginatedApi<UploadItem>("/transcript_uploads");
+    createUpload,
+  } = useTranscriptUploads();
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -44,12 +33,7 @@ export default function TranscriptUploads() {
   };
 
   const handleSubmit = async (payload: { student_id: string; textContent: string }) => {
-    const fullPayload = {
-      sourceType: "text",
-      ...payload,
-    };
-    await api.post("/transcript_uploads", fullPayload);
-    refresh();
+    await createUpload(payload);
     setModalOpen(false);
   };
 
@@ -145,7 +129,7 @@ export default function TranscriptUploads() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Tải bảng điểm lên</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Tải bảng điểm lên</h1>
           <p className="mt-1 text-xs text-slate-400">
             Nhập bảng điểm thô của sinh viên, phân tích điểm và tự động tính toán điểm số ma trận học tập.
           </p>

@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../../../services/api";
+import { useDashboardStats } from "../../../hooks/useDashboardStats";
 import {
   Users,
   Briefcase,
@@ -14,51 +13,8 @@ import {
   Loader2
 } from "lucide-react";
 
-interface Stats {
-  users: number;
-  advisors: number;
-  programs: number;
-  classes: number;
-  students: number;
-}
-
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats>({
-    users: 0,
-    advisors: 0,
-    programs: 0,
-    classes: 0,
-    students: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [usersRes, advisorsRes, programsRes, classesRes, studentsRes] = await Promise.all([
-          api.get("/users/count").catch(() => ({ data: { count: 0 } })),
-          api.get("/advisors/count").catch(() => ({ data: { count: 0 } })),
-          api.get("/programs/count").catch(() => ({ data: { count: 0 } })),
-          api.get("/classes/count").catch(() => ({ data: { count: 0 } })),
-          api.get("/students/count").catch(() => ({ data: { count: 0 } })),
-        ]);
-
-        setStats({
-          users: usersRes.data?.count ?? 0,
-          advisors: advisorsRes.data?.count ?? 0,
-          programs: programsRes.data?.count ?? 0,
-          classes: classesRes.data?.count ?? 0,
-          students: studentsRes.data?.count ?? 0,
-        });
-      } catch (e) {
-        console.error("Failed to load dashboard metrics:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  const { stats, loading } = useDashboardStats();
 
   const statCards = [
     {
@@ -97,7 +53,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Title Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight !text-white m-0">Tổng quan Bảng điều khiển</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white! m-0">Tổng quan Bảng điều khiển</h1>
         <p className="mt-2 text-sm text-slate-400">
           Số liệu thời gian thực và trạng thái của hệ thống cơ sở dữ liệu ma trận cố vấn học tập.
         </p>

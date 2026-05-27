@@ -80,22 +80,29 @@ export class CurriculumParser {
     const courses: ParsedCurriculumCourse[] = [];
     const warnings: CurriculumWarning[] = [];
 
-    // Helper for header detection
-    const detectHeaders = (rowValues: unknown[]) => {
+    // Helper to detect headers for a specific table slice
+    const detectTableHeaders = (sliceValues: unknown[], offset: number) => {
       let courseCodeIdx = -1;
       let courseNameIdx = -1;
       let courseNamePriority = 0;
       let creditsIdx = -1;
+      let theoryHoursIdx = -1;
+      let practiceHoursIdx = -1;
+      let projectHoursIdx = -1;
+      let internshipHoursIdx = -1;
       let semesterIdx = -1;
       let courseTypeIdx = -1;
       let prerequisiteIdx = -1;
       let corequisiteIdx = -1;
+      let organizingSemesterIdx = -1;
 
-      for (let i = 0; i < rowValues.length; i++) {
-        const val = getCellString(rowValues[i]).trim().toLowerCase();
+      for (let i = 0; i < sliceValues.length; i++) {
+        const val = getCellString(sliceValues[i]).trim().toLowerCase();
         if (!val) {
           continue;
         }
+
+        const actualIdx = i + offset;
 
         if (
           val.includes('mã học phần') ||
@@ -104,7 +111,7 @@ export class CurriculumParser {
           val === 'code' ||
           val.includes('course code')
         ) {
-          courseCodeIdx = i;
+          courseCodeIdx = actualIdx;
         } else if (
           val.includes('tên học phần') ||
           val.includes('tên hp') ||
@@ -113,26 +120,24 @@ export class CurriculumParser {
           val.includes('course name') ||
           val.includes('tên môn học')
         ) {
-          let priority = 2; // Default priority for standard match
+          let priority = 2;
           if (
             val.includes('tiếng việt') ||
             val.includes('việt') ||
             val.includes('vietnamese') ||
             val.includes('việt nam')
           ) {
-            priority = 3; // Highest priority for explicit Vietnamese name
+            priority = 3;
           } else if (
             val.includes('tiếng anh') ||
             val.includes('english') ||
-            val.includes('en') ||
-            val.includes('tiếng pháp') ||
-            val.includes('tiếng đức')
+            val.includes('en')
           ) {
-            priority = 1; // Lowest priority for foreign language names
+            priority = 1;
           }
 
           if (priority > courseNamePriority) {
-            courseNameIdx = i;
+            courseNameIdx = actualIdx;
             courseNamePriority = priority;
           }
         } else if (
@@ -142,14 +147,34 @@ export class CurriculumParser {
           val === 'stc' ||
           val.includes('credit')
         ) {
-          creditsIdx = i;
+          creditsIdx = actualIdx;
+        } else if (
+          (val === 'lt' || val === 'lý thuyết' || val === 'theory') &&
+          !val.includes('tên')
+        ) {
+          theoryHoursIdx = actualIdx;
+        } else if (
+          (val === 'th' || val === 'thực hành' || val === 'practice') &&
+          !val.includes('tên')
+        ) {
+          practiceHoursIdx = actualIdx;
+        } else if (
+          (val === 'đa' || val === 'đồ án' || val === 'project') &&
+          !val.includes('tên')
+        ) {
+          projectHoursIdx = actualIdx;
+        } else if (
+          (val === 'tt' || val === 'thực tập' || val === 'internship') &&
+          !val.includes('tên')
+        ) {
+          internshipHoursIdx = actualIdx;
         } else if (
           val.includes('phân bổ học kỳ') ||
           val.includes('học kỳ') ||
           val === 'semester' ||
           val === 'hk'
         ) {
-          semesterIdx = i;
+          semesterIdx = actualIdx;
         } else if (
           val.includes('bắt buộc') ||
           val.includes('tự chọn') ||
@@ -158,19 +183,27 @@ export class CurriculumParser {
           val.includes('elec') ||
           val.includes('bắt buộc/tự chọn')
         ) {
-          courseTypeIdx = i;
+          courseTypeIdx = actualIdx;
         } else if (
           val.includes('tiên quyết') ||
           val.includes('prereq') ||
-          val.includes('đk tiên quyết')
+          val.includes('đk tiên quyết') ||
+          val.includes('điều kiện tiên quyết')
         ) {
-          prerequisiteIdx = i;
+          prerequisiteIdx = actualIdx;
         } else if (
           val.includes('học trước') ||
           val.includes('coreq') ||
-          val.includes('đk học trước')
+          val.includes('đk học trước') ||
+          val.includes('điều kiện học trước')
         ) {
-          corequisiteIdx = i;
+          corequisiteIdx = actualIdx;
+        } else if (
+          val.includes('hk tổ chức') ||
+          val.includes('học kỳ tổ chức') ||
+          val.includes('organizing semester')
+        ) {
+          organizingSemesterIdx = actualIdx;
         }
       }
 
@@ -179,17 +212,33 @@ export class CurriculumParser {
           courseCodeIdx,
           courseNameIdx,
           creditsIdx,
+          theoryHoursIdx,
+          practiceHoursIdx,
+          projectHoursIdx,
+          internshipHoursIdx,
           semesterIdx,
           courseTypeIdx,
           prerequisiteIdx,
           corequisiteIdx,
+          organizingSemesterIdx,
         };
       }
 
       return null;
     };
 
-    // Helper for semester extraction (e.g. from "HK241 1" or "HK 2" or "Học kỳ 3")
+    // Helper for header detection across multiple side-by-side tables
+    const detectHeaders = (rowValues: unknown[]) => {
+      const t1 = detectTableHeaders(rowValues.slice(0, 12), 0);
+      const t2 = detectTableHeaders(rowValues.slice(12), 12);
+
+      if (t1) {
+        return { t1, t2 };
+      }
+      return null;
+    };
+
+    // Helper for semester extraction
     const parseSemester = (val: unknown): number | null => {
       if (val === null || val === undefined || val === '') {
         return null;
@@ -213,14 +262,63 @@ export class CurriculumParser {
         return nums[0];
       }
 
-      // If multiple numbers exist (e.g. 241 and 1 in "HK241 1")
-      // Find the one that is a standard semester number (1 to 12)
       const semNum = nums.find((n) => n >= 1 && n <= 12);
       if (semNum !== undefined) {
         return semNum;
       }
 
       return nums[0];
+    };
+
+    // Helper for TT (serial number / organizing semester) extraction
+    const parseTTValue = (
+      val: unknown,
+    ): { organizingSem: string | null; expectedSem: number | null } => {
+      if (val === null || val === undefined) {
+        return { organizingSem: null, expectedSem: null };
+      }
+      const str = getCellString(val).trim();
+      if (!str) {
+        return { organizingSem: null, expectedSem: null };
+      }
+
+      // Split by newline or spaces
+      const parts = str
+        .split(/[\s\n\r]+/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      let organizingSem: string | null = null;
+      let expectedSem: number | null = null;
+
+      for (const part of parts) {
+        if (/HK\d+/i.test(part)) {
+          organizingSem = part.toUpperCase();
+        } else {
+          const num = Number(part);
+          if (Number.isFinite(num)) {
+            expectedSem = num;
+          }
+        }
+      }
+
+      // Fallback: if we didn't find organizingSem but the whole string matches HK\d+
+      if (!organizingSem) {
+        const hkMatch = str.match(/HK\d+/i);
+        if (hkMatch) {
+          organizingSem = hkMatch[0].toUpperCase();
+        }
+      }
+
+      // Fallback: if expectedSem is still null, look for a number in the parts or in the string
+      if (expectedSem === null) {
+        const cleaned = str.replace(/HK\d+/i, '').trim();
+        const numMatch = cleaned.match(/\d+/);
+        if (numMatch) {
+          expectedSem = Number(numMatch[0]);
+        }
+      }
+
+      return { organizingSem, expectedSem };
     };
 
     const sheets = wb.worksheets
@@ -231,26 +329,32 @@ export class CurriculumParser {
       Math.max(0, sheets.length - 1),
     );
 
-    // Process only the active worksheet
     const ws = wb.worksheets[activeSheetIndex];
     if (ws) {
-      let currentHeaderConfig: ReturnType<typeof detectHeaders> = null;
-      let currentSemester: number | null = null;
-      let currentCourseGroup: string | null = null;
+      let currentHeaderConfig: { t1: any; t2: any | null } | null = null;
+      
+      // Independent states for Table 1 and Table 2
+      let t1Semester: number | null = null;
+      let t1OrganizingSemester: string | null = null;
+      let t1CourseGroup: string | null = null;
+
+      let t2Semester: number | null = null;
+      let t2OrganizingSemester: string | null = null;
+      let t2CourseGroup: string | null = null;
 
       ws.eachRow((row, rowNumber) => {
         const rawValues = row.values;
         const vals: unknown[] = [];
 
         if (Array.isArray(rawValues)) {
-          const maxCols = Math.max(rawValues.length, 25);
+          const maxCols = Math.max(rawValues.length, 30);
           for (let i = 1; i < maxCols; i++) {
             const val = rawValues[i];
             vals.push(val !== undefined ? val : null);
           }
         } else if (rawValues && typeof rawValues === 'object') {
           const rawObj = rawValues as Record<number | string, unknown>;
-          const maxCols = 25;
+          const maxCols = 30;
           for (let i = 1; i < maxCols; i++) {
             const val = rawObj[i];
             vals.push(val !== undefined ? val : null);
@@ -258,143 +362,256 @@ export class CurriculumParser {
         }
 
         if (vals.length === 0 || vals.every((v) => v === null || v === '')) {
-          return; // Skip empty row
+          return;
         }
 
-        // Try to detect a new header config in this row
         const detected = detectHeaders(vals);
         if (detected) {
           currentHeaderConfig = detected;
-          return; // Skip header row itself
+          return;
         }
 
-        // Skip rows before any header is discovered
         if (!currentHeaderConfig) {
           return;
         }
 
-        const {
-          courseCodeIdx,
-          courseNameIdx,
-          creditsIdx,
-          semesterIdx,
-          courseTypeIdx,
-        } = currentHeaderConfig;
+        const parseTableCourse = (config: any, isTable2: boolean) => {
+          if (!config) return null;
 
-        const rawCode = vals[courseCodeIdx];
-        const rawName = vals[courseNameIdx];
+          const {
+            courseCodeIdx,
+            courseNameIdx,
+            creditsIdx,
+            theoryHoursIdx,
+            practiceHoursIdx,
+            projectHoursIdx,
+            internshipHoursIdx,
+            semesterIdx,
+            courseTypeIdx,
+            prerequisiteIdx,
+            corequisiteIdx,
+          } = config;
 
-        const code = getCellString(rawCode).trim();
-        const name = getCellString(rawName).trim();
+          const rawCode = vals[courseCodeIdx];
+          const rawName = vals[courseNameIdx];
 
-        if (!code && !name) {
-          return; // Skip empty fields
-        }
+          const code = getCellString(rawCode).trim();
+          const name = getCellString(rawName).trim();
 
-        // Group/Specialization/Subheader detection
-        const isGroupRow =
-          !code ||
-          code.toLowerCase().includes('chuyên ngành') ||
-          code.toLowerCase().includes('chọn') ||
-          code.toLowerCase().includes('khối') ||
-          code.toLowerCase().includes('chương trình');
-
-        if (isGroupRow) {
-          const groupText = name || code;
-          if (groupText) {
-            currentCourseGroup = groupText;
+          if (!code && !name) {
+            return null;
           }
-          return;
-        }
 
-        // Skip repeated headers
-        if (
-          code.toLowerCase().includes('mã học phần') ||
-          code.toLowerCase().includes('mã hp') ||
-          code.toLowerCase() === 'code'
-        ) {
-          return;
-        }
+          // Determine current state variables based on table side (Table 1 vs Table 2)
+          let tableSemester = isTable2 ? t2Semester : t1Semester;
+          let tableOrganizingSemester = isTable2 ? t2OrganizingSemester : t1OrganizingSemester;
+          let tableCourseGroup = isTable2 ? t2CourseGroup : t1CourseGroup;
 
-        // Parse & Inherit Semester (handles merged cells)
-        if (
-          semesterIdx !== -1 &&
-          vals[semesterIdx] !== null &&
-          vals[semesterIdx] !== ''
-        ) {
-          const semVal = parseSemester(vals[semesterIdx]);
-          if (semVal !== null) {
-            currentSemester = semVal;
+          const isGroupRow =
+            !code ||
+            code.toLowerCase().includes('chuyên ngành') ||
+            code.toLowerCase().includes('chọn') ||
+            code.toLowerCase().includes('khối') ||
+            code.toLowerCase().includes('chương trình');
+
+          if (isGroupRow) {
+            const groupText = name || code;
+            if (groupText) {
+              if (isTable2) {
+                t2CourseGroup = groupText;
+              } else {
+                t1CourseGroup = groupText;
+              }
+            }
+            return null;
           }
+
+          if (
+            code.toLowerCase().includes('mã học phần') ||
+            code.toLowerCase().includes('mã hp') ||
+            code.toLowerCase() === 'code'
+          ) {
+            return null;
+          }
+
+          if (
+            semesterIdx !== -1 &&
+            vals[semesterIdx] !== null &&
+            vals[semesterIdx] !== ''
+          ) {
+            const semVal = parseSemester(vals[semesterIdx]);
+            if (semVal !== null) {
+              if (isTable2) {
+                t2Semester = semVal;
+                tableSemester = semVal;
+              } else {
+                t1Semester = semVal;
+                tableSemester = semVal;
+              }
+            }
+          }
+
+          const credits =
+            creditsIdx !== -1 ? this.parseNumber(vals[creditsIdx]) : null;
+
+          const courseTypeRaw =
+            courseTypeIdx !== -1 && vals[courseTypeIdx] !== null
+              ? getCellString(vals[courseTypeIdx]).trim().toUpperCase()
+              : 'REQUIRED';
+
+          const lowerName = name.toLowerCase();
+          const lowerCode = code.toLowerCase();
+          let isPE = false;
+          let isDefense = false;
+
+          if (
+            lowerName.includes('thể chất') ||
+            lowerName.includes('thể dục') ||
+            lowerCode.includes('gdtc') ||
+            lowerCode.startsWith('dgt')
+          ) {
+            isPE = true;
+          } else if (
+            lowerName.includes('quốc phòng') ||
+            lowerName.includes('quân sự') ||
+            lowerCode.includes('gdqp') ||
+            lowerCode.startsWith('nad') ||
+            lowerName.includes('an ninh')
+          ) {
+            isDefense = true;
+          }
+
+          let courseType: ParsedCurriculumCourse['courseType'] = 'REQUIRED';
+          if (isPE) {
+            courseType = 'PE';
+          } else if (isDefense) {
+            courseType = 'DEFENSE';
+          } else if (
+            courseTypeRaw === 'TC' ||
+            courseTypeRaw.includes('TỰ CHỌN') ||
+            courseTypeRaw === 'ELECTIVE'
+          ) {
+            courseType = 'ELECTIVE';
+          } else if (
+            courseTypeRaw === 'BB' ||
+            courseTypeRaw.includes('BẤT BUỘC') ||
+            courseTypeRaw === 'REQUIRED'
+          ) {
+            courseType = 'REQUIRED';
+          } else if (
+            courseTypeRaw.includes('GDTC') ||
+            courseTypeRaw === 'PE' ||
+            courseTypeRaw.includes('THỂ DỤC') ||
+            courseTypeRaw.includes('THỂ CHẤT')
+          ) {
+            courseType = 'PE';
+          } else if (
+            courseTypeRaw.includes('ANH VĂN') ||
+            courseTypeRaw.includes('TIẾNG ANH') ||
+            courseTypeRaw === 'ENGLISH'
+          ) {
+            courseType = 'ENGLISH';
+          } else if (
+            courseTypeRaw.includes('GDQP') ||
+            courseTypeRaw.includes('QUÂN SỰ') ||
+            courseTypeRaw === 'DEFENSE'
+          ) {
+            courseType = 'DEFENSE';
+          } else {
+            courseType = this.mapCourseType(courseTypeRaw);
+          }
+
+          const theoryHours =
+            theoryHoursIdx !== -1 ? this.parseNumber(vals[theoryHoursIdx]) : null;
+          const practiceHours =
+            practiceHoursIdx !== -1
+              ? this.parseNumber(vals[practiceHoursIdx])
+              : null;
+          const projectHours =
+            projectHoursIdx !== -1
+              ? this.parseNumber(vals[projectHoursIdx])
+              : null;
+          const internshipHours =
+            internshipHoursIdx !== -1
+              ? this.parseNumber(vals[internshipHoursIdx])
+              : null;
+
+          const prerequisite =
+            prerequisiteIdx !== -1 && vals[prerequisiteIdx] !== null
+              ? getCellString(vals[prerequisiteIdx]).trim() || null
+              : null;
+          const corequisite =
+            corequisiteIdx !== -1 && vals[corequisiteIdx] !== null
+              ? getCellString(vals[corequisiteIdx]).trim() || null
+              : null;
+
+          // Extract organizing semester & expected semester from TT column (semesterIdx - 1)
+          let expectedSemesterRaw: number | null = null;
+          if (semesterIdx !== -1 && semesterIdx > 0 && vals[semesterIdx - 1] !== null) {
+            const ttParsed = parseTTValue(vals[semesterIdx - 1]);
+            if (ttParsed.organizingSem) {
+              if (isTable2) {
+                t2OrganizingSemester = ttParsed.organizingSem;
+                tableOrganizingSemester = ttParsed.organizingSem;
+              } else {
+                t1OrganizingSemester = ttParsed.organizingSem;
+                tableOrganizingSemester = ttParsed.organizingSem;
+              }
+            }
+            if (ttParsed.expectedSem !== null) {
+              expectedSemesterRaw = ttParsed.expectedSem;
+            }
+          }
+
+          const expectedSemester = expectedSemesterRaw !== null ? expectedSemesterRaw : tableSemester;
+          const organizingSemester = tableOrganizingSemester || (tableSemester ? String(tableSemester) : null);
+
+          const cleanCode = code.toUpperCase().replace(/\s+/g, '');
+          if (cleanCode.length >= 3) {
+            let finalGroup = tableCourseGroup;
+            if (courseType === 'PE' || courseType === 'DEFENSE') {
+              finalGroup = 'Giáo dục thể chất và Giáo dục quốc phòng';
+            }
+
+            return {
+              courseCode: cleanCode,
+              courseName: name,
+              credits,
+              theoryHours,
+              practiceHours,
+              projectHours,
+              internshipHours,
+              expectedSemester,
+              courseGroup: finalGroup,
+              courseType,
+              isRequired:
+                courseType === 'REQUIRED' ||
+                courseType === 'ENGLISH' ||
+                courseType === 'DEFENSE' ||
+                courseType === 'PE',
+              prerequisite,
+              corequisite,
+              organizingSemester,
+            };
+          } else {
+            warnings.push({
+              rowNumber: rowNumber,
+              code: 'INVALID_CODE',
+              message: `Skipped row with suspicious/invalid course code: "${code}"`,
+              rawValue: JSON.stringify(vals),
+            });
+            return null;
+          }
+        };
+
+        const c1 = parseTableCourse(currentHeaderConfig.t1, false);
+        if (c1) {
+          courses.push(c1);
         }
 
-        // Parse Credits
-        const credits =
-          creditsIdx !== -1 ? this.parseNumber(vals[creditsIdx]) : null;
-
-        // Parse Course Type (REQUIRED / ELECTIVE)
-        const courseTypeRaw =
-          courseTypeIdx !== -1 && vals[courseTypeIdx] !== null
-            ? getCellString(vals[courseTypeIdx]).trim().toUpperCase()
-            : 'REQUIRED';
-
-        let courseType: ParsedCurriculumCourse['courseType'] = 'REQUIRED';
-        if (
-          courseTypeRaw === 'TC' ||
-          courseTypeRaw.includes('TỰ CHỌN') ||
-          courseTypeRaw === 'ELECTIVE'
-        ) {
-          courseType = 'ELECTIVE';
-        } else if (
-          courseTypeRaw === 'BB' ||
-          courseTypeRaw.includes('BẤT BUỘC') ||
-          courseTypeRaw === 'REQUIRED'
-        ) {
-          courseType = 'REQUIRED';
-        } else if (
-          courseTypeRaw.includes('GDTC') ||
-          courseTypeRaw === 'PE' ||
-          courseTypeRaw.includes('THỂ DỤC') ||
-          courseTypeRaw.includes('THỂ CHẤT')
-        ) {
-          courseType = 'PE';
-        } else if (
-          courseTypeRaw.includes('ANH VĂN') ||
-          courseTypeRaw.includes('TIẾNG ANH') ||
-          courseTypeRaw === 'ENGLISH'
-        ) {
-          courseType = 'ENGLISH';
-        } else if (
-          courseTypeRaw.includes('GDQP') ||
-          courseTypeRaw.includes('QUÂN SỰ') ||
-          courseTypeRaw === 'DEFENSE'
-        ) {
-          courseType = 'DEFENSE';
-        } else {
-          courseType = this.mapCourseType(courseTypeRaw);
-        }
-
-        const cleanCode = code.toUpperCase().replace(/\s+/g, '');
-        if (cleanCode.length >= 3) {
-          courses.push({
-            courseCode: cleanCode,
-            courseName: name,
-            credits,
-            expectedSemester: currentSemester,
-            courseGroup: currentCourseGroup,
-            courseType,
-            isRequired:
-              courseType === 'REQUIRED' ||
-              courseType === 'ENGLISH' ||
-              courseType === 'DEFENSE',
-          });
-        } else {
-          warnings.push({
-            rowNumber: rowNumber,
-            code: 'INVALID_CODE',
-            message: `Skipped row with suspicious/invalid course code: "${code}"`,
-            rawValue: JSON.stringify(vals),
-          });
+        const c2 = parseTableCourse(currentHeaderConfig.t2, true);
+        if (c2) {
+          courses.push(c2);
         }
       });
     }
@@ -449,14 +666,60 @@ export class CurriculumParser {
         ? String(vals[5]).trim().toUpperCase()
         : 'REQUIRED';
 
+      const cleanCode = courseCode.toUpperCase().replace(/\s+/g, '');
+      const lowerName = courseName.toLowerCase();
+      const lowerCode = cleanCode.toLowerCase();
+      let isPE = false;
+      let isDefense = false;
+
+      if (
+        lowerName.includes('thể chất') ||
+        lowerName.includes('thể dục') ||
+        lowerCode.includes('gdtc') ||
+        lowerCode.startsWith('dgt')
+      ) {
+        isPE = true;
+      } else if (
+        lowerName.includes('quốc phòng') ||
+        lowerName.includes('quân sự') ||
+        lowerCode.includes('gdqp') ||
+        lowerCode.startsWith('nad') ||
+        lowerName.includes('an ninh')
+      ) {
+        isDefense = true;
+      }
+
+      let courseType = this.mapCourseType(courseTypeRaw);
+      if (isPE) {
+        courseType = 'PE';
+      } else if (isDefense) {
+        courseType = 'DEFENSE';
+      }
+
+      let finalGroup = courseGroup;
+      if (isPE || isDefense) {
+        finalGroup = 'Giáo dục thể chất và Giáo dục quốc phòng';
+      }
+
       courses.push({
-        courseCode: courseCode.toUpperCase().replace(/\s+/g, ''),
+        courseCode: cleanCode,
         courseName,
         credits,
+        theoryHours: null,
+        practiceHours: null,
+        projectHours: null,
+        internshipHours: null,
         expectedSemester,
-        courseGroup,
-        courseType: this.mapCourseType(courseTypeRaw),
-        isRequired: courseTypeRaw === 'REQUIRED' || !courseTypeRaw,
+        courseGroup: finalGroup,
+        courseType,
+        isRequired:
+          courseType === 'REQUIRED' ||
+          courseType === 'ENGLISH' ||
+          courseType === 'DEFENSE' ||
+          courseType === 'PE',
+        prerequisite: null,
+        corequisite: null,
+        organizingSemester: null,
       });
     }
 

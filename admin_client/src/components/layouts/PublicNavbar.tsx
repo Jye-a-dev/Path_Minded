@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Sparkles, LayoutDashboard, LogIn } from "lucide-react";
+import { LayoutDashboard, LogIn } from "lucide-react";
 
 export default function PublicNavbar() {
   return (
@@ -15,17 +15,6 @@ export default function PublicNavbar() {
             PathMinded
           </span>
         </Link>
-
-        {/* Middle "Tai Thỏ" Notch visual indicator */}
-        <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center">
-          <div className="relative flex items-center justify-center bg-white border-x border-b border-zinc-200/80 px-7 py-1.5 rounded-b-xl shadow-lg -mt-3.5 border-t border-t-white">
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-              <Sparkles size={10} className="animate-spin text-indigo-500" />
-              Ma trận Đề chương
-            </span>
-            <span className="absolute -bottom-px left-1/2 -translate-x-1/2 w-10 h-0.5 bg-indigo-600 shadow-lg shadow-indigo-600/40"></span>
-          </div>
-        </div>
 
         {/* Right Side Actions: Links & Portal Access */}
         <nav className="flex items-center gap-4">

@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api";
 import { Loader2 } from "lucide-react";
-
-interface EquivalencyItem {
-  id: string;
-  program_id: string;
-  original_course_code: string;
-  equivalent_course_code: string;
-  note?: string;
-}
+import type { EquivalencyItem } from "../../../hooks/useCourseEquivalencies";
 
 interface DropdownItem {
   id: string;

@@ -1,17 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useAdvisors } from "../../../hooks/useAdvisors";
+import type { AdvisorItem } from "../../../hooks/useAdvisors";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { AdvisorForm } from "./AdvisorForm";
 import { Plus, Edit2, Trash2, Briefcase, Link2 } from "lucide-react";
-
-interface AdvisorItem {
-  id: string;
-  user_id?: string;
-  full_name: string;
-  department?: string;
-  email?: string;
-}
 
 export default function Advisors() {
   const {
@@ -28,7 +21,7 @@ export default function Advisors() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<AdvisorItem>("/advisors");
+  } = useAdvisors();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<AdvisorItem | null>(null);
@@ -130,7 +123,7 @@ export default function Advisors() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Danh sách Cố vấn</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Danh sách Cố vấn</h1>
           <p className="mt-1 text-xs text-slate-400">
             Quản lý cố vấn học tập, nhóm khoa ban và liên kết họ với tài khoản đăng nhập hệ thống.
           </p>

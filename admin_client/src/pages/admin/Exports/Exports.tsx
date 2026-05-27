@@ -1,21 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useExports } from "../../../hooks/useExports";
+import type { ExportItem } from "../../../hooks/useExports";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
-import { api } from "../../../services/api";
 import { Plus, DownloadCloud, Trash2 } from "lucide-react";
 import { ExportForm } from "./ExportForm";
-
-interface ExportItem {
-  id: string;
-  advisor_id?: string;
-  class_id: string;
-  program_id?: string;
-  file_name: string;
-  file_path?: string;
-  export_type: "MATRIX";
-  created_at: string;
-}
 
 export default function Exports() {
   const {
@@ -30,8 +19,8 @@ export default function Exports() {
     setLimit,
     setSearch,
     deleteItem,
-    refresh,
-  } = usePaginatedApi<ExportItem>("/exports");
+    createExport,
+  } = useExports();
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -48,12 +37,7 @@ export default function Exports() {
     program_id: string | null;
     advisor_id: string | null;
   }) => {
-    const fullPayload = {
-      export_type: "MATRIX",
-      ...payload,
-    };
-    await api.post("/exports", fullPayload);
-    refresh();
+    await createExport(payload);
     setModalOpen(false);
   };
 
@@ -135,7 +119,7 @@ export default function Exports() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Xuất dữ liệu</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Xuất dữ liệu</h1>
           <p className="mt-1 text-xs text-slate-400">
             Xuất bảng tính ma trận kiểm định học tập để kiểm tra tiến trình học tập theo niên khóa và lớp học.
           </p>

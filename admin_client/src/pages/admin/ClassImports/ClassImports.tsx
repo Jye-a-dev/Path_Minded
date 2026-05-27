@@ -1,21 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useClassImports } from "../../../hooks/useClassImports";
+import type { ClassImportItem as ImportItem } from "../../../hooks/useClassImports";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
-import { api } from "../../../services/api";
 import { Plus, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 import { ClassImportForm } from "./ClassImportForm";
-
-interface ImportItem {
-  id: string;
-  advisor_id?: string;
-  class_id: string;
-  file_name: string;
-  import_status: "PENDING" | "SUCCESS" | "FAILED";
-  import_error?: string;
-  uploaded_at: string;
-  processed_at?: string;
-}
 
 export default function ClassImports() {
   const {
@@ -30,8 +19,9 @@ export default function ClassImports() {
     setLimit,
     setSearch,
     deleteItem,
-    refresh,
-  } = usePaginatedApi<ImportItem>("/class_imports");
+    createImport,
+    confirmImport,
+  } = useClassImports();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -45,22 +35,15 @@ export default function ClassImports() {
   };
 
   const handleSubmit = async (payload: { class_id: string; textContent: string }) => {
-    const fullPayload = {
-      sourceType: "text",
-      file_name: `pasted_class_import_${Date.now()}.csv`,
-      ...payload,
-    };
-    await api.post("/class_imports", fullPayload);
-    refresh();
+    await createImport(payload);
     setModalOpen(false);
   };
 
   const handleConfirmImport = async (id: string) => {
     setConfirmingId(id);
     try {
-      await api.post(`/class_imports/${id}/confirm`, {});
+      await confirmImport(id);
       alert("Nhập danh sách sinh viên lớp học đã được xác nhận và xử lý thành công!");
-      refresh();
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
       alert(errObj.response?.data?.message || errObj.message || "Xác nhận nhập dữ liệu thất bại.");
@@ -166,7 +149,7 @@ export default function ClassImports() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Nhập lớp học</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Nhập lớp học</h1>
           <p className="mt-1 text-xs text-slate-400">
             Nhận các lô nhóm học tập, đăng ký danh sách sinh viên mới theo bảng lớp học.
           </p>

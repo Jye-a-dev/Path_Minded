@@ -1,17 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useCourseEquivalencies } from "../../../hooks/useCourseEquivalencies";
+import type { EquivalencyItem } from "../../../hooks/useCourseEquivalencies";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { CourseEquivalencyForm } from "./CourseEquivalencyForm";
 import { Plus, Edit2, Trash2, RefreshCw } from "lucide-react";
-
-interface EquivalencyItem {
-  id: string;
-  program_id: string;
-  original_course_code: string;
-  equivalent_course_code: string;
-  note?: string;
-}
 
 export default function CourseEquivalencies() {
   const {
@@ -28,7 +21,7 @@ export default function CourseEquivalencies() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<EquivalencyItem>("/course_equivalencies");
+  } = useCourseEquivalencies();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EquivalencyItem | null>(null);
@@ -129,7 +122,7 @@ export default function CourseEquivalencies() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Môn học tương đương</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Môn học tương đương</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa các môn học thay thế có thể đáp ứng cùng một khối điều kiện.
           </p>

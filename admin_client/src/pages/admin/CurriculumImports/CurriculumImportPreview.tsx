@@ -5,9 +5,16 @@ interface CoursePreviewItem {
   courseCode: string;
   courseName: string;
   credits: number | null;
+  theoryHours: number | null;
+  practiceHours: number | null;
+  projectHours: number | null;
+  internshipHours: number | null;
   expectedSemester: number | null;
   courseGroup: string | null;
   courseType: string;
+  prerequisite: string | null;
+  corequisite: string | null;
+  organizingSemester: string | null;
 }
 
 interface WarningItem {
@@ -227,9 +234,15 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                       <th className="px-4 py-2.5">Mã môn</th>
                       <th className="px-4 py-2.5">Tên môn</th>
                       <th className="px-4 py-2.5 text-center">TC</th>
-                      <th className="px-4 py-2.5 text-center">Học kỳ</th>
-                      <th className="px-4 py-2.5">Nhóm/Chuyên ngành</th>
+                      <th className="px-4 py-2.5 text-center">LT</th>
+                      <th className="px-4 py-2.5 text-center">TH</th>
+                      <th className="px-4 py-2.5 text-center">ĐA</th>
+                      <th className="px-4 py-2.5 text-center">TT</th>
                       <th className="px-4 py-2.5">Loại</th>
+                      <th className="px-4 py-2.5">ĐK tiên quyết</th>
+                      <th className="px-4 py-2.5">Học trước</th>
+                      <th className="px-4 py-2.5 text-center">HK tổ chức</th>
+                      <th className="px-4 py-2.5 text-center">Học kỳ</th>
                       <th className="px-4 py-2.5 text-center w-20">Thao tác</th>
                     </tr>
                   </thead>
@@ -282,20 +295,36 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                                   className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
                                 />
                               </td>
-                              <td className="px-2 py-1 w-14">
+                              <td className="px-2 py-1 w-12">
                                 <input
                                   type="number"
-                                  value={editForm.expectedSemester ?? ""}
-                                  onChange={(e) => setEditForm({ ...editForm, expectedSemester: e.target.value ? Number(e.target.value) : null })}
+                                  value={editForm.theoryHours ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, theoryHours: e.target.value ? Number(e.target.value) : null })}
                                   className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
                                 />
                               </td>
-                              <td className="px-2 py-1">
+                              <td className="px-2 py-1 w-12">
                                 <input
-                                  type="text"
-                                  value={editForm.courseGroup ?? ""}
-                                  onChange={(e) => setEditForm({ ...editForm, courseGroup: e.target.value || null })}
-                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1.5 py-1 text-xs text-slate-300 focus:outline-none"
+                                  type="number"
+                                  value={editForm.practiceHours ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, practiceHours: e.target.value ? Number(e.target.value) : null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-2 py-1 w-12">
+                                <input
+                                  type="number"
+                                  value={editForm.projectHours ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, projectHours: e.target.value ? Number(e.target.value) : null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-2 py-1 w-12">
+                                <input
+                                  type="number"
+                                  value={editForm.internshipHours ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, internshipHours: e.target.value ? Number(e.target.value) : null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
                                 />
                               </td>
                               <td className="px-2 py-1">
@@ -311,6 +340,38 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                                   <option value="DEFENSE">DEFENSE</option>
                                   <option value="OTHER">OTHER</option>
                                 </select>
+                              </td>
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={editForm.prerequisite ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, prerequisite: e.target.value || null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1.5 py-1 text-xs text-slate-300 focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-2 py-1">
+                                <input
+                                  type="text"
+                                  value={editForm.corequisite ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, corequisite: e.target.value || null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1.5 py-1 text-xs text-slate-300 focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-2 py-1 w-20">
+                                <input
+                                  type="text"
+                                  value={editForm.organizingSemester ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, organizingSemester: e.target.value || null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
+                                />
+                              </td>
+                              <td className="px-2 py-1 w-14">
+                                <input
+                                  type="number"
+                                  value={editForm.expectedSemester ?? ""}
+                                  onChange={(e) => setEditForm({ ...editForm, expectedSemester: e.target.value ? Number(e.target.value) : null })}
+                                  className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
+                                />
                               </td>
                               <td className="px-4 py-2 text-center flex items-center justify-center gap-1">
                                 <button
@@ -341,10 +402,10 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                                 {c.courseName}
                               </td>
                               <td className="px-4 py-2 text-center font-semibold">{c.credits ?? "-"}</td>
-                              <td className="px-4 py-2 text-center font-semibold">{c.expectedSemester ?? "-"}</td>
-                              <td className="px-4 py-2 truncate max-w-40" title={c.courseGroup || ""}>
-                                {c.courseGroup || "-"}
-                              </td>
+                              <td className="px-4 py-2 text-center text-slate-400">{c.theoryHours ?? "-"}</td>
+                              <td className="px-4 py-2 text-center text-slate-400">{c.practiceHours ?? "-"}</td>
+                              <td className="px-4 py-2 text-center text-slate-400">{c.projectHours ?? "-"}</td>
+                              <td className="px-4 py-2 text-center text-slate-400">{c.internshipHours ?? "-"}</td>
                               <td className="px-4 py-2">
                                 <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold ${
                                   !isSelected
@@ -355,6 +416,18 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                                 }`}>
                                   {c.courseType}
                                 </span>
+                              </td>
+                              <td className="px-4 py-2 truncate max-w-32 text-slate-400 text-[11px] font-mono" title={c.prerequisite || ""}>
+                                {c.prerequisite || "-"}
+                              </td>
+                              <td className="px-4 py-2 truncate max-w-32 text-slate-400 text-[11px] font-mono" title={c.corequisite || ""}>
+                                {c.corequisite || "-"}
+                              </td>
+                              <td className="px-4 py-2 text-center text-slate-400">
+                                {c.organizingSemester || "-"}
+                              </td>
+                              <td className="px-4 py-2 text-center text-slate-400 font-semibold">
+                                {c.expectedSemester ?? "-"}
                               </td>
                               <td className="px-4 py-2 text-center flex items-center justify-center gap-1">
                                 <button

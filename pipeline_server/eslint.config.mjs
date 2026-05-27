@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs'],
+    ignores: ['eslint.config.mjs', 'test_excel.cjs', 'test_excel.mjs', 'scratch/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

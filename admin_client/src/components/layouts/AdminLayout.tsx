@@ -53,17 +53,6 @@ export default function AdminLayout() {
               </div>
             </div>
 
-            {/* "Tai thỏ middle" notch visual indicator */}
-            <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center select-none">
-              <div className="relative flex items-center justify-center bg-slate-900 border-x border-b border-slate-800 px-7 py-1.5 rounded-b-xl shadow-lg -mt-3.5 border-t border-t-slate-900">
-                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
-                  Kiểm định PathMinded
-                </span>
-                {/* Dynamic notch accent glow */}
-                <span className="absolute -bottom-px left-1/2 -translate-x-1/2 w-10 h-0.5 bg-indigo-500 shadow-lg shadow-indigo-500/50"></span>
-              </div>
-            </div>
-
             {/* Right side connection info */}
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20 select-none shadow-xs shadow-emerald-500/5">

@@ -1,17 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useUsers } from "../../../hooks/useUsers";
+import type { UserItem } from "../../../hooks/useUsers";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { UserForm } from "./UserForm";
 import { Plus, Edit2, Trash2, Shield, User } from "lucide-react";
-
-interface UserItem {
-  id: string;
-  email: string;
-  role: string;
-  display_name?: string;
-  mail?: string;
-}
 
 export default function Users() {
   const {
@@ -30,7 +23,7 @@ export default function Users() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<UserItem>("/users");
+  } = useUsers();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UserItem | null>(null);
@@ -138,7 +131,7 @@ export default function Users() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Danh sách người dùng</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Danh sách người dùng</h1>
           <p className="mt-1 text-xs text-slate-400">
             Tạo, cập nhật và quản lý tài khoản hệ thống của sinh viên, cố vấn học tập và quản trị viên.
           </p>

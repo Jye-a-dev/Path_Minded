@@ -1,27 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useStudentCourseResults } from "../../../hooks/useStudentCourseResults";
+import type { StudentCourseResultItem as ResultItem } from "../../../hooks/useStudentCourseResults";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { StudentCourseResultForm } from "./StudentCourseResultForm";
-
-interface ResultItem {
-  id: string;
-  student_id: string;
-  course_code: string;
-  course_name?: string;
-  credits?: number;
-  school_year?: string;
-  semester_code?: string;
-  semester_number?: number;
-  score_10?: number;
-  score_4?: number;
-  letter_grade?: string;
-  result_text?: string;
-  status: "PASSED" | "FAILED" | "STUDYING";
-  attempt_no?: number;
-  is_latest?: boolean;
-}
 
 export default function StudentCourseResults() {
   const {
@@ -38,7 +21,7 @@ export default function StudentCourseResults() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<ResultItem>("/student_course_results");
+  } = useStudentCourseResults();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ResultItem | null>(null);
@@ -185,7 +168,7 @@ export default function StudentCourseResults() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Kết quả học tập</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Kết quả học tập</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm tra các điểm số môn học cụ thể, điểm chữ, số lần học và trạng thái tiến độ học tập.
           </p>

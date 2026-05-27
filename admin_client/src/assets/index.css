@@ -107,3 +107,28 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Custom styled horizontal scrollbar for tables */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.45) rgba(15, 23, 42, 0.15);
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 9999px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.45);
+  border-radius: 9999px;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}

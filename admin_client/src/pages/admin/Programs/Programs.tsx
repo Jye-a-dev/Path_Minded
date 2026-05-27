@@ -1,18 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { usePrograms } from "../../../hooks/usePrograms";
+import type { ProgramItem } from "../../../hooks/usePrograms";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ProgramForm } from "./ProgramForm";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";
-
-interface ProgramItem {
-  id: string;
-  program_code: string;
-  program_name: string;
-  major_name?: string;
-  version?: string;
-  total_credits?: number;
-}
 
 export default function Programs() {
   const {
@@ -29,7 +21,7 @@ export default function Programs() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<ProgramItem>("/programs");
+  } = usePrograms();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProgramItem | null>(null);
@@ -138,7 +130,7 @@ export default function Programs() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Chương trình đào tạo</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Chương trình đào tạo</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa các ma trận đề cương học thuật, trình độ học vị và ngưỡng tín chỉ tốt nghiệp.
           </p>

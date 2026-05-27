@@ -148,6 +148,16 @@ export class ParseWarningsController {
     return this.service.update(id, payload);
   }
 
+  @ApiOperation({ summary: 'Delete all' })
+  @ApiOkResponse({
+    description: 'Delete all result',
+    schema: { example: { message: 'all deleted', count: 100 } },
+  })
+  @Delete('all')
+  removeAll(): Promise<{ message: string; count: number }> {
+    return this.service.removeAll();
+  }
+
   @ApiOperation({ summary: 'Delete by id' })
   @ApiParam({ name: 'id', example: '11111111-1111-1111-1111-111111111111' })
   @ApiOkResponse({

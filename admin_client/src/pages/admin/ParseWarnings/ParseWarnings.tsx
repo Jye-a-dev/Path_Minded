@@ -1,19 +1,11 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useParseWarnings } from "../../../hooks/useParseWarnings";
+import type { WarningItem } from "../../../hooks/useParseWarnings";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { Plus, Edit2, Trash2, AlertTriangle } from "lucide-react";
 import { ParseWarningForm } from "./ParseWarningForm";
-
-interface WarningItem {
-  id: string;
-  source_type: string;
-  source_id: string;
-  row_number?: number;
-  warning_code?: string;
-  warning_message?: string;
-  raw_value?: string;
-}
 
 export default function ParseWarnings() {
   const {
@@ -30,10 +22,27 @@ export default function ParseWarnings() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<WarningItem>("/parse_warnings");
+    deleteAll,
+  } = useParseWarnings();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<WarningItem | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDanger?: boolean;
+    requirePromptText?: string;
+    promptValue?: string;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -65,14 +74,54 @@ export default function ParseWarnings() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn cảnh báo phân tích này?")) {
-      try {
-        await deleteItem(id);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Xóa cảnh báo thất bại");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      isOpen: true,
+      title: "Xác nhận xóa cảnh báo phân tích",
+      message: "Bạn có chắc chắn muốn xóa vĩnh viễn bản ghi cảnh báo phân tích này? Hành động này không thể hoàn tác.",
+      confirmText: "Xóa cảnh báo",
+      cancelText: "Hủy bỏ",
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          await deleteItem(id);
+        } catch (err) {
+          setConfirmState({
+            isOpen: true,
+            title: "Lỗi",
+            message: err instanceof Error ? err.message : "Xóa cảnh báo phân tích thất bại",
+            confirmText: "Đóng",
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
+  };
+
+  const handleDeleteAll = () => {
+    setConfirmState({
+      isOpen: true,
+      title: "CẢNH BÁO CỰC KỲ QUAN TRỌNG",
+      message: "Bạn đang chuẩn bị xóa TOÀN BỘ cảnh báo phân tích trong hệ thống!\nHành động này không thể hoàn tác.\nHãy gõ chữ 'DELETE' vào ô bên dưới để xác nhận xóa vĩnh viễn:",
+      confirmText: "Xóa toàn bộ",
+      cancelText: "Hủy",
+      isDanger: true,
+      requirePromptText: "DELETE",
+      promptValue: "",
+      onConfirm: async () => {
+        try {
+          await deleteAll();
+        } catch (err) {
+          setConfirmState({
+            isOpen: true,
+            title: "Lỗi",
+            message: err instanceof Error ? err.message : "Xóa toàn bộ cảnh báo thất bại",
+            confirmText: "Đóng",
+            onConfirm: () => {},
+          });
+        }
+      },
+    });
   };
 
   const columns = [
@@ -146,7 +195,7 @@ export default function ParseWarnings() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Cảnh báo phân tích</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Cảnh báo phân tích</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm định các cờ cảnh báo định dạng và các lỗi phân tích cú pháp gặp phải trong quá trình nhập bảng điểm.
           </p>
@@ -173,13 +222,23 @@ export default function ParseWarnings() {
         onSearchChange={setSearch}
         searchPlaceholder="Tìm kiếm mã cảnh báo..."
         rightActions={
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
-          >
-            <Plus size={16} />
-            Tạo cảnh báo
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleDeleteAll}
+              className="flex items-center gap-1.5 rounded-lg bg-amber-600/10 px-3.5 py-2 text-sm font-semibold text-amber-400 border border-amber-500/20 hover:bg-amber-600/20 hover:text-amber-300 transition-all cursor-pointer"
+            >
+              <Trash2 size={16} />
+              Xóa tất cả cảnh báo
+            </button>
+
+            <button
+              onClick={handleOpenCreate}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+            >
+              <Plus size={16} />
+              Tạo cảnh báo
+            </button>
+          </div>
         }
       />
 
@@ -197,6 +256,23 @@ export default function ParseWarnings() {
           onCancel={handleCloseModal}
         />
       </Modal>
+
+      {/* Custom Confirm Dialog Webform Component */}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        isDanger={confirmState.isDanger}
+        requirePromptText={confirmState.requirePromptText}
+        promptValue={confirmState.promptValue}
+        onPromptValueChange={(val) =>
+          setConfirmState((prev) => ({ ...prev, promptValue: val }))
+        }
+        onConfirm={confirmState.onConfirm}
+      />
     </div>
   );
 }

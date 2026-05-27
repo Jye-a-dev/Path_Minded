@@ -1,20 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useClassImportRows } from "../../../hooks/useClassImportRows";
+import type { ClassImportRowItem as RowItem } from "../../../hooks/useClassImportRows";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { ClassImportRowForm } from "./ClassImportRowForm";
-
-interface RowItem {
-  id: string;
-  import_id: string;
-  row_number?: number;
-  student_code?: string;
-  full_name?: string;
-  email?: string;
-  row_status: "PENDING" | "SUCCESS" | "FAILED";
-  row_error?: string;
-}
 
 export default function ClassImportRows() {
   const {
@@ -31,7 +21,7 @@ export default function ClassImportRows() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<RowItem>("/class_import_rows");
+  } = useClassImportRows();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<RowItem | null>(null);
@@ -161,7 +151,7 @@ export default function ClassImportRows() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Chi tiết hàng nhập lớp</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Chi tiết hàng nhập lớp</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm tra từng dòng hồ sơ được phân tích cú pháp bên trong các tệp lô CSV nhập sinh viên lớp học.
           </p>

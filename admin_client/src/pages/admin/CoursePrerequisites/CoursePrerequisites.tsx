@@ -1,17 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useCoursePrerequisites } from "../../../hooks/useCoursePrerequisites";
+import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { PrerequisiteForm } from "./PrerequisiteForm";
 import { Plus, Edit2, Trash2, GitFork } from "lucide-react";
-
-interface PrereqItem {
-  id: string;
-  program_id: string;
-  course_code: string;
-  prerequisite_course_code: string;
-  prerequisite_type: "REQUIRED" | "RECOMMENDED";
-}
 
 export default function CoursePrerequisites() {
   const {
@@ -28,17 +21,17 @@ export default function CoursePrerequisites() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<PrereqItem>("/course_prerequisites");
+  } = useCoursePrerequisites();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<PrereqItem | null>(null);
+  const [editingItem, setEditingItem] = useState<PrerequisiteItem | null>(null);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
     setModalOpen(true);
   };
 
-  const handleOpenEdit = (item: PrereqItem) => {
+  const handleOpenEdit = (item: PrerequisiteItem) => {
     setEditingItem(item);
     setModalOpen(true);
   };
@@ -75,14 +68,14 @@ export default function CoursePrerequisites() {
     {
       header: "Mã môn học",
       accessorKey: "course_code",
-      render: (row: PrereqItem) => (
+      render: (row: PrerequisiteItem) => (
         <span className="font-mono text-xs font-bold text-slate-200">{row.course_code}</span>
       ),
     },
     {
       header: "Môn học tiên quyết",
       accessorKey: "prerequisite_course_code",
-      render: (row: PrereqItem) => (
+      render: (row: PrerequisiteItem) => (
         <div className="flex items-center gap-1.5">
           <GitFork size={14} className="text-indigo-400 rotate-180" />
           <span className="font-mono text-xs font-bold text-slate-300">
@@ -94,11 +87,13 @@ export default function CoursePrerequisites() {
     {
       header: "Loại điều kiện",
       accessorKey: "prerequisite_type",
-      render: (row: PrereqItem) => {
+      render: (row: PrerequisiteItem) => {
         const isRequired = row.prerequisite_type === "REQUIRED";
-        const statusMap = {
+        const statusMap: Record<string, string> = {
           REQUIRED: "BẮT BUỘC",
-          RECOMMENDED: "KHUYẾN NGHỊ"
+          RECOMMENDED: "KHUYẾN NGHỊ",
+          PREVIOUS: "MÔN HỌC TRƯỚC",
+          OTHER: "KHÁC"
         };
         return (
           <span
@@ -115,7 +110,7 @@ export default function CoursePrerequisites() {
     },
     {
       header: "Thao tác",
-      render: (row: PrereqItem) => (
+      render: (row: PrerequisiteItem) => (
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleOpenEdit(row)}
@@ -139,7 +134,7 @@ export default function CoursePrerequisites() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Điều kiện môn học</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Điều kiện môn học</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa các yêu cầu trong đó việc hoàn thành các môn học tiên quyết cụ thể là điều kiện bắt buộc.
           </p>
@@ -153,7 +148,7 @@ export default function CoursePrerequisites() {
       )}
 
       {/* Data Table */}
-      <DataTable<PrereqItem>
+      <DataTable<PrerequisiteItem>
         columns={columns}
         data={data}
         loading={loading}

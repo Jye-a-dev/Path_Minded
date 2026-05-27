@@ -1,18 +1,10 @@
 import { useState } from "react";
-import { usePaginatedApi } from "../../../hooks/useApi";
+import { useExportLogs } from "../../../hooks/useExportLogs";
+import type { ExportLogItem as LogItem } from "../../../hooks/useExportLogs";
 import { DataTable } from "../../../components/data-display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Edit2, Trash2, History } from "lucide-react";
 import { ExportLogForm } from "./ExportLogForm";
-
-interface LogItem {
-  id: string;
-  export_id: string;
-  student_count?: number;
-  course_count?: number;
-  success_count?: number;
-  warning_count?: number;
-}
 
 export default function ExportLogs() {
   const {
@@ -29,7 +21,7 @@ export default function ExportLogs() {
     createItem,
     updateItem,
     deleteItem,
-  } = usePaginatedApi<LogItem>("/export_logs");
+  } = useExportLogs();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<LogItem | null>(null);
@@ -138,7 +130,7 @@ export default function ExportLogs() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight !text-white m-0">Lịch sử xuất</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Lịch sử xuất</h1>
           <p className="mt-1 text-xs text-slate-400">
             Kiểm tra các dòng cơ sở dữ liệu xuất bản ghi theo dõi sinh viên được xử lý, số lượng đề cương và cờ cảnh báo ma trận.
           </p>
