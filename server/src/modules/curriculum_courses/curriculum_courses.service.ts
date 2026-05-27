@@ -67,6 +67,8 @@ export class CurriculumCoursesService {
       }
 
       if (key === 'search') {
+        if (typeof value !== 'string') return;
+
         clauses.push(
           `(course_code ILIKE $${idx} OR course_name ILIKE $${idx})`,
         );

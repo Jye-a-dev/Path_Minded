@@ -67,6 +67,8 @@ export class ParseWarningsService {
       }
 
       if (key === 'search') {
+        if (typeof value !== 'string') return;
+
         clauses.push(
           `(warning_message ILIKE $${idx} OR warning_code ILIKE $${idx})`,
         );

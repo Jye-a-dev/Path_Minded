@@ -24,7 +24,10 @@ export class ClassImportPipeline {
       const parsed = await this.parser.parseExcel(input.fileBuffer);
       parsedResult = this.parser.mapRows(parsed, input.columnMappings);
     } else if (input.textContent) {
-      const parsed = this.parser.parseText(input.textContent, input.columnMappings);
+      const parsed = this.parser.parseText(
+        input.textContent,
+        input.columnMappings,
+      );
       parsedResult = this.parser.mapRows(parsed, input.columnMappings);
     } else {
       return { students: [], warnings: [] };
@@ -34,4 +37,3 @@ export class ClassImportPipeline {
     return parsedResult;
   }
 }
-

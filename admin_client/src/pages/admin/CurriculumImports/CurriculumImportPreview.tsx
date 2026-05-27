@@ -243,6 +243,7 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                       <th className="px-4 py-2.5">Học trước</th>
                       <th className="px-4 py-2.5 text-center">HK tổ chức</th>
                       <th className="px-4 py-2.5 text-center">Học kỳ</th>
+                      <th className="px-4 py-2.5 text-center">Năm</th>
                       <th className="px-4 py-2.5 text-center w-20">Thao tác</th>
                     </tr>
                   </thead>
@@ -373,6 +374,9 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                                   className="w-full rounded border border-indigo-500 bg-slate-950 px-1 py-1 text-xs text-center focus:outline-none"
                                 />
                               </td>
+                              <td className="px-2 py-1 w-12 text-center text-slate-400 font-semibold">
+                                {editForm.expectedSemester ? Math.ceil(editForm.expectedSemester / 3) : "-"}
+                              </td>
                               <td className="px-4 py-2 text-center flex items-center justify-center gap-1">
                                 <button
                                   type="button"
@@ -428,6 +432,9 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
                               </td>
                               <td className="px-4 py-2 text-center text-slate-400 font-semibold">
                                 {c.expectedSemester ?? "-"}
+                              </td>
+                              <td className="px-4 py-2 text-center text-slate-400 font-semibold">
+                                {c.expectedSemester ? Math.ceil(c.expectedSemester / 3) : "-"}
                               </td>
                               <td className="px-4 py-2 text-center flex items-center justify-center gap-1">
                                 <button

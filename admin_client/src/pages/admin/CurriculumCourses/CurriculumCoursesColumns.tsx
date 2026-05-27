@@ -119,6 +119,16 @@ export const getCurriculumCoursesColumns = (
     ),
   },
   {
+    header: "Năm thứ",
+    accessorKey: "expected_year",
+    render: (row: CourseItem) => {
+      const year = row.expected_semester ? Math.ceil(row.expected_semester / 3) : null;
+      return (
+        <span className="text-slate-400 text-center font-semibold block">{year ?? "-"}</span>
+      );
+    },
+  },
+  {
     header: "Yêu cầu",
     accessorKey: "is_required",
     render: (row: CourseItem) => (
@@ -129,6 +139,7 @@ export const getCurriculumCoursesColumns = (
   },
   {
     header: "Thao tác",
+    accessorKey: "actions",
     render: (row: CourseItem) => (
       <div className="flex items-center gap-2">
         <button

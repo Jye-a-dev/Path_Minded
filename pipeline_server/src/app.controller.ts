@@ -16,6 +16,7 @@ import type {
   ExportCourse,
   ExportCourseResult,
 } from './pipelines/exports/exports.types';
+import 'multer';
 
 interface ParseBody {
   textContent?: string;
@@ -123,7 +124,6 @@ export class AppController {
       columnMappings: columnMappingsObj,
     });
   }
-
 
   @Post('exports/matrix')
   async exportMatrix(@Body() body: ExportMatrixBody) {

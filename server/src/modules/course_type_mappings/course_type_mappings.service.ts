@@ -68,13 +68,17 @@ export class CourseTypeMappingsService {
       if (!Array.isArray(payload.phrases)) {
         throw new BadRequestException('phrases must be an array of strings');
       }
-      const cleaned = payload.phrases.map((p) => p.trim().toLowerCase()).filter(Boolean);
+      const cleaned = payload.phrases
+        .map((p) => p.trim().toLowerCase())
+        .filter(Boolean);
       fields.push(`phrases = $${idx++}`);
       values.push(cleaned);
     }
 
     if (fields.length === 0) {
-      throw new BadRequestException('at least one of phrases or label is required');
+      throw new BadRequestException(
+        'at least one of phrases or label is required',
+      );
     }
 
     values.push(id);

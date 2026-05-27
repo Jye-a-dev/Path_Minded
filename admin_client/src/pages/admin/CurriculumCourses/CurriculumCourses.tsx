@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCurriculumCourses } from "../../../hooks/useCurriculumCourses";
 import type { CourseItem } from "../../../hooks/useCurriculumCourses";
 import { DataTable } from "../../../components/data-display/DataTable";
@@ -6,7 +6,30 @@ import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { CurriculumCourseForm } from "./CurriculumCourseForm";
 import { getCurriculumCoursesColumns } from "./CurriculumCoursesColumns";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Eye, RefreshCw } from "lucide-react";
+import { api } from "../../../services/api";
+
+interface DropdownItem {
+  id: string;
+  label: string;
+}
+
+const allToggleableColumns = [
+  { key: "course_code", label: "Mã môn" },
+  { key: "course_name", label: "Tên môn học" },
+  { key: "credits", label: "Số tín chỉ" },
+  { key: "theory_hours", label: "LT" },
+  { key: "practice_hours", label: "TH" },
+  { key: "project_hours", label: "ĐA" },
+  { key: "internship_hours", label: "TT" },
+  { key: "course_type", label: "Loại môn" },
+  { key: "prerequisite", label: "ĐK tiên quyết" },
+  { key: "corequisite", label: "Học trước" },
+  { key: "organizing_semester", label: "HK tổ chức" },
+  { key: "expected_semester", label: "Học kỳ" },
+  { key: "expected_year", label: "Năm thứ" },
+  { key: "is_required", label: "Yêu cầu" },
+];
 
 export default function CurriculumCourses() {
   const {
@@ -17,9 +40,12 @@ export default function CurriculumCourses() {
     loading,
     error,
     search,
+    filters,
     setPage,
     setLimit,
     setSearch,
+    updateFilters,
+    clearFilters,
     createItem,
     updateItem,
     deleteItem,
@@ -27,9 +53,43 @@ export default function CurriculumCourses() {
     deleteAll,
   } = useCurriculumCourses();
 
+  const [programsList, setProgramsList] = useState<DropdownItem[]>([]);
+
+  useEffect(() => {
+    api.get("/programs?limit=100")
+      .then((res) => {
+        setProgramsList(
+          (res.data || []).map((p: { id: string; program_code: string }) => ({
+            id: p.id,
+            label: p.program_code,
+          }))
+        );
+      })
+      .catch((err) => console.error("Failed to fetch programs list:", err));
+  }, []);
+
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CourseItem | null>(null);
+  
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "course_code",
+    "course_name",
+    "credits",
+    "theory_hours",
+    "practice_hours",
+    "project_hours",
+    "internship_hours",
+    "course_type",
+    "prerequisite",
+    "corequisite",
+    "organizing_semester",
+    "expected_semester",
+    "expected_year",
+    "is_required",
+    "actions",
+  ]);
+  const [showColumnToggle, setShowColumnToggle] = useState(false);
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     title: string;
@@ -165,7 +225,11 @@ export default function CurriculumCourses() {
     });
   };
 
-  const columns = getCurriculumCoursesColumns(handleOpenEdit, handleDelete);
+  const allColumns = getCurriculumCoursesColumns(handleOpenEdit, handleDelete);
+  const columns = allColumns.filter((col) => {
+    if (!col.accessorKey) return true;
+    return visibleColumns.includes(col.accessorKey as string);
+  });
 
   return (
     <div className="space-y-6">
@@ -201,8 +265,107 @@ export default function CurriculumCourses() {
         enableSelection={true}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
+        filters={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Program Filter */}
+            <select
+              value={(filters?.program_id as string) || ""}
+              onChange={(e) => updateFilters({ program_id: e.target.value || undefined })}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+            >
+              <option className="bg-slate-900 text-slate-200" value="">-- Chương trình --</option>
+              {programsList.map((p) => (
+                <option className="bg-slate-900 text-slate-200" key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Course Type Filter */}
+            <select
+              value={(filters?.course_type as string) || ""}
+              onChange={(e) => updateFilters({ course_type: e.target.value || undefined })}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+            >
+              <option className="bg-slate-900 text-slate-200" value="">-- Loại môn --</option>
+              <option className="bg-slate-900 text-slate-200" value="REQUIRED">Bắt buộc</option>
+              <option className="bg-slate-900 text-slate-200" value="ELECTIVE">Tự chọn</option>
+              <option className="bg-slate-900 text-slate-200" value="PE">Thể chất</option>
+              <option className="bg-slate-900 text-slate-200" value="ENGLISH">Tiếng Anh</option>
+              <option className="bg-slate-900 text-slate-200" value="DEFENSE">Quốc phòng</option>
+              <option className="bg-slate-900 text-slate-200" value="OTHER">Khác</option>
+            </select>
+
+            {/* Semester Filter */}
+            <select
+              value={(filters?.expected_semester as string) || ""}
+              onChange={(e) => updateFilters({ expected_semester: e.target.value ? Number(e.target.value) : undefined })}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+            >
+              <option className="bg-slate-900 text-slate-200" value="">-- Học kỳ --</option>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((sem) => (
+                <option className="bg-slate-900 text-slate-200" key={sem} value={sem}>
+                  Học kỳ {sem}
+                </option>
+              ))}
+            </select>
+
+            {/* Reset Filters button */}
+            {filters && !!(filters["program_id"] || filters["course_type"] || filters["expected_semester"]) && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all cursor-pointer"
+              >
+                <RefreshCw size={12} />
+                Xóa lọc
+              </button>
+            )}
+          </div>
+        }
         rightActions={
           <div className="flex flex-wrap items-center gap-2">
+            {/* Column Hiding Toggle */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowColumnToggle(!showColumnToggle)}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/60 px-3.5 py-2 text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all cursor-pointer"
+              >
+                <Eye size={16} />
+                Ẩn/Hiện Cột
+              </button>
+              {showColumnToggle && (
+                <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-800 bg-slate-950 p-2.5 shadow-xl z-50 max-h-80 overflow-y-auto space-y-1.5 backdrop-blur-md">
+                  <div className="text-[10px] font-bold text-slate-500 px-1.5 pb-1 border-b border-slate-800 uppercase tracking-wider">
+                    Hiển thị cột
+                  </div>
+                  {allToggleableColumns.map((col) => (
+                    <label
+                      key={col.key}
+                      className="flex items-center gap-2 px-1.5 py-1 hover:bg-slate-800/60 rounded text-xs text-slate-300 cursor-pointer font-medium select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.includes(col.key)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setVisibleColumns([...visibleColumns, col.key]);
+                          } else {
+                            if (visibleColumns.length > 2) {
+                              setVisibleColumns(visibleColumns.filter((k) => k !== col.key));
+                            }
+                          }
+                        }}
+                        className="rounded border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {selectedIds.length > 0 && (
               <button
                 onClick={handleBulkDelete}
