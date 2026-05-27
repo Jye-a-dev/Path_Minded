@@ -42,6 +42,7 @@ export class CurriculumPipeline {
       parsedResult = await this.parser.parseExcel(
         input.fileBuffer,
         input.sheetIndex,
+        input.columnMappings,
       );
     } else if (input.textContent) {
       const rows = this.parser.parseText(input.textContent);

@@ -76,6 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: "Cấu hình hệ thống",
       items: [
         { label: "Cảnh báo phân tích", to: "/admin/parse_warnings", icon: AlertTriangle },
+        { label: "Cấu hình khớp cột", to: "/admin/column_mappings", icon: FileSpreadsheet },
       ],
     },
   ];

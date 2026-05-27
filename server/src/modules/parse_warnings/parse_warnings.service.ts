@@ -66,6 +66,13 @@ export class ParseWarningsService {
         return;
       }
 
+      if (key === 'search') {
+        clauses.push(`(warning_message ILIKE $${idx} OR warning_code ILIKE $${idx})`);
+        values.push(`%${value}%`);
+        idx++;
+        return;
+      }
+
       clauses.push(`${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });

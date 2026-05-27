@@ -14,6 +14,7 @@ import { CourseEquivalenciesModule } from './modules/course_equivalencies/course
 import { CoursePrerequisitesModule } from './modules/course_prerequisites/course_prerequisites.module';
 import { CurriculumImportsModule } from './modules/curriculum_imports/curriculum_imports.module';
 import { CurriculumCoursesModule } from './modules/curriculum_courses/curriculum_courses.module';
+import { CurriculumColumnMappingsModule } from './modules/curriculum_column_mappings/curriculum_column_mappings.module';
 import { ExportLogsModule } from './modules/export_logs/export_logs.module';
 import { ExportsModule } from './modules/exports/exports.module';
 import { ParseWarningsModule } from './modules/parse_warnings/parse_warnings.module';
@@ -43,6 +44,7 @@ import { UsersModule } from './modules/users/users.module';
     ParseWarningsModule,
     CourseEquivalenciesModule,
     CoursePrerequisitesModule,
+    CurriculumColumnMappingsModule,
   ],
   controllers: [AppController],
   providers: [

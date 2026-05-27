@@ -30,29 +30,30 @@ export class CurriculumImportsService {
     const advisorId = payload.advisorId as string;
 
     const fileName = file ? file.originalname : 'Pasted Text';
+    const fileBuffer = file ? file.buffer : null;
 
-    let savedPath: string | null = null;
-    if (file) {
-      const uploadDir = path.join(process.cwd(), 'uploads', 'curriculum');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-      const uniqueFileName = `${Date.now()}-${file.originalname}`;
-      savedPath = path.join(uploadDir, uniqueFileName);
-      fs.writeFileSync(savedPath, file.buffer);
-    }
-
-    // Insert into DB as PENDING
+    // Insert into DB as PENDING with binary file data stored directly in Postgres
     const insertResult = await this.pool.query<CurriculumImportEntity>(
-      `INSERT INTO curriculum_imports (advisor_id, program_id, file_name, file_path, import_status) 
-       VALUES ($1, $2, $3, $4, 'PENDING') RETURNING *`,
-      [advisorId || null, programId || null, fileName, savedPath],
+      `INSERT INTO curriculum_imports (advisor_id, program_id, file_name, file_path, file_data, import_status) 
+       VALUES ($1, $2, $3, $4, $5, 'PENDING') RETURNING *`,
+      [advisorId || null, programId || null, fileName, null, fileBuffer],
     );
     const importRecord = insertResult.rows[0];
+
+    // Fetch active column mappings from database
+    const mappingResult = await this.pool.query<{
+      field_key: string;
+      phrases: string[];
+    }>('SELECT field_key, phrases FROM curriculum_column_mappings');
+    const mappingConfig: Record<string, string[]> = {};
+    mappingResult.rows.forEach((row) => {
+      mappingConfig[row.field_key] = row.phrases;
+    });
 
     const pipelineUrl =
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
+    formData.append('columnMappings', JSON.stringify(mappingConfig));
     if (file) {
       const blob = new Blob([new Uint8Array(file.buffer)], {
         type: file.mimetype,
@@ -133,22 +134,28 @@ export class CurriculumImportsService {
       throw new BadRequestException('Import is not in PENDING state');
     }
 
-    if (!importRecord.file_path) {
-      throw new BadRequestException('No Excel file uploaded for this session');
-    }
-
-    if (!fs.existsSync(importRecord.file_path)) {
-      throw new NotFoundException(
-        'Uploaded Excel file not found on server disk',
+    // Fetch binary file data from the database
+    const fileBuffer = importRecord.file_data;
+    if (!fileBuffer) {
+      throw new BadRequestException(
+        'No Excel file data found for this session in the database',
       );
     }
 
-    // Load file buffer
-    const fileBuffer = fs.readFileSync(importRecord.file_path);
+    // Fetch active column mappings from database
+    const mappingResult = await this.pool.query<{
+      field_key: string;
+      phrases: string[];
+    }>('SELECT field_key, phrases FROM curriculum_column_mappings');
+    const mappingConfig: Record<string, string[]> = {};
+    mappingResult.rows.forEach((row) => {
+      mappingConfig[row.field_key] = row.phrases;
+    });
 
     const pipelineUrl =
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
+    formData.append('columnMappings', JSON.stringify(mappingConfig));
 
     const blob = new Blob([new Uint8Array(fileBuffer)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -272,7 +279,9 @@ export class CurriculumImportsService {
             course.theoryHours != null ? Number(course.theoryHours) : null,
             course.practiceHours != null ? Number(course.practiceHours) : null,
             course.projectHours != null ? Number(course.projectHours) : null,
-            course.internshipHours != null ? Number(course.internshipHours) : null,
+            course.internshipHours != null
+              ? Number(course.internshipHours)
+              : null,
             course.prerequisite || null,
             course.corequisite || null,
             course.organizingSemester || null,
@@ -417,6 +426,12 @@ export class CurriculumImportsService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
+    // Cascade delete any curriculum courses that were created from this import session
+    await this.pool.query(
+      `DELETE FROM curriculum_courses WHERE import_id = $1`,
+      [id],
+    );
+
     const result = await this.pool.query(
       `DELETE FROM curriculum_imports WHERE id = $1`,
       [id],

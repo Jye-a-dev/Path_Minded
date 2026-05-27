@@ -66,6 +66,13 @@ export class CurriculumCoursesService {
         return;
       }
 
+      if (key === 'search') {
+        clauses.push(`(course_code ILIKE $${idx} OR course_name ILIKE $${idx})`);
+        values.push(`%${value}%`);
+        idx++;
+        return;
+      }
+
       clauses.push(`${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });
@@ -191,9 +198,7 @@ export class CurriculumCoursesService {
   }
 
   async removeAll(): Promise<{ message: string; count: number }> {
-    const result = await this.pool.query(
-      `DELETE FROM curriculum_courses`,
-    );
+    const result = await this.pool.query(`DELETE FROM curriculum_courses`);
     return { message: 'all deleted', count: result.rowCount ?? 0 };
   }
 

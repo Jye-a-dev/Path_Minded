@@ -66,6 +66,13 @@ export class ClassImportRowsService {
         return;
       }
 
+      if (key === 'search') {
+        clauses.push(`(student_code ILIKE $${idx} OR full_name ILIKE $${idx})`);
+        values.push(`%${value}%`);
+        idx++;
+        return;
+      }
+
       clauses.push(`${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });

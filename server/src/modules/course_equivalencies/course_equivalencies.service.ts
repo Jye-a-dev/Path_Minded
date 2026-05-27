@@ -66,6 +66,13 @@ export class CourseEquivalenciesService {
         return;
       }
 
+      if (key === 'search') {
+        clauses.push(`(course_code ILIKE $${idx} OR equivalent_code ILIKE $${idx})`);
+        values.push(`%${value}%`);
+        idx++;
+        return;
+      }
+
       clauses.push(`${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });

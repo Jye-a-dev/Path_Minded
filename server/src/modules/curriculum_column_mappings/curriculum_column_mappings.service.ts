@@ -8,18 +8,18 @@ import {
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
 import {
-  StudentCourseResultsPaginationResponse,
-  StudentCourseResultEntity,
-  StudentCourseResultResponse,
-} from './interfaces/student_course_results.interfaces';
+  CurriculumColumnMappingsPaginationResponse,
+  CurriculumColumnMappingEntity,
+  CurriculumColumnMappingResponse,
+} from './interfaces/curriculum_column_mappings.interfaces';
 
 @Injectable()
-export class StudentCourseResultsService {
+export class CurriculumColumnMappingsService {
   constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
 
   async create(
     payload: Record<string, unknown>,
-  ): Promise<StudentCourseResultResponse> {
+  ): Promise<CurriculumColumnMappingResponse> {
     const keys = Object.keys(payload);
     if (keys.length === 0) {
       throw new BadRequestException('payload is required');
@@ -30,8 +30,8 @@ export class StudentCourseResultsService {
     const values = keys.map((key) => payload[key] ?? null);
 
     try {
-      const result = await this.pool.query<StudentCourseResultEntity>(
-        `INSERT INTO student_course_results (${cols}) VALUES (${params}) RETURNING *`,
+      const result = await this.pool.query<CurriculumColumnMappingEntity>(
+        `INSERT INTO curriculum_column_mappings (${cols}) VALUES (${params}) RETURNING *`,
         values,
       );
       return result.rows[0];
@@ -49,11 +49,11 @@ export class StudentCourseResultsService {
 
   private buildFilter(query: Record<string, unknown>): {
     where: string;
-    values: Array<string | number | boolean>;
+    values: Array<unknown>;
     idx: number;
   } {
     const clauses: string[] = [];
-    const values: Array<string | number | boolean> = [];
+    const values: Array<unknown> = [];
     let idx = 1;
 
     Object.entries(query).forEach(([key, value]) => {
@@ -61,20 +61,14 @@ export class StudentCourseResultsService {
         value === undefined ||
         key === 'page' ||
         key === 'limit' ||
-        key === 'offset'
+        key === 'offset' ||
+        key === 'search'
       ) {
         return;
       }
 
-      if (key === 'search') {
-        clauses.push(`(course_code ILIKE $${idx} OR course_name ILIKE $${idx})`);
-        values.push(`%${value}%`);
-        idx++;
-        return;
-      }
-
       clauses.push(`${key} = $${idx++}`);
-      values.push(value as string | number | boolean);
+      values.push(value);
     });
 
     return {
@@ -86,13 +80,13 @@ export class StudentCourseResultsService {
 
   async findAll(
     query: Record<string, unknown>,
-  ): Promise<StudentCourseResultResponse[]> {
+  ): Promise<CurriculumColumnMappingResponse[]> {
     const { where, values, idx } = this.buildFilter(query);
-    const limit = Number(query.limit ?? 20);
+    const limit = Number(query.limit ?? 100);
     const offset = Number(query.offset ?? 0);
 
-    const result = await this.pool.query<StudentCourseResultEntity>(
-      `SELECT * FROM student_course_results ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+    const result = await this.pool.query<CurriculumColumnMappingEntity>(
+      `SELECT * FROM curriculum_column_mappings ${where} ORDER BY field_key LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -101,22 +95,22 @@ export class StudentCourseResultsService {
 
   async pagination(
     query: Record<string, unknown>,
-  ): Promise<StudentCourseResultsPaginationResponse> {
+  ): Promise<CurriculumColumnMappingsPaginationResponse> {
     const { where, values, idx } = this.buildFilter(query);
     const page = Math.max(1, Number(query.page ?? 1));
     const limit = Math.max(1, Number(query.limit ?? 20));
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM student_course_results ${where}`,
+      `SELECT COUNT(*) AS total FROM curriculum_column_mappings ${where}`,
       values,
     );
 
     const total = Number(countResult.rows[0]?.total ?? 0);
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
-    const result = await this.pool.query<StudentCourseResultEntity>(
-      `SELECT * FROM student_course_results ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+    const result = await this.pool.query<CurriculumColumnMappingEntity>(
+      `SELECT * FROM curriculum_column_mappings ${where} ORDER BY field_key LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -129,21 +123,21 @@ export class StudentCourseResultsService {
   async count(query: Record<string, unknown>): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM student_course_results ${where}`,
+      `SELECT COUNT(*) AS count FROM curriculum_column_mappings ${where}`,
       values,
     );
 
     return { count: Number(result.rows[0]?.count ?? 0) };
   }
 
-  async findOne(id: string): Promise<StudentCourseResultResponse> {
-    const result = await this.pool.query<StudentCourseResultEntity>(
-      `SELECT * FROM student_course_results WHERE id = $1`,
+  async findOne(id: string): Promise<CurriculumColumnMappingResponse> {
+    const result = await this.pool.query<CurriculumColumnMappingEntity>(
+      `SELECT * FROM curriculum_column_mappings WHERE id = $1`,
       [id],
     );
 
     if (result.rowCount === 0) {
-      throw new NotFoundException('student_course_results not found');
+      throw new NotFoundException('mapping not found');
     }
 
     return result.rows[0];
@@ -152,7 +146,7 @@ export class StudentCourseResultsService {
   async update(
     id: string,
     payload: Record<string, unknown>,
-  ): Promise<StudentCourseResultResponse> {
+  ): Promise<CurriculumColumnMappingResponse> {
     const keys = Object.keys(payload);
     if (keys.length === 0) {
       throw new BadRequestException('at least one field is required');
@@ -162,13 +156,13 @@ export class StudentCourseResultsService {
     const values = keys.map((key) => payload[key] ?? null);
 
     try {
-      const result = await this.pool.query<StudentCourseResultEntity>(
-        `UPDATE student_course_results SET ${sets} WHERE id = $${keys.length + 1} RETURNING *`,
+      const result = await this.pool.query<CurriculumColumnMappingEntity>(
+        `UPDATE curriculum_column_mappings SET ${sets}, updated_at = CURRENT_TIMESTAMP WHERE id = $${keys.length + 1} RETURNING *`,
         [...values, id],
       );
 
       if (result.rowCount === 0) {
-        throw new NotFoundException('student_course_results not found');
+        throw new NotFoundException('mapping not found');
       }
 
       return result.rows[0];
@@ -186,12 +180,12 @@ export class StudentCourseResultsService {
 
   async remove(id: string): Promise<{ message: string }> {
     const result = await this.pool.query(
-      `DELETE FROM student_course_results WHERE id = $1`,
+      `DELETE FROM curriculum_column_mappings WHERE id = $1`,
       [id],
     );
 
     if (result.rowCount === 0) {
-      throw new NotFoundException('student_course_results not found');
+      throw new NotFoundException('mapping not found');
     }
 
     return { message: 'deleted' };

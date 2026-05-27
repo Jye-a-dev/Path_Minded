@@ -10,6 +10,21 @@ type RawRow = {
   values: (string | number | null)[];
 };
 
+interface TableHeaders {
+  courseCodeIdx: number;
+  courseNameIdx: number;
+  creditsIdx: number;
+  theoryHoursIdx: number;
+  practiceHoursIdx: number;
+  projectHoursIdx: number;
+  internshipHoursIdx: number;
+  semesterIdx: number;
+  courseTypeIdx: number;
+  prerequisiteIdx: number;
+  corequisiteIdx: number;
+  organizingSemesterIdx: number;
+}
+
 function toPrimitiveString(v: unknown): string {
   if (v === null || v === undefined) {
     return '';
@@ -68,6 +83,7 @@ export class CurriculumParser {
   async parseExcel(
     buffer: Buffer,
     targetSheetIdx?: number,
+    columnMappings?: Record<string, string[]>,
   ): Promise<{
     courses: ParsedCurriculumCourse[];
     warnings: CurriculumWarning[];
@@ -80,8 +96,25 @@ export class CurriculumParser {
     const courses: ParsedCurriculumCourse[] = [];
     const warnings: CurriculumWarning[] = [];
 
+    // Helper to check if a cell value matches any phrase in a dynamic mapping rule or defaults
+    const matchesMapping = (
+      cellVal: string,
+      key: string,
+      defaultPhrases: string[],
+    ): boolean => {
+      const phrases =
+        columnMappings && Array.isArray(columnMappings[key])
+          ? columnMappings[key]
+          : defaultPhrases;
+      const lowerVal = cellVal.toLowerCase();
+      return phrases.some((phrase) => lowerVal.includes(phrase.toLowerCase()));
+    };
+
     // Helper to detect headers for a specific table slice
-    const detectTableHeaders = (sliceValues: unknown[], offset: number) => {
+    const detectTableHeaders = (
+      sliceValues: unknown[],
+      offset: number,
+    ): TableHeaders | null => {
       let courseCodeIdx = -1;
       let courseNameIdx = -1;
       let courseNamePriority = 0;
@@ -97,7 +130,7 @@ export class CurriculumParser {
       let organizingSemesterIdx = -1;
 
       for (let i = 0; i < sliceValues.length; i++) {
-        const val = getCellString(sliceValues[i]).trim().toLowerCase();
+        const val = getCellString(sliceValues[i]).trim();
         if (!val) {
           continue;
         }
@@ -105,33 +138,37 @@ export class CurriculumParser {
         const actualIdx = i + offset;
 
         if (
-          val.includes('mã học phần') ||
-          val.includes('mã hp') ||
-          val.includes('mã môn') ||
-          val === 'code' ||
-          val.includes('course code')
+          matchesMapping(val, 'course_code', [
+            'mã học phần',
+            'mã hp',
+            'mã môn',
+            'code',
+            'course code',
+          ])
         ) {
           courseCodeIdx = actualIdx;
         } else if (
-          val.includes('tên học phần') ||
-          val.includes('tên hp') ||
-          val.includes('tên môn') ||
-          val === 'name' ||
-          val.includes('course name') ||
-          val.includes('tên môn học')
+          matchesMapping(val, 'course_name', [
+            'tên học phần',
+            'tên hp',
+            'tên môn',
+            'name',
+            'course name',
+            'tên môn học',
+          ])
         ) {
           let priority = 2;
           if (
-            val.includes('tiếng việt') ||
-            val.includes('việt') ||
-            val.includes('vietnamese') ||
-            val.includes('việt nam')
+            val.toLowerCase().includes('tiếng việt') ||
+            val.toLowerCase().includes('việt') ||
+            val.toLowerCase().includes('vietnamese') ||
+            val.toLowerCase().includes('việt nam')
           ) {
             priority = 3;
           } else if (
-            val.includes('tiếng anh') ||
-            val.includes('english') ||
-            val.includes('en')
+            val.toLowerCase().includes('tiếng anh') ||
+            val.toLowerCase().includes('english') ||
+            val.toLowerCase().includes('en')
           ) {
             priority = 1;
           }
@@ -141,67 +178,87 @@ export class CurriculumParser {
             courseNamePriority = priority;
           }
         } else if (
-          val.includes('tín chỉ') ||
-          val.includes('số tc') ||
-          val === 'credits' ||
-          val === 'stc' ||
-          val.includes('credit')
+          matchesMapping(val, 'credits', [
+            'tín chỉ',
+            'số tc',
+            'credits',
+            'stc',
+            'credit',
+          ])
         ) {
           creditsIdx = actualIdx;
         } else if (
-          (val === 'lt' || val === 'lý thuyết' || val === 'theory') &&
-          !val.includes('tên')
+          matchesMapping(val, 'theory_hours', ['lt', 'lý thuyết', 'theory']) &&
+          !val.toLowerCase().includes('tên')
         ) {
           theoryHoursIdx = actualIdx;
         } else if (
-          (val === 'th' || val === 'thực hành' || val === 'practice') &&
-          !val.includes('tên')
+          matchesMapping(val, 'practice_hours', [
+            'th',
+            'thực hành',
+            'practice',
+          ]) &&
+          !val.toLowerCase().includes('tên')
         ) {
           practiceHoursIdx = actualIdx;
         } else if (
-          (val === 'đa' || val === 'đồ án' || val === 'project') &&
-          !val.includes('tên')
+          matchesMapping(val, 'project_hours', ['đa', 'đồ án', 'project']) &&
+          !val.toLowerCase().includes('tên')
         ) {
           projectHoursIdx = actualIdx;
         } else if (
-          (val === 'tt' || val === 'thực tập' || val === 'internship') &&
-          !val.includes('tên')
+          matchesMapping(val, 'internship_hours', [
+            'tt',
+            'thực tập',
+            'internship',
+          ]) &&
+          !val.toLowerCase().includes('tên')
         ) {
           internshipHoursIdx = actualIdx;
         } else if (
-          val.includes('phân bổ học kỳ') ||
-          val.includes('học kỳ') ||
-          val === 'semester' ||
-          val === 'hk'
+          matchesMapping(val, 'expected_semester', [
+            'phân bổ học kỳ',
+            'học kỳ',
+            'semester',
+            'hk',
+          ])
         ) {
           semesterIdx = actualIdx;
         } else if (
-          val.includes('bắt buộc') ||
-          val.includes('tự chọn') ||
-          val === 'bb/tc' ||
-          val.includes('req') ||
-          val.includes('elec') ||
-          val.includes('bắt buộc/tự chọn')
+          matchesMapping(val, 'course_type', [
+            'bắt buộc',
+            'tự chọn',
+            'bb/tc',
+            'req',
+            'elec',
+            'bắt buộc/tự chọn',
+          ])
         ) {
           courseTypeIdx = actualIdx;
         } else if (
-          val.includes('tiên quyết') ||
-          val.includes('prereq') ||
-          val.includes('đk tiên quyết') ||
-          val.includes('điều kiện tiên quyết')
+          matchesMapping(val, 'prerequisite', [
+            'tiên quyết',
+            'prereq',
+            'đk tiên quyết',
+            'điều kiện tiên quyết',
+          ])
         ) {
           prerequisiteIdx = actualIdx;
         } else if (
-          val.includes('học trước') ||
-          val.includes('coreq') ||
-          val.includes('đk học trước') ||
-          val.includes('điều kiện học trước')
+          matchesMapping(val, 'corequisite', [
+            'học trước',
+            'coreq',
+            'đk học trước',
+            'điều kiện học trước',
+          ])
         ) {
           corequisiteIdx = actualIdx;
         } else if (
-          val.includes('hk tổ chức') ||
-          val.includes('học kỳ tổ chức') ||
-          val.includes('organizing semester')
+          matchesMapping(val, 'organizing_semester', [
+            'hk tổ chức',
+            'học kỳ tổ chức',
+            'organizing semester',
+          ])
         ) {
           organizingSemesterIdx = actualIdx;
         }
@@ -229,11 +286,38 @@ export class CurriculumParser {
 
     // Helper for header detection across multiple side-by-side tables
     const detectHeaders = (rowValues: unknown[]) => {
-      const t1 = detectTableHeaders(rowValues.slice(0, 12), 0);
-      const t2 = detectTableHeaders(rowValues.slice(12), 12);
+      // First, check if there's a side-by-side table structure.
+      // We look for a second "Mã học phần" or "Mã HP" header in columns index >= 12.
+      let hasSecondTable = false;
+      for (let i = 12; i < rowValues.length; i++) {
+        const val = getCellString(rowValues[i]).trim();
+        if (
+          matchesMapping(val, 'course_code', [
+            'mã học phần',
+            'mã hp',
+            'mã môn',
+            'code',
+            'course code',
+          ])
+        ) {
+          hasSecondTable = true;
+          break;
+        }
+      }
 
-      if (t1) {
-        return { t1, t2 };
+      if (hasSecondTable) {
+        // Parse side-by-side tables: Table 1 (0 to 12) and Table 2 (12 onwards)
+        const t1 = detectTableHeaders(rowValues.slice(0, 12), 0);
+        const t2 = detectTableHeaders(rowValues.slice(12), 12);
+        if (t1) {
+          return { t1, t2 };
+        }
+      } else {
+        // Parse single table: scan all columns (0 onwards) for Table 1
+        const t1 = detectTableHeaders(rowValues, 0);
+        if (t1) {
+          return { t1, t2: null };
+        }
       }
       return null;
     };
@@ -331,8 +415,11 @@ export class CurriculumParser {
 
     const ws = wb.worksheets[activeSheetIndex];
     if (ws) {
-      let currentHeaderConfig: { t1: any; t2: any | null } | null = null;
-      
+      let currentHeaderConfig: {
+        t1: TableHeaders;
+        t2: TableHeaders | null;
+      } | null = null;
+
       // Independent states for Table 1 and Table 2
       let t1Semester: number | null = null;
       let t1OrganizingSemester: string | null = null;
@@ -375,7 +462,10 @@ export class CurriculumParser {
           return;
         }
 
-        const parseTableCourse = (config: any, isTable2: boolean) => {
+        const parseTableCourse = (
+          config: TableHeaders | null,
+          isTable2: boolean,
+        ) => {
           if (!config) return null;
 
           const {
@@ -404,8 +494,10 @@ export class CurriculumParser {
 
           // Determine current state variables based on table side (Table 1 vs Table 2)
           let tableSemester = isTable2 ? t2Semester : t1Semester;
-          let tableOrganizingSemester = isTable2 ? t2OrganizingSemester : t1OrganizingSemester;
-          let tableCourseGroup = isTable2 ? t2CourseGroup : t1CourseGroup;
+          let tableOrganizingSemester = isTable2
+            ? t2OrganizingSemester
+            : t1OrganizingSemester;
+          const tableCourseGroup = isTable2 ? t2CourseGroup : t1CourseGroup;
 
           const isGroupRow =
             !code ||
@@ -522,7 +614,9 @@ export class CurriculumParser {
           }
 
           const theoryHours =
-            theoryHoursIdx !== -1 ? this.parseNumber(vals[theoryHoursIdx]) : null;
+            theoryHoursIdx !== -1
+              ? this.parseNumber(vals[theoryHoursIdx])
+              : null;
           const practiceHours =
             practiceHoursIdx !== -1
               ? this.parseNumber(vals[practiceHoursIdx])
@@ -547,7 +641,11 @@ export class CurriculumParser {
 
           // Extract organizing semester & expected semester from TT column (semesterIdx - 1)
           let expectedSemesterRaw: number | null = null;
-          if (semesterIdx !== -1 && semesterIdx > 0 && vals[semesterIdx - 1] !== null) {
+          if (
+            semesterIdx !== -1 &&
+            semesterIdx > 0 &&
+            vals[semesterIdx - 1] !== null
+          ) {
             const ttParsed = parseTTValue(vals[semesterIdx - 1]);
             if (ttParsed.organizingSem) {
               if (isTable2) {
@@ -563,8 +661,11 @@ export class CurriculumParser {
             }
           }
 
-          const expectedSemester = expectedSemesterRaw !== null ? expectedSemesterRaw : tableSemester;
-          const organizingSemester = tableOrganizingSemester || (tableSemester ? String(tableSemester) : null);
+          const expectedSemester =
+            expectedSemesterRaw !== null ? expectedSemesterRaw : tableSemester;
+          const organizingSemester =
+            tableOrganizingSemester ||
+            (tableSemester ? String(tableSemester) : null);
 
           const cleanCode = code.toUpperCase().replace(/\s+/g, '');
           if (cleanCode.length >= 3) {

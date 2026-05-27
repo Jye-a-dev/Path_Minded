@@ -54,15 +54,32 @@ export class AppController {
   @UseInterceptors(FileInterceptor('file'))
   async parseCurriculum(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: { textContent?: string; sheetIndex?: string | number },
+    @Body()
+    body: {
+      textContent?: string;
+      sheetIndex?: string | number;
+      columnMappings?: string;
+    },
   ) {
     const sheetIdx =
       body.sheetIndex !== undefined ? Number(body.sheetIndex) : 0;
+    let columnMappingsObj: Record<string, string[]> | undefined = undefined;
+    if (body.columnMappings) {
+      try {
+        columnMappingsObj = JSON.parse(body.columnMappings) as Record<
+          string,
+          string[]
+        >;
+      } catch (e) {
+        console.error('Failed to parse columnMappings JSON', e);
+      }
+    }
     return this.curriculumPipeline.parse({
       fileBuffer: file?.buffer,
       textContent: body.textContent,
       fileName: file?.originalname,
       sheetIndex: sheetIdx,
+      columnMappings: columnMappingsObj,
     });
   }
 

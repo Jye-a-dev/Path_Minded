@@ -59,7 +59,8 @@ export class ExportLogsService {
         value === undefined ||
         key === 'page' ||
         key === 'limit' ||
-        key === 'offset'
+        key === 'offset' ||
+        key === 'search'
       ) {
         return;
       }

@@ -24,6 +24,7 @@ import ClassImportRows from "../pages/admin/ClassImportRows/ClassImportRows";
 import Exports from "../pages/admin/Exports/Exports";
 import ExportLogs from "../pages/admin/ExportLogs/ExportLogs";
 import ParseWarnings from "../pages/admin/ParseWarnings/ParseWarnings";
+import ColumnMappings from "../pages/admin/ColumnMappings/ColumnMappings";
 
 const routes = [
   // Public Routes
@@ -61,6 +62,7 @@ const routes = [
           { path: "exports", element: <Exports /> },
           { path: "export_logs", element: <ExportLogs /> },
           { path: "parse_warnings", element: <ParseWarnings /> },
+          { path: "column_mappings", element: <ColumnMappings /> },
         ],
       },
     ],

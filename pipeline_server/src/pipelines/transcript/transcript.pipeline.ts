@@ -27,7 +27,7 @@ export class TranscriptPipeline {
   /**
    * Parse a raw transcript input and return structured course results.
    */
-  async parse(input: RawTranscriptInput): Promise<TranscriptParseResult> {
+  parse(input: RawTranscriptInput): Promise<TranscriptParseResult> {
     this.logger.log('Starting transcript parse pipeline');
 
     let rawText: string;
@@ -39,7 +39,7 @@ export class TranscriptPipeline {
       // For now, treat file buffer as plain text
       rawText = input.fileBuffer.toString('utf-8');
     } else {
-      return { results: [], warnings: [] };
+      return Promise.resolve({ results: [], warnings: [] });
     }
 
     // Step 1: Parse raw text into structured lines
@@ -52,6 +52,6 @@ export class TranscriptPipeline {
       `Mapped ${results.length} course results, ${warnings.length} warnings`,
     );
 
-    return { results, warnings };
+    return Promise.resolve({ results, warnings });
   }
 }
