@@ -52,6 +52,7 @@ export default function CurriculumImports() {
   } = useCurriculumImports();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [isFullWidth, setIsFullWidth] = useState(true);
 
   const [previewData, setPreviewData] = useState<CoursePreviewItem[] | null>(null);
   const [previewWarnings, setPreviewWarnings] = useState<WarningItem[]>([]);
@@ -239,11 +240,12 @@ export default function CurriculumImports() {
             ? "Xem trước cấu trúc Chương trình đào tạo học phần"
             : "Bắt đầu phiên nhập chương trình học mới"
         }
-        size="lg"
+        size={previewData ? (isFullWidth ? "full" : "3xl") : "lg"}
       >
         {previewData ? (
           <CurriculumImportPreview
             key={`${activeSessionId}-${activeSheetIndex}`}
+            activeSessionId={activeSessionId!}
             courses={previewData}
             warnings={previewWarnings}
             sheets={sheetsList}
@@ -251,6 +253,8 @@ export default function CurriculumImports() {
             onConfirm={handleConfirmPreview}
             onCancel={handleCancelPreview}
             onSheetChange={handleSheetChange}
+            isFullWidth={isFullWidth}
+            onToggleFullWidth={() => setIsFullWidth(!isFullWidth)}
           />
         ) : (
           <CurriculumImportForm

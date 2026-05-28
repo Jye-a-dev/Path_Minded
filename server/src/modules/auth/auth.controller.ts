@@ -61,6 +61,24 @@ export class AuthController {
     return this.authService.loginWithMicrosoft(payload.accessToken);
   }
 
+  @Public()
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refreshToken: { type: 'string' },
+      },
+      required: ['refreshToken'],
+    },
+  })
+  @Post('refresh')
+  refresh(
+    @Body('refreshToken') refreshToken: string,
+  ): Promise<AuthLoginResponse> {
+    return this.authService.refresh(refreshToken);
+  }
+
   @ApiOperation({ summary: 'Logout current session' })
   @ApiOkResponse({
     description: 'Logout response',

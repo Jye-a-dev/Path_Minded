@@ -6,7 +6,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "full";
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -40,6 +40,11 @@ export const Modal: React.FC<ModalProps> = ({
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
+    "2xl": "max-w-5xl",
+    "3xl": "max-w-6xl",
+    "4xl": "max-w-7xl",
+    "5xl": "max-w-[90vw] w-[90vw]",
+    full: "max-w-[96vw] w-[96vw] h-[92vh] flex flex-col",
   };
 
   return (
@@ -66,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5">
           {children}
         </div>
       </div>

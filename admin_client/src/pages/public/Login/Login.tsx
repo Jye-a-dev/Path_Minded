@@ -37,7 +37,7 @@ export default function Login() {
           return;
         }
 
-        login(response.data.accessToken, user);
+        login(response.data.accessToken, response.data.refreshToken, user);
         navigate("/admin");
       } else {
         setError("Phản hồi không hợp lệ từ máy chủ.");
@@ -62,7 +62,7 @@ export default function Login() {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-600/30 text-xl">
             PM
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Chào mừng quay trở lại</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-white!">Chào mừng quay trở lại</h2>
           <p className="text-sm text-slate-400">
             Đăng nhập vào Cổng quản trị PathMinded
           </p>

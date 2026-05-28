@@ -9,6 +9,7 @@ export type AuthUserPayload = {
 
 export type AuthLoginResponse = {
   accessToken: string;
+  refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number | StringValue;
   user: {

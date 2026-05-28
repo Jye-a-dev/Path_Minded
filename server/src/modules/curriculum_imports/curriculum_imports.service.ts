@@ -60,7 +60,10 @@ export class CurriculumImportsService {
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
     formData.append('columnMappings', JSON.stringify(mappingConfig));
-    formData.append('courseTypeMappings', JSON.stringify(courseTypeMappingConfig));
+    formData.append(
+      'courseTypeMappings',
+      JSON.stringify(courseTypeMappingConfig),
+    );
     if (file) {
       const blob = new Blob([new Uint8Array(file.buffer)], {
         type: file.mimetype,
@@ -167,7 +170,10 @@ export class CurriculumImportsService {
       process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
     const formData = new FormData();
     formData.append('columnMappings', JSON.stringify(mappingConfig));
-    formData.append('courseTypeMappings', JSON.stringify(courseTypeMappingConfig));
+    formData.append(
+      'courseTypeMappings',
+      JSON.stringify(courseTypeMappingConfig),
+    );
 
     const blob = new Blob([new Uint8Array(fileBuffer)], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

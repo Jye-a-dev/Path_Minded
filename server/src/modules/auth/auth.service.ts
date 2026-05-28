@@ -126,6 +126,21 @@ export class AuthService {
     };
   }
 
+  async refresh(refreshToken: string): Promise<AuthLoginResponse> {
+    try {
+      const payload = await this.jwtService.verifyAsync<AuthUserPayload>(
+        refreshToken,
+        {
+          secret: envConfig().JWT_SECRET,
+        },
+      );
+      const user = await this.usersService.findOne(payload.sub);
+      return this.buildAuthResponse(user.id, user.email, user.role);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+  }
+
   private async buildAuthResponse(
     id: string,
     email: string,
@@ -133,9 +148,13 @@ export class AuthService {
   ): Promise<AuthLoginResponse> {
     const payload: AuthUserPayload = { sub: id, email, role };
     const accessToken = await this.jwtService.signAsync(payload);
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
     const env = envConfig();
     return {
       accessToken,
+      refreshToken,
       tokenType: 'Bearer',
       expiresIn: env.JWT_EXPIRES_IN,
       user: { id, email, role },
