@@ -192,6 +192,7 @@ CREATE TABLE curriculum_courses (
     course_group VARCHAR(255),
 
     course_type course_type DEFAULT 'REQUIRED',
+    knowledge_block VARCHAR(50) DEFAULT 'GENERAL',
 
     is_required BOOLEAN DEFAULT TRUE,
 
@@ -209,7 +210,7 @@ CREATE TABLE curriculum_courses (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(program_id, course_code)
+    UNIQUE(program_id, course_code, course_type)
 );
 
 -- =========================================================
@@ -440,6 +441,28 @@ INSERT INTO course_type_mappings (course_type, label, phrases) VALUES
 ('DEFENSE',   'Giáo dục quốc phòng',  ARRAY['quốc phòng','quân sự','gdqp','nad','an ninh','defense','defence']),
 ('OTHER',     'Khác',                  ARRAY['khac','other'])
 ON CONFLICT (course_type) DO NOTHING;
+
+-- =========================================================
+-- KNOWLEDGE BLOCK MAPPINGS
+-- =========================================================
+
+CREATE TABLE knowledge_block_mappings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    knowledge_block VARCHAR(50) NOT NULL,
+    label VARCHAR(100) NOT NULL,
+    phrases TEXT[] NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(knowledge_block)
+);
+
+-- Seed default keyword mappings for each knowledge block
+INSERT INTO knowledge_block_mappings (knowledge_block, label, phrases) VALUES
+('GENERAL',     'Đại cương',            ARRAY['đại cương','chính trị','mác-lênin','ngoại ngữ','tiếng anh','thể chất','quốc phòng','pháp luật','kỹ năng']),
+('SECTOR_CORE',  'Cơ sở khối ngành',     ARRAY['cơ sở khối ngành','cơ sở nhóm ngành','khối ngành']),
+('MAJOR_CORE',   'Cơ sở ngành',          ARRAY['cơ sở ngành','nền tảng','cơ bản','toán','lập trình','cấu trúc dữ liệu']),
+('SPECIALIZED',  'Chuyên ngành',         ARRAY['chuyên ngành','chuyên sâu','tốt nghiệp','thực tập','đồ án','chuyên đề'])
+ON CONFLICT (knowledge_block) DO NOTHING;
 
 -- =========================================================
 -- INDEXES

@@ -15,6 +15,7 @@ interface CoursePreviewItem {
   prerequisite: string | null;
   corequisite: string | null;
   organizingSemester: string | null;
+  knowledgeBlock?: string | null;
 }
 
 interface CurriculumPreviewTableProps {
@@ -24,12 +25,13 @@ interface CurriculumPreviewTableProps {
   editForm: CoursePreviewItem | null;
   isFullWidth: boolean;
   onToggleAll: () => void;
-  onToggleSelect: (code: string) => void;
+  onToggleSelect: (compositeKey: string) => void;
   onStartEdit: (index: number, course: CoursePreviewItem) => void;
-  onDeleteRow: (index: number, code: string) => void;
+  onDeleteRow: (index: number, compositeKey: string) => void;
   onEditFormChange: (form: CoursePreviewItem) => void;
   onSaveEdit: (index: number) => void;
   onCancelEdit: () => void;
+  knowledgeBlocks: Array<{ knowledge_block: string; label: string }>;
 }
 
 export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
@@ -45,6 +47,7 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
   onEditFormChange,
   onSaveEdit,
   onCancelEdit,
+  knowledgeBlocks,
 }) => {
   return (
     <div className="space-y-2">
@@ -77,6 +80,7 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
                 <th className="px-4 py-2.5 text-center">ĐA</th>
                 <th className="px-4 py-2.5 text-center">TT</th>
                 <th className="px-4 py-2.5">Loại</th>
+                <th className="px-4 py-2.5">Khối kiến thức</th>
                 <th className="px-4 py-2.5">ĐK tiên quyết</th>
                 <th className="px-4 py-2.5">Học trước</th>
                 <th className="px-4 py-2.5 text-center">HK tổ chức</th>
@@ -88,7 +92,8 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
             <tbody className="divide-y divide-slate-855">
               {courses.map((c, idx) => {
                 const isEditing = editingIndex === idx;
-                const isSelected = selectedCodes.has(c.courseCode);
+                const compositeKey = c.courseCode + "_" + c.courseType;
+                const isSelected = selectedCodes.has(compositeKey);
 
                 return (
                   <tr
@@ -102,7 +107,7 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => onToggleSelect(c.courseCode)}
+                        onChange={() => onToggleSelect(compositeKey)}
                         className="h-3.5 w-3.5 rounded border-slate-800 bg-slate-955 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                       />
                     </td>
@@ -178,6 +183,27 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
                             <option value="ENGLISH">ENGLISH</option>
                             <option value="DEFENSE">DEFENSE</option>
                             <option value="OTHER">OTHER</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1">
+                          <select
+                            value={editForm.knowledgeBlock || "GENERAL"}
+                            onChange={(e) => onEditFormChange({ ...editForm, knowledgeBlock: e.target.value })}
+                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-slate-300 focus:outline-none"
+                          >
+                            {knowledgeBlocks.map((kb) => (
+                              <option key={kb.knowledge_block} value={kb.knowledge_block}>
+                                {kb.label} ({kb.knowledge_block})
+                              </option>
+                            ))}
+                            {knowledgeBlocks.length === 0 && (
+                              <>
+                                <option value="GENERAL">Đại cương (GENERAL)</option>
+                                <option value="SECTOR_CORE">Cơ sở khối ngành (SECTOR_CORE)</option>
+                                <option value="MAJOR_CORE">Cơ sở ngành (MAJOR_CORE)</option>
+                                <option value="SPECIALIZED">Chuyên ngành (SPECIALIZED)</option>
+                              </>
+                            )}
                           </select>
                         </td>
                         <td className="px-2 py-1">
@@ -259,6 +285,26 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
                             {c.courseType}
                           </span>
                         </td>
+                        <td className="px-4 py-2">
+                          {(() => {
+                            const badges: Record<string, string> = {
+                              GENERAL: "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30",
+                              SECTOR_CORE: "bg-orange-500/15 text-orange-300 border border-orange-500/30",
+                              MAJOR_CORE: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
+                              SPECIALIZED: "bg-sky-500/15 text-sky-300 border border-sky-500/30",
+                              INTERNSHIP: "bg-rose-500/15 text-rose-300 border border-rose-500/30",
+                            };
+                            const kb = c.knowledgeBlock || "GENERAL";
+                            const badgeStyle = badges[kb] || "bg-slate-500/15 text-slate-300 border border-slate-500/30";
+                            const found = knowledgeBlocks.find((k) => k.knowledge_block === kb);
+                            const displayLabel = found ? found.label.toUpperCase() : kb;
+                            return (
+                              <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${badgeStyle}`}>
+                                {displayLabel}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-4 py-2 truncate max-w-32 text-slate-400 text-[11px] font-mono" title={c.prerequisite || ""}>
                           {c.prerequisite || "-"}
                         </td>
@@ -285,8 +331,8 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
                           </button>
                           <button
                             type="button"
-                            onClick={() => onDeleteRow(idx, c.courseCode)}
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-850 transition cursor-pointer"
+                            onClick={() => onDeleteRow(idx, compositeKey)}
+                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-855 transition cursor-pointer"
                             title="Xóa môn học này"
                           >
                             <Trash2 size={12} />

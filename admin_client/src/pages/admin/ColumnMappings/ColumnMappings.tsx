@@ -41,6 +41,7 @@ export default function ColumnMappings() {
     "internship_hours",
     "expected_semester",
     "course_type",
+    "knowledge_block",
     "prerequisite",
     "corequisite",
     "organizing_semester",

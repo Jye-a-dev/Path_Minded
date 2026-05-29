@@ -51,10 +51,12 @@ export class CurriculumParser {
       } | null = null;
       let t1Semester: number | null = null,
         t1OrganizingSemester: string | null = null,
-        t1CourseGroup: string | null = null;
+        t1CourseGroup: string | null = null,
+        t1KnowledgeBlock: string | null = null;
       let t2Semester: number | null = null,
         t2OrganizingSemester: string | null = null,
-        t2CourseGroup: string | null = null;
+        t2CourseGroup: string | null = null,
+        t2KnowledgeBlock: string | null = null;
 
       ws.eachRow((row, rowNumber) => {
         const rawValues = row.values;
@@ -96,6 +98,9 @@ export class CurriculumParser {
             ? t2OrganizingSemester
             : t1OrganizingSemester;
           const tableCourseGroup = isTable2 ? t2CourseGroup : t1CourseGroup;
+          const tableKnowledgeBlock = isTable2
+            ? t2KnowledgeBlock
+            : t1KnowledgeBlock;
 
           const isGroupRow =
             !code || /chuyên ngành|chọn|khối|chương trình/i.test(code);
@@ -105,6 +110,12 @@ export class CurriculumParser {
             if (groupText) {
               if (isTable2) t2CourseGroup = groupText;
               else t1CourseGroup = groupText;
+            }
+            // Also capture knowledge block from group/section header row
+            const kbText = name || code;
+            if (kbText) {
+              if (isTable2) t2KnowledgeBlock = kbText;
+              else t1KnowledgeBlock = kbText;
             }
             return null;
           }
@@ -241,6 +252,12 @@ export class CurriculumParser {
               organizingSemester:
                 tableOrganizingSemester ||
                 (tableSemester ? String(tableSemester) : null),
+              knowledgeBlock:
+                config.knowledgeBlockIdx !== -1 &&
+                vals[config.knowledgeBlockIdx] !== null
+                  ? getCellString(vals[config.knowledgeBlockIdx]).trim() ||
+                    tableKnowledgeBlock
+                  : tableKnowledgeBlock,
             };
           } else {
             warnings.push({

@@ -12,6 +12,7 @@ interface CurriculumSheetSelectorProps {
   showMergeDropdown: boolean;
   onToggleMergeDropdown: (show: boolean) => void;
   onPerformMerge: (idx: number) => Promise<void>;
+  onPerformMergeAll?: () => Promise<void>;
 }
 
 export const CurriculumSheetSelector: React.FC<CurriculumSheetSelectorProps> = ({
@@ -25,6 +26,7 @@ export const CurriculumSheetSelector: React.FC<CurriculumSheetSelectorProps> = (
   showMergeDropdown,
   onToggleMergeDropdown,
   onPerformMerge,
+  onPerformMergeAll,
 }) => {
   if (sheets.length <= 1) return null;
 
@@ -86,7 +88,17 @@ export const CurriculumSheetSelector: React.FC<CurriculumSheetSelectorProps> = (
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Chọn trang tính nguồn chứa dữ liệu Năm / Học kỳ:
                 </div>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                  {sheets.length > 2 && onPerformMergeAll && (
+                    <button
+                      type="button"
+                      onClick={onPerformMergeAll}
+                      className="w-full text-left rounded-lg bg-indigo-600/15 hover:bg-indigo-600 border border-indigo-500/30 px-3 py-2 text-xs font-bold text-indigo-300 hover:text-white transition-all flex items-center justify-between cursor-pointer mb-1.5"
+                    >
+                      <span>Trộn TẤT CẢ sheet còn lại</span>
+                      <span className="text-[9px] bg-indigo-550 text-white rounded px-1.5 py-0.5">n sheets</span>
+                    </button>
+                  )}
                   {sheets
                     .map((sheetName, idx) => ({ sheetName, idx }))
                     .filter((item) => item.idx !== activeSheetIndex)
@@ -103,7 +115,7 @@ export const CurriculumSheetSelector: React.FC<CurriculumSheetSelectorProps> = (
                     ))}
                 </div>
                 <p className="text-[10px] text-slate-500 italic leading-normal border-t border-slate-800/60 pt-2">
-                  * Hệ thống sẽ tự động đối khớp (Join) theo <strong>Mã môn học</strong> giữa trang tính này và trang tính được chọn để bù đắp các dữ liệu thiếu (như Học kỳ, Năm, Số giờ, Tín chỉ...).
+                  * Hệ thống sẽ tự động đối khớp (Join) theo <strong>Mã môn học</strong> và <strong>Loại môn</strong> giữa trang tính này và trang tính được chọn để bù đắp các dữ liệu thiếu (như Học kỳ, Năm, Số giờ, Tín chỉ...).
                 </p>
               </div>
             )}

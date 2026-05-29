@@ -19,6 +19,7 @@ export interface CourseItem {
   corequisite?: string | null;
   organizing_semester?: string | null;
   sort_order?: number;
+  knowledge_block?: string | null;
 }
 
 export function useCurriculumCourses() {

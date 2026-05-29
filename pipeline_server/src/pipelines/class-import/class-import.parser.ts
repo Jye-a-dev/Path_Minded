@@ -61,8 +61,23 @@ export class ClassImportParser {
     }
 
     const defaultMappings: Record<string, string[]> = {
-      student_code: ['mã sinh viên', 'mã sv', 'student code', 'student_code', 'mssv', 'ms sv'],
-      full_name: ['họ và tên', 'họ tên', 'full name', 'full_name', 'tên sinh viên', 'tên sv', 'name'],
+      student_code: [
+        'mã sinh viên',
+        'mã sv',
+        'student code',
+        'student_code',
+        'mssv',
+        'ms sv',
+      ],
+      full_name: [
+        'họ và tên',
+        'họ tên',
+        'full name',
+        'full_name',
+        'tên sinh viên',
+        'tên sv',
+        'name',
+      ],
       email: ['email', 'mail', 'thư điện tử'],
     };
 
@@ -116,8 +131,23 @@ export class ClassImportParser {
     const seenStudentCodes = new Set<string>();
 
     const defaultMappings: Record<string, string[]> = {
-      student_code: ['mã sinh viên', 'mã sv', 'student code', 'student_code', 'mssv', 'ms sv'],
-      full_name: ['họ và tên', 'họ tên', 'full name', 'full_name', 'tên sinh viên', 'tên sv', 'name'],
+      student_code: [
+        'mã sinh viên',
+        'mã sv',
+        'student code',
+        'student_code',
+        'mssv',
+        'ms sv',
+      ],
+      full_name: [
+        'họ và tên',
+        'họ tên',
+        'full name',
+        'full_name',
+        'tên sinh viên',
+        'tên sv',
+        'name',
+      ],
       email: ['email', 'mail', 'thư điện tử'],
     };
 
@@ -195,4 +225,3 @@ export class ClassImportParser {
     return { students, warnings };
   }
 }
-

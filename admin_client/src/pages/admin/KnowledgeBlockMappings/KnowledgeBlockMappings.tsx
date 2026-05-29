@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { useCourseTypeMappings } from "../../../hooks/useCourseTypeMappings";
-import type { CourseTypeMappingItem, CourseTypeKey } from "../../../hooks/useCourseTypeMappings";
-import { Tags, RefreshCw, Plus, X, AlertTriangle, FileSpreadsheet } from "lucide-react";
+import { useKnowledgeBlockMappings } from "../../../hooks/useKnowledgeBlockMappings";
+import type { KnowledgeBlockMappingItem } from "../../../hooks/useKnowledgeBlockMappings";
+import { Layers, RefreshCw, Plus, X, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { api } from "../../../services/api";
-import { CourseTypeCard } from "./CourseTypeCard";
-import type { ColMappingItem } from "./courseTypeConfig";
+import { KnowledgeBlockCard } from "./KnowledgeBlockCard";
+import type { ColMappingItem } from "./knowledgeBlockConfig";
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
-
-export default function CourseTypeMappings() {
-  const { data, loading, error, refresh, createItem, updateItem, deleteItem } = useCourseTypeMappings();
+export default function KnowledgeBlockMappings() {
+  const { data, loading, error, refresh, createItem, updateItem, deleteItem } = useKnowledgeBlockMappings();
 
   // Excel Column recognition states
   const [colMapping, setColMapping] = useState<ColMappingItem | null>(null);
@@ -22,7 +21,7 @@ export default function CourseTypeMappings() {
   const fetchColMapping = useCallback(async () => {
     try {
       const res = await api.get<ColMappingItem[]>("/curriculum_column_mappings");
-      const item = res.data.find((m) => m.field_key === "course_type");
+      const item = res.data.find((m) => m.field_key === "knowledge_block");
       if (item) {
         setColMapping(item);
       }
@@ -80,7 +79,7 @@ export default function CourseTypeMappings() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Active items for edit/delete
-  const [activeItem, setActiveItem] = useState<CourseTypeMappingItem | null>(null);
+  const [activeItem, setActiveItem] = useState<KnowledgeBlockMappingItem | null>(null);
 
   // Form states
   const [newTypeCode, setNewTypeCode] = useState("");
@@ -108,11 +107,11 @@ export default function CourseTypeMappings() {
     const code = newTypeCode.trim().toUpperCase();
     const label = newTypeLabel.trim();
     if (!code || !label) {
-      setActionError("Mã loại môn và tên loại môn không được để trống");
+      setActionError("Mã khối kiến thức và tên khối kiến thức không được để trống");
       return;
     }
-    if (!/^[A-Z0-9_]{2,20}$/.test(code)) {
-      setActionError("Mã loại môn phải từ 2-20 ký tự, chỉ gồm chữ in hoa, số và dấu gạch dưới");
+    if (!/^[A-Z0-9_]{2,30}$/.test(code)) {
+      setActionError("Mã khối phải từ 2-30 ký tự, chỉ gồm chữ in hoa, số và dấu gạch dưới");
       return;
     }
 
@@ -124,7 +123,7 @@ export default function CourseTypeMappings() {
     setSubmitting(true);
     setActionError(null);
     try {
-      await createItem({ course_type: code, label, phrases });
+      await createItem({ knowledge_block: code, label, phrases });
       setIsCreateOpen(false);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Có lỗi xảy ra");
@@ -133,7 +132,7 @@ export default function CourseTypeMappings() {
     }
   };
 
-  const handleOpenEdit = (item: CourseTypeMappingItem) => {
+  const handleOpenEdit = (item: KnowledgeBlockMappingItem) => {
     setActiveItem(item);
     setEditLabel(item.label);
     setActionError(null);
@@ -144,7 +143,7 @@ export default function CourseTypeMappings() {
     if (!activeItem) return;
     const label = editLabel.trim();
     if (!label) {
-      setActionError("Tên loại môn không được để trống");
+      setActionError("Tên khối không được để trống");
       return;
     }
 
@@ -160,7 +159,7 @@ export default function CourseTypeMappings() {
     }
   };
 
-  const handleOpenDelete = (item: CourseTypeMappingItem) => {
+  const handleOpenDelete = (item: KnowledgeBlockMappingItem) => {
     setActiveItem(item);
     setDeleteConfirmText("");
     setActionError(null);
@@ -181,14 +180,14 @@ export default function CourseTypeMappings() {
   };
 
   // Sort by a fixed order
-  const ORDER: CourseTypeKey[] = ["REQUIRED", "ELECTIVE", "ENGLISH", "PE", "DEFENSE", "OTHER"];
+  const ORDER = ["GENERAL", "SECTOR_CORE", "MAJOR_CORE", "SPECIALIZED"];
   const sorted = [...data].sort((a, b) => {
-    const idxA = ORDER.indexOf(a.course_type);
-    const idxB = ORDER.indexOf(b.course_type);
+    const idxA = ORDER.indexOf(a.knowledge_block);
+    const idxB = ORDER.indexOf(b.knowledge_block);
     if (idxA !== -1 && idxB !== -1) return idxA - idxB;
     if (idxA !== -1) return -1;
     if (idxB !== -1) return 1;
-    return a.course_type.localeCompare(b.course_type);
+    return a.knowledge_block.localeCompare(b.knowledge_block);
   });
 
   return (
@@ -197,14 +196,12 @@ export default function CourseTypeMappings() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0 flex items-center gap-2.5">
-            <Tags className="text-indigo-500" />
-            Phân Loại Môn Học
+            <Layers className="text-indigo-500" />
+            Phân Loại Khối Kiến Thức
           </h1>
           <p className="mt-1.5 text-xs text-slate-400 max-w-2xl leading-relaxed">
-            Cấu hình các từ khóa để tự động nhận diện và phân loại môn học khi import Excel chương trình đào tạo.
-            Parser sẽ kiểm tra <strong className="text-slate-300">tên môn</strong>,{" "}
-            <strong className="text-slate-300">mã môn</strong> và{" "}
-            <strong className="text-slate-300">giá trị cột loại môn</strong> so với danh sách từ khóa bên dưới.
+            Cấu hình các từ khóa để tự động nhận diện và phân loại môn học vào các Khối kiến thức chuẩn khi import Excel chương trình đào tạo.
+            Parser sẽ đối khớp <strong className="text-slate-300">Tên khối/Nhóm môn</strong> so với danh sách từ khóa bên dưới.
           </p>
         </div>
 
@@ -214,7 +211,7 @@ export default function CourseTypeMappings() {
             className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-500 transition-all cursor-pointer shadow-lg shadow-indigo-600/10"
           >
             <Plus size={14} />
-            Thêm loại môn
+            Thêm khối kiến thức
           </button>
 
           <button
@@ -230,13 +227,7 @@ export default function CourseTypeMappings() {
 
       {/* Info banner */}
       <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-3 text-xs text-indigo-300 leading-relaxed">
-        <strong>💡 Cách hoạt động:</strong> Khi import Excel, hệ thống sẽ quét từng môn học và so sánh với các từ khóa đã cấu hình.
-        Ưu tiên theo thứ tự: <span className="font-mono bg-indigo-500/10 px-1 rounded">PE</span> →{" "}
-        <span className="font-mono bg-indigo-500/10 px-1 rounded">DEFENSE</span> →{" "}
-        <span className="font-mono bg-indigo-500/10 px-1 rounded">ENGLISH</span> →{" "}
-        <span className="font-mono bg-indigo-500/10 px-1 rounded">ELECTIVE</span> →{" "}
-        <span className="font-mono bg-indigo-500/10 px-1 rounded">REQUIRED</span> →{" "}
-        <span className="font-mono bg-indigo-500/10 px-1 rounded">OTHER</span>.
+        <strong>💡 Cách hoạt động:</strong> Khi import Excel, hệ thống sẽ quét tên nhóm môn của học phần và so sánh với danh sách từ khóa đã cấu hình của từng Khối kiến thức (Đại cương, Cơ sở khối ngành, Cơ sở ngành, Chuyên ngành) để phân nhóm tự động.
         Từ khóa không phân biệt hoa thường.
       </div>
 
@@ -250,13 +241,13 @@ export default function CourseTypeMappings() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-                  Nhận diện Cột Loại môn học trong Excel
+                  Nhận diện Cột Khối kiến thức trong Excel
                   <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-mono font-bold text-emerald-400">
                     System Key: {colMapping.field_key}
                   </span>
                 </h3>
                 <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                  Định nghĩa các tiêu đề cột trong file Excel (không phân biệt hoa thường, khoảng trắng) để tự động nhận diện cột chứa dữ liệu loại môn (Bắt buộc / Tự chọn).
+                  Định nghĩa các tiêu đề cột trong file Excel (không phân biệt hoa thường, khoảng trắng) để tự động nhận diện cột chứa dữ liệu Khối kiến thức.
                 </p>
               </div>
             </div>
@@ -308,7 +299,7 @@ export default function CourseTypeMappings() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") void handleAddColPhrase();
               }}
-              placeholder="Thêm tên cột Excel khác (VD: bb/tc)..."
+              placeholder="Thêm tên cột Excel khác (VD: nhóm môn)..."
               disabled={colSaving}
               className="flex-1 rounded-lg border border-slate-700 bg-slate-950/80 px-3.5 py-2 text-xs text-slate-100 placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 transition-all disabled:opacity-50"
             />
@@ -334,7 +325,7 @@ export default function CourseTypeMappings() {
       {/* Loading skeleton */}
       {loading && data.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <div
               key={i}
               className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4 animate-pulse"
@@ -358,7 +349,7 @@ export default function CourseTypeMappings() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sorted.map((item) => (
-            <CourseTypeCard
+            <KnowledgeBlockCard
               key={item.id}
               item={item}
               onUpdate={handleUpdate}
@@ -373,7 +364,7 @@ export default function CourseTypeMappings() {
       <Modal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Thêm loại môn học mới"
+        title="Thêm khối kiến thức mới"
         size="md"
       >
         <div className="space-y-4">
@@ -386,7 +377,7 @@ export default function CourseTypeMappings() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Mã loại môn <span className="text-rose-500">*</span>
+              Mã khối kiến thức <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -395,18 +386,18 @@ export default function CourseTypeMappings() {
                 setNewTypeCode(e.target.value);
                 setActionError(null);
               }}
-              placeholder="VD: FREE_ELECTIVE, ADVANCED"
+              placeholder="VD: GENERAL, SECTOR_CORE, SPECIALIZED"
               disabled={submitting}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all font-mono uppercase"
             />
             <p className="text-[10px] text-slate-500 leading-normal">
-              Chỉ cho phép chữ in hoa, số và dấu gạch dưới (A-Z, 0-9, _). Từ 2-20 ký tự.
+              Chỉ cho phép chữ in hoa, số và dấu gạch dưới (A-Z, 0-9, _). Từ 2-30 ký tự.
             </p>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Tên loại môn <span className="text-rose-500">*</span>
+              Tên khối kiến thức <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -415,7 +406,7 @@ export default function CourseTypeMappings() {
                 setNewTypeLabel(e.target.value);
                 setActionError(null);
               }}
-              placeholder="VD: Tự chọn tự do, Môn nâng cao"
+              placeholder="VD: Đại cương, Cơ sở ngành"
               disabled={submitting}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
             />
@@ -432,7 +423,7 @@ export default function CourseTypeMappings() {
                 setNewTypePhrases(e.target.value);
                 setActionError(null);
               }}
-              placeholder="VD: tự do, tự chọn tự do, free, elective"
+              placeholder="VD: đại cương, cơ sở ngành, chuyên sâu"
               disabled={submitting}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
             />
@@ -456,7 +447,7 @@ export default function CourseTypeMappings() {
               onClick={handleCreate}
               className="rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 text-xs font-semibold shadow-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
             >
-              {submitting ? "Đang tạo..." : "Thêm loại môn"}
+              {submitting ? "Đang tạo..." : "Thêm khối"}
             </button>
           </div>
         </div>
@@ -466,7 +457,7 @@ export default function CourseTypeMappings() {
       <Modal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
-        title="Sửa tên loại môn học"
+        title="Sửa tên khối kiến thức"
         size="sm"
       >
         <div className="space-y-4">
@@ -479,11 +470,11 @@ export default function CourseTypeMappings() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Mã loại môn
+              Mã khối
             </label>
             <input
               type="text"
-              value={activeItem?.course_type || ""}
+              value={activeItem?.knowledge_block || ""}
               disabled={true}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-500 transition-all font-mono opacity-60 cursor-not-allowed"
             />
@@ -491,7 +482,7 @@ export default function CourseTypeMappings() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Tên loại môn <span className="text-rose-500">*</span>
+              Tên khối kiến thức <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -500,7 +491,7 @@ export default function CourseTypeMappings() {
                 setEditLabel(e.target.value);
                 setActionError(null);
               }}
-              placeholder="Nhập tên loại môn..."
+              placeholder="Nhập tên khối kiến thức..."
               disabled={submitting}
               className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
             />
@@ -531,14 +522,14 @@ export default function CourseTypeMappings() {
       <ConfirmModal
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
-        title="Xóa loại môn học"
-        message={`Bạn có chắc chắn muốn xóa loại môn học "${activeItem?.label}" (${activeItem?.course_type}) không?
+        title="Xóa khối kiến thức"
+        message={`Bạn có chắc chắn muốn xóa khối kiến thức "${activeItem?.label}" (${activeItem?.knowledge_block}) không?
         
 Hành động này sẽ xóa hoàn toàn cấu hình từ khóa phân loại này.
-Lưu ý: Chỉ có thể xóa nếu không có môn học nào trong chương trình đào tạo hiện tại đang sử dụng loại môn này.`}
-        confirmText="Xóa loại môn"
+Lưu ý: Chỉ có thể xóa nếu không có môn học nào trong chương trình đào tạo hiện tại đang sử dụng khối kiến thức này.`}
+        confirmText="Xóa khối"
         isDanger={true}
-        requirePromptText={activeItem?.course_type}
+        requirePromptText={activeItem?.knowledge_block}
         promptValue={deleteConfirmText}
         onPromptValueChange={setDeleteConfirmText}
         onConfirm={handleDelete}

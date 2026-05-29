@@ -39,7 +39,7 @@ export class TranscriptUploadsService {
     const uploadRecord = insertResult.rows[0];
 
     const pipelineUrl =
-      process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
+      process.env.PIPELINE_SERVER_URL || 'http://localhost:5101';
     const formData = new FormData();
     if (studentId) formData.append('studentId', studentId);
 

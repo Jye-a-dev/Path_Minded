@@ -19,6 +19,7 @@ interface CoursePreviewItem {
   prerequisite: string | null;
   corequisite: string | null;
   organizingSemester: string | null;
+  knowledgeBlock?: string | null;
 }
 
 interface WarningItem {
@@ -54,9 +55,20 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
   onToggleFullWidth,
 }) => {
   const [courses, setCourses] = useState<CoursePreviewItem[]>(initialCourses);
-  const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set(initialCourses.map((c) => c.courseCode)));
+  const [selectedCodes, setSelectedCodes] = useState<Set<string>>(
+    new Set(initialCourses.map((c) => c.courseCode + "_" + c.courseType))
+  );
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<CoursePreviewItem | null>(null);
+  const [knowledgeBlocks, setKnowledgeBlocks] = useState<Array<{ knowledge_block: string; label: string }>>([]);
+
+  React.useEffect(() => {
+    api.get("/knowledge_block_mappings")
+      .then((res) => {
+        setKnowledgeBlocks(res.data || []);
+      })
+      .catch((err) => console.error("Failed to fetch knowledge blocks:", err));
+  }, []);
 
   const [loadingSheet, setLoadingSheet] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -83,7 +95,13 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
       let mergeCount = 0;
 
       const nextCourses = courses.map((courseY) => {
+        // Robust match resolver: matches both Code and Type first, then matches Code-only
         const matchingCourseX = sourceCourses.find(
+          (courseX) =>
+            courseX.courseCode.trim().toUpperCase() ===
+            courseY.courseCode.trim().toUpperCase() &&
+            courseX.courseType === courseY.courseType
+        ) || sourceCourses.find(
           (courseX) =>
             courseX.courseCode.trim().toUpperCase() ===
             courseY.courseCode.trim().toUpperCase()
@@ -104,6 +122,7 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
             courseType: courseY.courseType && courseY.courseType !== "OTHER" ? courseY.courseType : matchingCourseX.courseType,
             prerequisite: courseY.prerequisite ?? matchingCourseX.prerequisite,
             corequisite: courseY.corequisite ?? matchingCourseX.corequisite,
+            knowledgeBlock: courseY.knowledgeBlock || matchingCourseX.knowledgeBlock,
           };
         }
         return courseY;
@@ -112,7 +131,7 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
       setCourses(nextCourses);
 
       const nextSelected = new Set(selectedCodes);
-      nextCourses.forEach((c) => nextSelected.add(c.courseCode));
+      nextCourses.forEach((c) => nextSelected.add(c.courseCode + "_" + c.courseType));
       setSelectedCodes(nextSelected);
 
       setMergeStatus(
@@ -125,6 +144,91 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
     } catch (err) {
       console.error("Failed to merge sheets:", err);
       setMergeStatus("Lỗi: Không thể lấy dữ liệu từ trang tính đã chọn.");
+      setTimeout(() => {
+        setMergeStatus(null);
+      }, 5000);
+    } finally {
+      setMergingSheet(false);
+    }
+  };
+
+  const handlePerformMergeAll = async () => {
+    setShowMergeDropdown(false);
+    setMergingSheet(true);
+    setMergeStatus(`Đang chuẩn bị trộn dữ liệu từ tất cả các sheet còn lại...`);
+
+    const otherIndices = sheets
+      .map((_, idx) => idx)
+      .filter((idx) => idx !== activeSheetIndex);
+
+    let currentCourses = [...courses];
+    let totalMerged = 0;
+
+    try {
+      for (const sourceIdx of otherIndices) {
+        setMergeStatus(`Đang trộn dữ liệu từ sheet "${sheets[sourceIdx]}"...`);
+
+        const response = await api.post(`/curriculum_imports/${activeSessionId}/reparse`, {
+          sheetIndex: sourceIdx,
+        });
+
+        if (response.data?.preview && Array.isArray(response.data.preview)) {
+          const sourceCourses: CoursePreviewItem[] = response.data.preview;
+          let sheetMergeCount = 0;
+
+          currentCourses = currentCourses.map((courseY) => {
+            const matchingCourseX = sourceCourses.find(
+              (courseX) =>
+                courseX.courseCode.trim().toUpperCase() ===
+                courseY.courseCode.trim().toUpperCase() &&
+                courseX.courseType === courseY.courseType
+            ) || sourceCourses.find(
+              (courseX) =>
+                courseX.courseCode.trim().toUpperCase() ===
+                courseY.courseCode.trim().toUpperCase()
+            );
+
+            if (matchingCourseX) {
+              sheetMergeCount++;
+              return {
+                ...courseY,
+                expectedSemester: courseY.expectedSemester || matchingCourseX.expectedSemester,
+                organizingSemester: courseY.organizingSemester || matchingCourseX.organizingSemester,
+                credits: courseY.credits ?? matchingCourseX.credits,
+                theoryHours: courseY.theoryHours ?? matchingCourseX.theoryHours,
+                practiceHours: courseY.practiceHours ?? matchingCourseX.practiceHours,
+                projectHours: courseY.projectHours ?? matchingCourseX.projectHours,
+                internshipHours: courseY.internshipHours ?? matchingCourseX.internshipHours,
+                courseGroup: courseY.courseGroup ?? matchingCourseX.courseGroup,
+                courseType: courseY.courseType && courseY.courseType !== "OTHER" ? courseY.courseType : matchingCourseX.courseType,
+                prerequisite: courseY.prerequisite ?? matchingCourseX.prerequisite,
+                corequisite: courseY.corequisite ?? matchingCourseX.corequisite,
+                knowledgeBlock: courseY.knowledgeBlock || matchingCourseX.knowledgeBlock,
+              };
+            }
+            return courseY;
+          });
+
+          totalMerged += sheetMergeCount;
+        }
+      }
+
+      setCourses(currentCourses);
+
+      const nextSelected = new Set(selectedCodes);
+      currentCourses.forEach((c) => nextSelected.add(c.courseCode + "_" + c.courseType));
+      setSelectedCodes(nextSelected);
+
+      setMergeStatus(
+        `Đã trộn thành công từ tất cả các sheet! Khớp được ${totalMerged} lượt thông tin môn học.`
+      );
+
+      setTimeout(() => {
+        setMergeStatus(null);
+      }, 6050);
+    } catch (err) {
+      console.error("Failed to merge all sheets:", err);
+      setMergeStatus("Lỗi: Không thể hoàn tất trộn hàng loạt từ tất cả các sheet.");
       setTimeout(() => {
         setMergeStatus(null);
       }, 5000);
@@ -146,19 +250,19 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
-      const selectedList = courses.filter((c) => selectedCodes.has(c.courseCode));
+      const selectedList = courses.filter((c) => selectedCodes.has(c.courseCode + "_" + c.courseType));
       await onConfirm(selectedList);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleToggleSelect = (code: string) => {
+  const handleToggleSelect = (compositeKey: string) => {
     const next = new Set(selectedCodes);
-    if (next.has(code)) {
-      next.delete(code);
+    if (next.has(compositeKey)) {
+      next.delete(compositeKey);
     } else {
-      next.add(code);
+      next.add(compositeKey);
     }
     setSelectedCodes(next);
   };
@@ -167,17 +271,17 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
     if (selectedCodes.size === courses.length) {
       setSelectedCodes(new Set());
     } else {
-      setSelectedCodes(new Set(courses.map((c) => c.courseCode)));
+      setSelectedCodes(new Set(courses.map((c) => c.courseCode + "_" + c.courseType)));
     }
   };
 
-  const handleDeleteRow = (index: number, code: string) => {
+  const handleDeleteRow = (index: number, compositeKey: string) => {
     const nextCourses = [...courses];
     nextCourses.splice(index, 1);
     setCourses(nextCourses);
 
     const nextSelected = new Set(selectedCodes);
-    nextSelected.delete(code);
+    nextSelected.delete(compositeKey);
     setSelectedCodes(nextSelected);
   };
 
@@ -189,14 +293,15 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
   const handleSaveEdit = (index: number) => {
     if (!editForm) return;
     const nextCourses = [...courses];
-    const oldCode = nextCourses[index].courseCode;
+    const oldItem = nextCourses[index];
+    const oldKey = oldItem.courseCode + "_" + oldItem.courseType;
     nextCourses[index] = { ...editForm };
     setCourses(nextCourses);
 
     const nextSelected = new Set(selectedCodes);
-    if (nextSelected.has(oldCode)) {
-      nextSelected.delete(oldCode);
-      nextSelected.add(editForm.courseCode);
+    if (nextSelected.has(oldKey)) {
+      nextSelected.delete(oldKey);
+      nextSelected.add(editForm.courseCode + "_" + editForm.courseType);
     }
     setSelectedCodes(nextSelected);
 
@@ -223,6 +328,7 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
         showMergeDropdown={showMergeDropdown}
         onToggleMergeDropdown={setShowMergeDropdown}
         onPerformMerge={handlePerformMerge}
+        onPerformMergeAll={handlePerformMergeAll}
       />
 
       {/* Loading Overlay */}
@@ -235,13 +341,12 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
         <>
           {/* Merge Status Toast Alert */}
           {mergeStatus && (
-            <div className={`rounded-lg p-4 text-xs font-semibold border flex items-center gap-2 ${
-              mergeStatus.startsWith("Lỗi")
-                ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-                : mergeStatus.startsWith("Đang")
-                  ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
-                  : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-            }`}>
+            <div className={`rounded-lg p-4 text-xs font-semibold border flex items-center gap-2 ${mergeStatus.startsWith("Lỗi")
+              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+              : mergeStatus.startsWith("Đang")
+                ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              }`}>
               {mergeStatus.startsWith("Đang") ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
               <span>{mergeStatus}</span>
             </div>
@@ -278,6 +383,7 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
             onEditFormChange={setEditForm}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
+            knowledgeBlocks={knowledgeBlocks}
           />
         </>
       )}

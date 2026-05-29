@@ -16,6 +16,7 @@ import { CurriculumImportsModule } from './modules/curriculum_imports/curriculum
 import { CurriculumCoursesModule } from './modules/curriculum_courses/curriculum_courses.module';
 import { CurriculumColumnMappingsModule } from './modules/curriculum_column_mappings/curriculum_column_mappings.module';
 import { CourseTypeMappingsModule } from './modules/course_type_mappings/course_type_mappings.module';
+import { KnowledgeBlockMappingsModule } from './modules/knowledge_block_mappings/knowledge_block_mappings.module';
 import { ExportLogsModule } from './modules/export_logs/export_logs.module';
 import { ExportsModule } from './modules/exports/exports.module';
 import { ParseWarningsModule } from './modules/parse_warnings/parse_warnings.module';
@@ -47,6 +48,7 @@ import { UsersModule } from './modules/users/users.module';
     CoursePrerequisitesModule,
     CurriculumColumnMappingsModule,
     CourseTypeMappingsModule,
+    KnowledgeBlockMappingsModule,
   ],
   controllers: [AppController],
   providers: [

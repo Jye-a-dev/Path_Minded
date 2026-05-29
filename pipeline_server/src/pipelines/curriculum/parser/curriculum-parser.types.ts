@@ -14,6 +14,7 @@ export interface TableHeaders {
   internshipHoursIdx: number;
   semesterIdx: number;
   courseTypeIdx: number;
+  knowledgeBlockIdx: number;
   prerequisiteIdx: number;
   corequisiteIdx: number;
   organizingSemesterIdx: number;

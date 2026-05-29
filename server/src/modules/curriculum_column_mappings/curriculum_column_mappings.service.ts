@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
@@ -14,8 +15,47 @@ import {
 } from './interfaces/curriculum_column_mappings.interfaces';
 
 @Injectable()
-export class CurriculumColumnMappingsService {
+export class CurriculumColumnMappingsService implements OnModuleInit {
   constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
+
+  async onModuleInit() {
+    const client = await this.pool.connect();
+    try {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS curriculum_column_mappings (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          field_key VARCHAR(50) NOT NULL UNIQUE,
+          display_label VARCHAR(100) NOT NULL,
+          phrases TEXT[] NOT NULL DEFAULT '{}',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await client.query(`
+        INSERT INTO curriculum_column_mappings (field_key, display_label, phrases) VALUES
+        ('course_code',         'Mã học phần',          ARRAY['mã học phần', 'mã hp', 'mã môn', 'code', 'course code', 'mã môn học']),
+        ('course_name',         'Tên học phần',         ARRAY['tên học phần', 'tên hp', 'tên môn', 'name', 'course name', 'tên môn học']),
+        ('credits',             'Số tín chỉ',           ARRAY['tín chỉ', 'số tc', 'credits', 'stc', 'credit', 'số tín chỉ']),
+        ('theory_hours',        'Giờ lý thuyết (LT)',   ARRAY['lt', 'lý thuyết', 'theory', 'lý thuyết']),
+        ('practice_hours',      'Giờ thực hành (TH)',   ARRAY['th', 'thực hành', 'practice', 'thực hành']),
+        ('project_hours',       'Giờ đồ án (ĐA)',       ARRAY['đa', 'đồ án', 'project', 'đồ án']),
+        ('internship_hours',    'Giờ thực tập (TT)',    ARRAY['tt', 'thực tập', 'internship', 'thực tập']),
+        ('expected_semester',   'Học kỳ phân bổ',       ARRAY['phân bổ học kỳ', 'học kỳ', 'semester', 'hk', 'học kì']),
+        ('course_type',         'Loại môn (BB/TC)',     ARRAY['bắt buộc', 'tự chọn', 'bb/tc', 'req', 'elec', 'bắt buộc/tự chọn', 'loại môn']),
+        ('prerequisite',        'Môn tiên quyết',       ARRAY['tiên quyết', 'prereq', 'đk tiên quyết', 'điều kiện tiên quyết']),
+        ('corequisite',         'Môn học trước',        ARRAY['học trước', 'coreq', 'đk học trước', 'điều kiện học trước']),
+        ('organizing_semester',  'Học kỳ tổ chức',       ARRAY['hk tổ chức', 'học kỳ tổ chức', 'organizing semester']),
+        ('knowledge_block',     'Khối kiến thức',       ARRAY['khối kiến thức', 'khối kt', 'nhóm học phần', 'phân loại khối', 'knowledge block', 'knowledge_block', 'nhóm môn'])
+        ON CONFLICT (field_key) DO NOTHING
+      `);
+      console.log('CurriculumColumnMappings seed completed.');
+    } catch (err) {
+      console.error('Failed to seed curriculum_column_mappings:', err);
+    } finally {
+      client.release();
+    }
+  }
 
   async create(
     payload: Record<string, unknown>,

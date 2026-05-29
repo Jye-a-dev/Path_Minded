@@ -15,6 +15,7 @@ export type ParsedCurriculumCourse = {
   prerequisite: string | null;
   corequisite: string | null;
   organizingSemester: string | null;
+  knowledgeBlock?: string | null;
 };
 
 export type CurriculumWarning = {

@@ -1,20 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../services/api";
 
-export type CourseTypeKey = "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER" | string;
-
-export interface CourseTypeMappingItem {
+export interface KnowledgeBlockMappingItem {
   id: string;
-  course_type: string;
+  knowledge_block: string;
   label: string;
   phrases: string[];
   created_at: string;
   updated_at: string;
 }
 
-export function useCourseTypeMappings() {
-  const [data, setData] = useState<CourseTypeMappingItem[]>([]);
-  // 1. Initialize to true, since we fetch immediately upon mounting
+export function useKnowledgeBlockMappings() {
+  const [data, setData] = useState<KnowledgeBlockMappingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +19,7 @@ export function useCourseTypeMappings() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<CourseTypeMappingItem[]>("/course_type_mappings");
+      const res = await api.get<KnowledgeBlockMappingItem[]>("/knowledge_block_mappings");
       setData(res.data ?? []);
     } catch (err) {
       const e = err as { response?: { data?: { message?: string } }; message?: string };
@@ -33,14 +30,13 @@ export function useCourseTypeMappings() {
   }, []);
 
   useEffect(() => {
-    // 2. Suppress the warning here. We are intentionally fetching on mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchAll();
   }, [fetchAll]);
 
-  const createItem = async (payload: { course_type: string; label: string; phrases: string[] }) => {
+  const createItem = async (payload: { knowledge_block: string; label: string; phrases: string[] }) => {
     try {
-      const res = await api.post<CourseTypeMappingItem>("/course_type_mappings", payload);
+      const res = await api.post<KnowledgeBlockMappingItem>("/knowledge_block_mappings", payload);
       setData((prev) => [...prev, res.data]);
       return res.data;
     } catch (err) {
@@ -51,7 +47,7 @@ export function useCourseTypeMappings() {
 
   const updateItem = async (id: string, payload: { phrases?: string[]; label?: string }) => {
     try {
-      const res = await api.patch<CourseTypeMappingItem>(`/course_type_mappings/${id}`, payload);
+      const res = await api.patch<KnowledgeBlockMappingItem>(`/knowledge_block_mappings/${id}`, payload);
       setData((prev) => prev.map((item) => (item.id === id ? res.data : item)));
       return res.data;
     } catch (err) {
@@ -62,7 +58,7 @@ export function useCourseTypeMappings() {
 
   const deleteItem = async (id: string) => {
     try {
-      await api.delete(`/course_type_mappings/${id}`);
+      await api.delete(`/knowledge_block_mappings/${id}`);
       setData((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       const e = err as { response?: { data?: { message?: string } }; message?: string };

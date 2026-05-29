@@ -26,6 +26,7 @@ import ExportLogs from "../pages/admin/ExportLogs/ExportLogs";
 import ParseWarnings from "../pages/admin/ParseWarnings/ParseWarnings";
 import ColumnMappings from "../pages/admin/ColumnMappings/ColumnMappings";
 import CourseTypeMappings from "../pages/admin/CourseTypeMappings/CourseTypeMappings";
+import KnowledgeBlockMappings from "../pages/admin/KnowledgeBlockMappings/KnowledgeBlockMappings";
 
 const routes = [
   // Public Routes
@@ -65,6 +66,7 @@ const routes = [
           { path: "parse_warnings", element: <ParseWarnings /> },
           { path: "column_mappings", element: <ColumnMappings /> },
           { path: "course_type_mappings", element: <CourseTypeMappings /> },
+          { path: "knowledge_block_mappings", element: <KnowledgeBlockMappings /> },
         ],
       },
     ],

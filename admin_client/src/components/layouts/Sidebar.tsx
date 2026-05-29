@@ -21,7 +21,8 @@ import {
   X,
   LayoutDashboard,
   User,
-  Tags
+  Tags,
+  Layers
 } from "lucide-react";
 
 interface SidebarProps {
@@ -79,6 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: "Cảnh báo phân tích", to: "/admin/parse_warnings", icon: AlertTriangle },
         { label: "Cấu hình khớp cột", to: "/admin/column_mappings", icon: FileSpreadsheet },
         { label: "Phân loại môn học", to: "/admin/course_type_mappings", icon: Tags },
+        { label: "Khối kiến thức", to: "/admin/knowledge_block_mappings", icon: Layers },
       ],
     },
   ];

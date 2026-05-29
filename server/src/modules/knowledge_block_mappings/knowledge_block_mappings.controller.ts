@@ -7,11 +7,11 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { CourseTypeMappingsService } from './course_type_mappings.service';
+import { KnowledgeBlockMappingsService } from './knowledge_block_mappings.service';
 
-@Controller('course_type_mappings')
-export class CourseTypeMappingsController {
-  constructor(private readonly service: CourseTypeMappingsService) {}
+@Controller('knowledge_block_mappings')
+export class KnowledgeBlockMappingsController {
+  constructor(private readonly service: KnowledgeBlockMappingsService) {}
 
   @Get()
   findAll() {
@@ -25,7 +25,7 @@ export class CourseTypeMappingsController {
 
   @Post()
   create(
-    @Body() body: { course_type: string; label: string; phrases?: string[] },
+    @Body() body: { knowledge_block: string; label: string; phrases?: string[] },
   ) {
     return this.service.create(body);
   }

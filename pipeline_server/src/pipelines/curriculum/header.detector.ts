@@ -29,7 +29,8 @@ export function detectTableHeaders(
   let projectHoursIdx = -1,
     internshipHoursIdx = -1,
     semesterIdx = -1,
-    courseTypeIdx = -1;
+    courseTypeIdx = -1,
+    knowledgeBlockIdx = -1;
   let prerequisiteIdx = -1,
     corequisiteIdx = -1,
     organizingSemesterIdx = -1;
@@ -154,6 +155,23 @@ export function detectTableHeaders(
     } else if (
       matchesMapping(
         val,
+        'knowledge_block',
+        [
+          'khối kiến thức',
+          'khối kt',
+          'nhóm học phần',
+          'phân loại khối',
+          'knowledge block',
+          'knowledge_block',
+          'nhóm môn',
+        ],
+        columnMappings,
+      )
+    ) {
+      knowledgeBlockIdx = actualIdx;
+    } else if (
+      matchesMapping(
+        val,
         'prerequisite',
         ['tiên quyết', 'prereq', 'đk tiên quyết', 'điều kiện tiên quyết'],
         columnMappings,
@@ -192,6 +210,7 @@ export function detectTableHeaders(
       internshipHoursIdx,
       semesterIdx,
       courseTypeIdx,
+      knowledgeBlockIdx,
       prerequisiteIdx,
       corequisiteIdx,
       organizingSemesterIdx,

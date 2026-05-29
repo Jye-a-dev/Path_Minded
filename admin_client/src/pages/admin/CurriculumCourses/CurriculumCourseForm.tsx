@@ -20,6 +20,7 @@ interface CourseItem {
   corequisite?: string | null;
   organizing_semester?: string | null;
   sort_order?: number;
+  knowledge_block?: string | null;
 }
 
 interface DropdownItem {
@@ -46,16 +47,19 @@ interface CurriculumCourseFormProps {
     corequisite: string | null;
     organizing_semester: string | null;
     sort_order: number | null;
+    knowledge_block: string | null;
   }) => Promise<void>;
   onCancel: () => void;
+  defaultProgramId?: string;
 }
 
 export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
   editingItem,
   onSubmit,
   onCancel,
+  defaultProgramId,
 }) => {
-  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || "");
+  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || defaultProgramId || "");
   const [formCode, setFormCode] = useState(() => editingItem?.course_code || "");
   const [formName, setFormName] = useState(() => editingItem?.course_name || "");
   const [formCredits, setFormCredits] = useState<number | "">(
@@ -89,8 +93,10 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
   const [formSortOrder, setFormSortOrder] = useState<number | "">(
     () => editingItem?.sort_order ?? ""
   );
+  const [formKnowledgeBlock, setFormKnowledgeBlock] = useState(() => editingItem?.knowledge_block || "");
 
   const [programsList, setProgramsList] = useState<DropdownItem[]>([]);
+  const [knowledgeBlocksList, setKnowledgeBlocksList] = useState<DropdownItem[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -99,15 +105,24 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
     const loadDropdownsData = async () => {
       setLoadingDropdowns(true);
       try {
-        const response = await api.get("/programs?limit=100");
+        const [programsRes, kbRes] = await Promise.all([
+          api.get("/programs?limit=100"),
+          api.get("/knowledge_block_mappings"),
+        ]);
         setProgramsList(
-          (response.data || []).map((p: { id: string; program_code: string }) => ({
+          (programsRes.data || []).map((p: { id: string; program_code: string }) => ({
             id: p.id,
             label: p.program_code,
           }))
         );
+        setKnowledgeBlocksList(
+          (kbRes.data || []).map((k: { knowledge_block: string; label: string }) => ({
+            id: k.knowledge_block,
+            label: `${k.label} (${k.knowledge_block})`,
+          }))
+        );
       } catch (e) {
-        console.error("Failed to load program list:", e);
+        console.error("Failed to load dropdown lists:", e);
       } finally {
         setLoadingDropdowns(false);
       }
@@ -138,6 +153,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
       corequisite: formCorequisite || null,
       organizing_semester: formOrganizingSemester || null,
       sort_order: formSortOrder !== "" ? Number(formSortOrder) : null,
+      knowledge_block: formKnowledgeBlock || null,
     };
 
     try {
@@ -354,7 +370,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Loại môn học
@@ -373,6 +389,26 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
           </select>
         </div>
 
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Khối kiến thức
+          </label>
+          <select
+            value={formKnowledgeBlock}
+            onChange={(e) => setFormKnowledgeBlock(e.target.value)}
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+          >
+            <option className="bg-slate-900 text-slate-100" value="">-- Chọn khối kiến thức --</option>
+            {knowledgeBlocksList.map((k) => (
+              <option className="bg-slate-900 text-slate-100" key={k.id} value={k.id}>
+                {k.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Nhóm môn học

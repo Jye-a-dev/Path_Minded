@@ -3,7 +3,8 @@ import { Bookmark, Edit2, Trash2 } from "lucide-react";
 
 export const getCurriculumCoursesColumns = (
   handleOpenEdit: (item: CourseItem) => void,
-  handleDelete: (id: string) => void
+  handleDelete: (id: string) => void,
+  knowledgeBlocks: Array<{ id: string; label: string }> = []
 ) => [
   {
     header: "Mã môn",
@@ -82,6 +83,33 @@ export const getCurriculumCoursesColumns = (
           className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${badges[row.course_type]}`}
         >
           {statusMap[row.course_type]}
+        </span>
+      );
+    },
+  },
+  {
+    header: "Khối kiến thức",
+    accessorKey: "knowledge_block",
+    render: (row: CourseItem) => {
+      const badges: Record<string, string> = {
+        GENERAL: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30",
+        SECTOR_CORE: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+        MAJOR_CORE: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+        SPECIALIZED: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+        INTERNSHIP: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+      };
+      const kb = row.knowledge_block;
+      if (!kb) return <span className="text-slate-600 font-medium">-</span>;
+      
+      const badgeStyle = badges[kb] || "bg-slate-500/15 text-slate-300 border-slate-500/30";
+      const found = knowledgeBlocks.find((k) => k.id === kb);
+      const displayLabel = found ? found.label.toUpperCase() : kb;
+      
+      return (
+        <span
+          className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${badgeStyle}`}
+        >
+          {displayLabel}
         </span>
       );
     },

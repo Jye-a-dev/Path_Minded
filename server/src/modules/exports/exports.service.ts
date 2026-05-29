@@ -66,7 +66,7 @@ export class ExportsService {
 
     // Generate Excel using pipeline server
     const pipelineUrl =
-      process.env.PIPELINE_SERVER_URL || 'http://localhost:5100';
+      process.env.PIPELINE_SERVER_URL || 'http://localhost:5101';
 
     const response = await fetch(`${pipelineUrl}/exports/matrix`, {
       method: 'POST',
