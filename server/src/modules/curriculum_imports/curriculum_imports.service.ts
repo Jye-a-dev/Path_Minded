@@ -206,15 +206,19 @@ export class CurriculumImportsService {
     let idx = 1;
 
     if (query.import_status) {
-      clauses.push(`import_status = $${idx++}`);
+      clauses.push(`ci.import_status = $${idx++}`);
       values.push(query.import_status);
     }
     if (query.program_id) {
-      clauses.push(`program_id = $${idx++}`);
+      clauses.push(`ci.program_id = $${idx++}`);
       values.push(query.program_id);
     }
+    if (query.major_name) {
+      clauses.push(`p.major_name = $${idx++}`);
+      values.push(query.major_name);
+    }
     if (query.search) {
-      clauses.push(`file_name ILIKE $${idx}`);
+      clauses.push(`ci.file_name ILIKE $${idx}`);
       values.push(`%${query.search}%`);
       idx++;
     }
@@ -232,7 +236,9 @@ export class CurriculumImportsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<CurriculumImportEntity>(
-      `SELECT * FROM curriculum_imports ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT ci.* FROM curriculum_imports ci 
+       LEFT JOIN programs p ON ci.program_id = p.id 
+       ${where} ORDER BY ci.uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -248,7 +254,9 @@ export class CurriculumImportsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM curriculum_imports ${where}`,
+      `SELECT COUNT(*) AS total FROM curriculum_imports ci 
+       LEFT JOIN programs p ON ci.program_id = p.id 
+       ${where}`,
       values,
     );
 
@@ -258,7 +266,9 @@ export class CurriculumImportsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<CurriculumImportEntity>(
-      `SELECT * FROM curriculum_imports ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT ci.* FROM curriculum_imports ci 
+       LEFT JOIN programs p ON ci.program_id = p.id 
+       ${where} ORDER BY ci.uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -271,7 +281,9 @@ export class CurriculumImportsService {
   async count(query: QueryCurriculumImportsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM curriculum_imports ${where}`,
+      `SELECT COUNT(*) AS count FROM curriculum_imports ci 
+       LEFT JOIN programs p ON ci.program_id = p.id 
+       ${where}`,
       values,
     );
 

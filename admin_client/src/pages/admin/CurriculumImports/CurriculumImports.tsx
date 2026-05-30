@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCurriculumImports } from "../../../hooks/useCurriculumImports";
 import type { ImportItem } from "../../../hooks/useCurriculumImports";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -8,6 +8,8 @@ import { Plus } from "lucide-react";
 import { CurriculumImportForm } from "./CurriculumImportForm";
 import { CurriculumImportPreview } from "./CurriculumImportPreview";
 import { getCurriculumImportsColumns } from "./CurriculumImportsColumns";
+import { api } from "../../../services/api";
+import { CurriculumImportsFilters } from "./partials/CurriculumImportsFilters";
 
 interface CoursePreviewItem {
   courseCode: string;
@@ -44,6 +46,9 @@ export default function CurriculumImports() {
     setPage,
     setLimit,
     setSearch,
+    filters,
+    updateFilters,
+    clearFilters,
     deleteItem,
     startImport,
     confirmImport,
@@ -52,6 +57,19 @@ export default function CurriculumImports() {
   } = useCurriculumImports();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [programsList, setProgramsList] = useState<{ id: string; program_code: string; program_name: string; major_name?: string }[]>([]);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await api.get("/programs?limit=100");
+        setProgramsList(response.data || []);
+      } catch (err) {
+        console.error("Failed to fetch programs list:", err);
+      }
+    };
+    void fetchPrograms();
+  }, []);
   const [isFullWidth, setIsFullWidth] = useState(true);
 
   const [previewData, setPreviewData] = useState<CoursePreviewItem[] | null>(null);
@@ -220,6 +238,14 @@ export default function CurriculumImports() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Tìm kiếm phiên nhập bảng tính..."
+        filters={
+          <CurriculumImportsFilters
+            filters={filters}
+            updateFilters={updateFilters}
+            clearFilters={clearFilters}
+            programsList={programsList}
+          />
+        }
         rightActions={
           <button
             onClick={handleOpenCreate}

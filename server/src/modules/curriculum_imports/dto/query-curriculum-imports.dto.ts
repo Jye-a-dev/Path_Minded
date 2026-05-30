@@ -15,4 +15,9 @@ export class QueryCurriculumImportsDto extends BaseQueryDto {
   @IsOptional()
   @IsString()
   program_id?: string;
+
+  @ApiPropertyOptional({ example: 'Công nghệ thông tin' })
+  @IsOptional()
+  @IsString()
+  major_name?: string;
 }
