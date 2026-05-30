@@ -1,4 +1,4 @@
-import PublicLayout from "../components/layouts/PublicLayout";
+import PublicLayout from "../components/layouts/(public)/PublicLayout";
 import AdminLayout from "../components/layouts/AdminLayout";
 import { PrivateRoute } from "../components/guards/PrivateRoute";
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useStudents } from "../../../hooks/useStudents";
 import type { StudentItem } from "../../../hooks/useStudents";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { StudentForm } from "./StudentForm";
 import { Plus, Edit2, Trash2, GraduationCap } from "lucide-react";

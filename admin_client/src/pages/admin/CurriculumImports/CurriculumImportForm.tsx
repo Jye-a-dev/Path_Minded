@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api";
-import { UploadCloud, FileText, Loader2 } from "lucide-react";
+import { UploadCloud, FileText, Loader2, Search } from "lucide-react";
 
-interface DropdownItem {
+interface ProgramItem {
   id: string;
-  label: string;
+  program_code: string;
+  program_name: string;
+  major_name: string | null;
+  version: string | null;
 }
 
 interface CurriculumImportFormProps {
@@ -22,7 +25,10 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
   const [formFile, setFormFile] = useState<File | null>(null);
   const [formNote, setFormNote] = useState("");
 
-  const [programsList, setProgramsList] = useState<DropdownItem[]>([]);
+  const [programs, setPrograms] = useState<ProgramItem[]>([]);
+  const [majors, setMajors] = useState<string[]>([]);
+  const [selectedMajor, setSelectedMajor] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loadingPrograms, setLoadingPrograms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -31,13 +37,19 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
     const loadPrograms = async () => {
       setLoadingPrograms(true);
       try {
-        const response = await api.get("/programs?limit=100");
-        setProgramsList(
-          (response.data || []).map((p: { id: string; program_code: string }) => ({
-            id: p.id,
-            label: p.program_code,
-          }))
-        );
+        const response = await api.get("/programs?limit=200");
+        const list: ProgramItem[] = response.data || [];
+        setPrograms(list);
+
+        // Extract unique majors
+        const uniqueMajors = Array.from(
+          new Set(
+            list
+              .map((p) => p.major_name?.trim())
+              .filter((m): m is string => !!m)
+          )
+        ).sort();
+        setMajors(uniqueMajors);
       } catch (e) {
         console.error("Failed to load education program list:", e);
       } finally {
@@ -47,6 +59,22 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
 
     loadPrograms();
   }, []);
+
+  // Filter programs based on selected major
+  const filteredPrograms = programs.filter((p) => {
+    if (!selectedMajor) return false;
+    return p.major_name?.trim() === selectedMajor;
+  });
+
+  const displayedPrograms = filteredPrograms.filter((p) => {
+    if (!searchQuery.trim()) return true;
+    const lowerQuery = searchQuery.toLowerCase().trim();
+    return (
+      p.program_code.toLowerCase().includes(lowerQuery) ||
+      p.program_name.toLowerCase().includes(lowerQuery) ||
+      (p.version && p.version.toLowerCase().includes(lowerQuery))
+    );
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,23 +120,70 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
           Đang tải chương trình đào tạo...
         </div>
       ) : (
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Phân công Chương trình đào tạo
-          </label>
-          <select
-            value={formProgramId}
-            required
-            onChange={(e) => setFormProgramId(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
-          >
-            <option className="bg-slate-900 text-slate-100" value="">-- Chọn chương trình --</option>
-            {programsList.map((p) => (
-              <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
-                {p.label}
+        <div className="space-y-3">
+          {/* Major Selection */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Ngành học (Major)
+            </label>
+            <select
+              value={selectedMajor}
+              required
+              onChange={(e) => {
+                setSelectedMajor(e.target.value);
+                setFormProgramId(""); // reset program when major changes
+                setSearchQuery(""); // reset search query
+              }}
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
+            >
+              <option className="bg-slate-900 text-slate-100" value="">-- Chọn ngành học --</option>
+              {majors.map((m) => (
+                <option className="bg-slate-900 text-slate-100" key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+              {majors.length === 0 && (
+                <option className="bg-slate-900 text-slate-100" value="default">Chương trình chung (General)</option>
+              )}
+            </select>
+          </div>
+
+          {/* Program Selection */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Chương trình đào tạo (Program)
+            </label>
+            {selectedMajor && filteredPrograms.length > 5 && (
+              <div className="relative flex items-center">
+                <Search size={12} className="absolute left-2.5 text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Tìm nhanh chương trình..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-lg border border-slate-800 bg-slate-900/60 pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none transition-all"
+                />
+              </div>
+            )}
+            <select
+              disabled={!selectedMajor}
+              value={formProgramId}
+              required
+              onChange={(e) => setFormProgramId(e.target.value)}
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <option className="bg-slate-900 text-slate-100" value="">
+                {displayedPrograms.length === 0 && searchQuery
+                  ? "Không tìm thấy chương trình nào phù hợp"
+                  : "-- Chọn chương trình --"}
               </option>
-            ))}
-          </select>
+              {displayedPrograms.map((p) => (
+                <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
+                  {p.program_name} {p.version ? `(Phiên bản ${p.version})` : ""} - {p.program_code}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 
@@ -204,5 +279,5 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
         </button>
       </div>
     </form>
-  );
+);
 };

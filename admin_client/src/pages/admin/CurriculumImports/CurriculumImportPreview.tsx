@@ -4,6 +4,7 @@ import { api } from "../../../services/api";
 import { CurriculumSheetSelector } from "./CurriculumSheetSelector";
 import { CurriculumWarningList } from "./CurriculumWarningList";
 import { CurriculumPreviewTable } from "./CurriculumPreviewTable";
+import { MergeStatusAlert } from "./partials/MergeStatusAlert";
 
 interface CoursePreviewItem {
   courseCode: string;
@@ -27,6 +28,84 @@ interface WarningItem {
   code: string;
   message: string;
   rawValue: string;
+}
+
+const MERGEABLE_FIELDS = [
+  "expectedSemester",
+  "organizingSemester",
+  "credits",
+  "theoryHours",
+  "practiceHours",
+  "projectHours",
+  "internshipHours",
+  "courseGroup",
+  "courseType",
+  "prerequisite",
+  "corequisite",
+  "knowledgeBlock",
+] as const;
+
+type MergeableField = typeof MERGEABLE_FIELDS[number];
+
+const FIELD_LABELS: Record<MergeableField, string> = {
+  expectedSemester: "Học kỳ dự kiến",
+  organizingSemester: "Học kỳ tổ chức",
+  credits: "Số tín chỉ",
+  theoryHours: "Giờ lý thuyết",
+  practiceHours: "Giờ thực hành",
+  projectHours: "Giờ đồ án",
+  internshipHours: "Giờ thực tập",
+  courseGroup: "Nhóm môn học",
+  courseType: "Loại môn học",
+  prerequisite: "Môn tiên quyết",
+  corequisite: "Môn song hành",
+  knowledgeBlock: "Khối kiến thức",
+};
+
+function isPopulated(field: string, val: unknown): boolean {
+  if (val === null || val === undefined) return false;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (
+      trimmed === "" ||
+      trimmed.toLowerCase() === "null" ||
+      trimmed.toLowerCase() === "undefined" ||
+      trimmed === "-" ||
+      trimmed === "0" ||
+      trimmed.toLowerCase() === "n/a"
+    ) {
+      return false;
+    }
+    if (field === "courseType" && trimmed === "OTHER") return false;
+  }
+  if (typeof val === "number") {
+    if (isNaN(val)) return false;
+    if ((field === "expectedSemester" || field === "organizingSemester") && val <= 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getColumnCompleteness(coursesList: CoursePreviewItem[], field: MergeableField): number {
+  if (coursesList.length === 0) return 0;
+  let populatedCount = 0;
+  for (const course of coursesList) {
+    if (isPopulated(field, course[field])) {
+      populatedCount++;
+    }
+  }
+  return populatedCount / coursesList.length;
+}
+
+function getMergedValue<T>(field: MergeableField, valY: T, valX: T, prioSource: boolean): T {
+  const hasY = isPopulated(field, valY);
+  const hasX = isPopulated(field, valX);
+  if (prioSource) {
+    return hasX ? valX : valY;
+  } else {
+    return hasY ? valY : valX;
+  }
 }
 
 interface CurriculumImportPreviewProps {
@@ -94,8 +173,22 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
       const sourceCourses: CoursePreviewItem[] = response.data.preview;
       let mergeCount = 0;
 
+      // 1. Identify which fields are more complete in sourceCourses (Sheet 2) than in courses (Sheet 1)
+      const prioritizeSourceFields: Record<string, boolean> = {};
+      const prioritizedFieldLabels: string[] = [];
+
+      MERGEABLE_FIELDS.forEach((field) => {
+        const compY = getColumnCompleteness(courses, field);
+        const compX = getColumnCompleteness(sourceCourses, field);
+        if (compX > compY) {
+          prioritizeSourceFields[field] = true;
+          prioritizedFieldLabels.push(FIELD_LABELS[field]);
+        } else {
+          prioritizeSourceFields[field] = false;
+        }
+      });
+
       const nextCourses = courses.map((courseY) => {
-        // Robust match resolver: matches both Code and Type first, then matches Code-only
         const matchingCourseX = sourceCourses.find(
           (courseX) =>
             courseX.courseCode.trim().toUpperCase() ===
@@ -111,18 +204,18 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
           mergeCount++;
           return {
             ...courseY,
-            expectedSemester: courseY.expectedSemester || matchingCourseX.expectedSemester,
-            organizingSemester: courseY.organizingSemester || matchingCourseX.organizingSemester,
-            credits: courseY.credits ?? matchingCourseX.credits,
-            theoryHours: courseY.theoryHours ?? matchingCourseX.theoryHours,
-            practiceHours: courseY.practiceHours ?? matchingCourseX.practiceHours,
-            projectHours: courseY.projectHours ?? matchingCourseX.projectHours,
-            internshipHours: courseY.internshipHours ?? matchingCourseX.internshipHours,
-            courseGroup: courseY.courseGroup ?? matchingCourseX.courseGroup,
-            courseType: courseY.courseType && courseY.courseType !== "OTHER" ? courseY.courseType : matchingCourseX.courseType,
-            prerequisite: courseY.prerequisite ?? matchingCourseX.prerequisite,
-            corequisite: courseY.corequisite ?? matchingCourseX.corequisite,
-            knowledgeBlock: courseY.knowledgeBlock || matchingCourseX.knowledgeBlock,
+            expectedSemester: getMergedValue("expectedSemester", courseY.expectedSemester, matchingCourseX.expectedSemester, !!prioritizeSourceFields.expectedSemester),
+            organizingSemester: getMergedValue("organizingSemester", courseY.organizingSemester, matchingCourseX.organizingSemester, !!prioritizeSourceFields.organizingSemester),
+            credits: getMergedValue("credits", courseY.credits, matchingCourseX.credits, !!prioritizeSourceFields.credits),
+            theoryHours: getMergedValue("theoryHours", courseY.theoryHours, matchingCourseX.theoryHours, !!prioritizeSourceFields.theoryHours),
+            practiceHours: getMergedValue("practiceHours", courseY.practiceHours, matchingCourseX.practiceHours, !!prioritizeSourceFields.practiceHours),
+            projectHours: getMergedValue("projectHours", courseY.projectHours, matchingCourseX.projectHours, !!prioritizeSourceFields.projectHours),
+            internshipHours: getMergedValue("internshipHours", courseY.internshipHours, matchingCourseX.internshipHours, !!prioritizeSourceFields.internshipHours),
+            courseGroup: getMergedValue("courseGroup", courseY.courseGroup, matchingCourseX.courseGroup, !!prioritizeSourceFields.courseGroup),
+            courseType: getMergedValue("courseType", courseY.courseType, matchingCourseX.courseType, !!prioritizeSourceFields.courseType),
+            prerequisite: getMergedValue("prerequisite", courseY.prerequisite, matchingCourseX.prerequisite, !!prioritizeSourceFields.prerequisite),
+            corequisite: getMergedValue("corequisite", courseY.corequisite, matchingCourseX.corequisite, !!prioritizeSourceFields.corequisite),
+            knowledgeBlock: getMergedValue("knowledgeBlock", courseY.knowledgeBlock, matchingCourseX.knowledgeBlock, !!prioritizeSourceFields.knowledgeBlock),
           };
         }
         return courseY;
@@ -134,13 +227,17 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
       nextCourses.forEach((c) => nextSelected.add(c.courseCode + "_" + c.courseType));
       setSelectedCodes(nextSelected);
 
+      const prioritizedMsg = prioritizedFieldLabels.length > 0
+        ? `. Do Sheet 1 thiếu/không đầy đủ, hệ thống ưu tiên lấy từ "${sheets[sourceIdx]}" các cột: ${prioritizedFieldLabels.join(", ")}`
+        : "";
+
       setMergeStatus(
-        `Đã trộn thành công! Đối khớp được ${mergeCount}/${courses.length} môn học từ sheet "${sheets[sourceIdx]}".`
+        `Đã trộn thành công! Đối khớp được ${mergeCount}/${courses.length} môn học từ sheet "${sheets[sourceIdx]}"${prioritizedMsg}.`
       );
 
       setTimeout(() => {
         setMergeStatus(null);
-      }, 6050);
+      }, 7500);
     } catch (err) {
       console.error("Failed to merge sheets:", err);
       setMergeStatus("Lỗi: Không thể lấy dữ liệu từ trang tính đã chọn.");
@@ -163,6 +260,7 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
 
     let currentCourses = [...courses];
     let totalMerged = 0;
+    const allPrioritizedFields = new Set<string>();
 
     try {
       for (const sourceIdx of otherIndices) {
@@ -175,6 +273,19 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
         if (response.data?.preview && Array.isArray(response.data.preview)) {
           const sourceCourses: CoursePreviewItem[] = response.data.preview;
           let sheetMergeCount = 0;
+
+          // Compute prioritization for this source sheet against the current accumulated courses
+          const prioritizeSourceFields: Record<string, boolean> = {};
+          MERGEABLE_FIELDS.forEach((field) => {
+            const compY = getColumnCompleteness(currentCourses, field);
+            const compX = getColumnCompleteness(sourceCourses, field);
+            if (compX > compY) {
+              prioritizeSourceFields[field] = true;
+              allPrioritizedFields.add(FIELD_LABELS[field]);
+            } else {
+              prioritizeSourceFields[field] = false;
+            }
+          });
 
           currentCourses = currentCourses.map((courseY) => {
             const matchingCourseX = sourceCourses.find(
@@ -192,18 +303,18 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
               sheetMergeCount++;
               return {
                 ...courseY,
-                expectedSemester: courseY.expectedSemester || matchingCourseX.expectedSemester,
-                organizingSemester: courseY.organizingSemester || matchingCourseX.organizingSemester,
-                credits: courseY.credits ?? matchingCourseX.credits,
-                theoryHours: courseY.theoryHours ?? matchingCourseX.theoryHours,
-                practiceHours: courseY.practiceHours ?? matchingCourseX.practiceHours,
-                projectHours: courseY.projectHours ?? matchingCourseX.projectHours,
-                internshipHours: courseY.internshipHours ?? matchingCourseX.internshipHours,
-                courseGroup: courseY.courseGroup ?? matchingCourseX.courseGroup,
-                courseType: courseY.courseType && courseY.courseType !== "OTHER" ? courseY.courseType : matchingCourseX.courseType,
-                prerequisite: courseY.prerequisite ?? matchingCourseX.prerequisite,
-                corequisite: courseY.corequisite ?? matchingCourseX.corequisite,
-                knowledgeBlock: courseY.knowledgeBlock || matchingCourseX.knowledgeBlock,
+                expectedSemester: getMergedValue("expectedSemester", courseY.expectedSemester, matchingCourseX.expectedSemester, !!prioritizeSourceFields.expectedSemester),
+                organizingSemester: getMergedValue("organizingSemester", courseY.organizingSemester, matchingCourseX.organizingSemester, !!prioritizeSourceFields.organizingSemester),
+                credits: getMergedValue("credits", courseY.credits, matchingCourseX.credits, !!prioritizeSourceFields.credits),
+                theoryHours: getMergedValue("theoryHours", courseY.theoryHours, matchingCourseX.theoryHours, !!prioritizeSourceFields.theoryHours),
+                practiceHours: getMergedValue("practiceHours", courseY.practiceHours, matchingCourseX.practiceHours, !!prioritizeSourceFields.practiceHours),
+                projectHours: getMergedValue("projectHours", courseY.projectHours, matchingCourseX.projectHours, !!prioritizeSourceFields.projectHours),
+                internshipHours: getMergedValue("internshipHours", courseY.internshipHours, matchingCourseX.internshipHours, !!prioritizeSourceFields.internshipHours),
+                courseGroup: getMergedValue("courseGroup", courseY.courseGroup, matchingCourseX.courseGroup, !!prioritizeSourceFields.courseGroup),
+                courseType: getMergedValue("courseType", courseY.courseType, matchingCourseX.courseType, !!prioritizeSourceFields.courseType),
+                prerequisite: getMergedValue("prerequisite", courseY.prerequisite, matchingCourseX.prerequisite, !!prioritizeSourceFields.prerequisite),
+                corequisite: getMergedValue("corequisite", courseY.corequisite, matchingCourseX.corequisite, !!prioritizeSourceFields.corequisite),
+                knowledgeBlock: getMergedValue("knowledgeBlock", courseY.knowledgeBlock, matchingCourseX.knowledgeBlock, !!prioritizeSourceFields.knowledgeBlock),
               };
             }
             return courseY;
@@ -219,13 +330,18 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
       currentCourses.forEach((c) => nextSelected.add(c.courseCode + "_" + c.courseType));
       setSelectedCodes(nextSelected);
 
+      const prioritizedList = Array.from(allPrioritizedFields);
+      const prioritizedMsg = prioritizedList.length > 0
+        ? `. Ưu tiên lấy từ các sheet khác các cột: ${prioritizedList.join(", ")}`
+        : "";
+
       setMergeStatus(
-        `Đã trộn thành công từ tất cả các sheet! Khớp được ${totalMerged} lượt thông tin môn học.`
+        `Đã trộn thành công từ tất cả các sheet! Khớp được ${totalMerged} lượt thông tin môn học${prioritizedMsg}.`
       );
 
       setTimeout(() => {
         setMergeStatus(null);
-      }, 6050);
+      }, 7500);
     } catch (err) {
       console.error("Failed to merge all sheets:", err);
       setMergeStatus("Lỗi: Không thể hoàn tất trộn hàng loạt từ tất cả các sheet.");
@@ -339,18 +455,8 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
         </div>
       ) : (
         <>
-          {/* Merge Status Toast Alert */}
-          {mergeStatus && (
-            <div className={`rounded-lg p-4 text-xs font-semibold border flex items-center gap-2 ${mergeStatus.startsWith("Lỗi")
-              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-              : mergeStatus.startsWith("Đang")
-                ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
-                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-              }`}>
-              {mergeStatus.startsWith("Đang") ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-              <span>{mergeStatus}</span>
-            </div>
-          )}
+          {/* Merge Status Toast Alert component */}
+          <MergeStatusAlert mergeStatus={mergeStatus} />
 
           {/* Alert Summary */}
           <div className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

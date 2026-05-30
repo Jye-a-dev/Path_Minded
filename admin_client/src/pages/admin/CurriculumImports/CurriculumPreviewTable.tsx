@@ -1,5 +1,6 @@
 import React from "react";
-import { Edit2, Trash2, Save, X } from "lucide-react";
+import { PreviewTableRowEdit } from "./partials/PreviewTableRowEdit";
+import { PreviewTableRowRead } from "./partials/PreviewTableRowRead";
 
 interface CoursePreviewItem {
   courseCode: string;
@@ -113,232 +114,24 @@ export const CurriculumPreviewTable: React.FC<CurriculumPreviewTableProps> = ({
                     </td>
 
                     {isEditing && editForm ? (
-                      <>
-                        {/* EDITING STATE ROW */}
-                        <td className="px-2 py-1">
-                          <input
-                            type="text"
-                            value={editForm.courseCode}
-                            onChange={(e) => onEditFormChange({ ...editForm, courseCode: e.target.value.toUpperCase() })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1.5 py-1 text-xs font-mono font-bold text-indigo-400 focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
-                            type="text"
-                            value={editForm.courseName}
-                            onChange={(e) => onEditFormChange({ ...editForm, courseName: e.target.value })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1.5 py-1 text-xs text-white focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-14">
-                          <input
-                            type="number"
-                            value={editForm.credits ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, credits: e.target.value ? Number(e.target.value) : null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-12">
-                          <input
-                            type="number"
-                            value={editForm.theoryHours ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, theoryHours: e.target.value ? Number(e.target.value) : null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-12">
-                          <input
-                            type="number"
-                            value={editForm.practiceHours ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, practiceHours: e.target.value ? Number(e.target.value) : null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-12">
-                          <input
-                            type="number"
-                            value={editForm.projectHours ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, projectHours: e.target.value ? Number(e.target.value) : null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-12">
-                          <input
-                            type="number"
-                            value={editForm.internshipHours ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, internshipHours: e.target.value ? Number(e.target.value) : null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <select
-                            value={editForm.courseType}
-                            onChange={(e) => onEditFormChange({ ...editForm, courseType: e.target.value })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-slate-300 focus:outline-none"
-                          >
-                            <option value="REQUIRED">REQUIRED</option>
-                            <option value="ELECTIVE">ELECTIVE</option>
-                            <option value="PE">PE</option>
-                            <option value="ENGLISH">ENGLISH</option>
-                            <option value="DEFENSE">DEFENSE</option>
-                            <option value="OTHER">OTHER</option>
-                          </select>
-                        </td>
-                        <td className="px-2 py-1">
-                          <select
-                            value={editForm.knowledgeBlock || "GENERAL"}
-                            onChange={(e) => onEditFormChange({ ...editForm, knowledgeBlock: e.target.value })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-slate-300 focus:outline-none"
-                          >
-                            {knowledgeBlocks.map((kb) => (
-                              <option key={kb.knowledge_block} value={kb.knowledge_block}>
-                                {kb.label} ({kb.knowledge_block})
-                              </option>
-                            ))}
-                            {knowledgeBlocks.length === 0 && (
-                              <>
-                                <option value="GENERAL">Đại cương (GENERAL)</option>
-                                <option value="SECTOR_CORE">Cơ sở khối ngành (SECTOR_CORE)</option>
-                                <option value="MAJOR_CORE">Cơ sở ngành (MAJOR_CORE)</option>
-                                <option value="SPECIALIZED">Chuyên ngành (SPECIALIZED)</option>
-                              </>
-                            )}
-                          </select>
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
-                            type="text"
-                            value={editForm.prerequisite ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, prerequisite: e.target.value || null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1.5 py-1 text-xs text-slate-300 focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1">
-                          <input
-                            type="text"
-                            value={editForm.corequisite ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, corequisite: e.target.value || null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1.5 py-1 text-xs text-slate-300 focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-20">
-                          <input
-                            type="text"
-                            value={editForm.organizingSemester ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, organizingSemester: e.target.value || null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-14">
-                          <input
-                            type="number"
-                            value={editForm.expectedSemester ?? ""}
-                            onChange={(e) => onEditFormChange({ ...editForm, expectedSemester: e.target.value ? Number(e.target.value) : null })}
-                            className="w-full rounded border border-indigo-500 bg-slate-955 px-1 py-1 text-xs text-center focus:outline-none"
-                          />
-                        </td>
-                        <td className="px-2 py-1 w-12 text-center text-slate-400 font-semibold">
-                          {editForm.expectedSemester ? Math.ceil(editForm.expectedSemester / 3) : "-"}
-                        </td>
-                        <td className="px-4 py-2 text-center flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onSaveEdit(idx)}
-                            className="p-1 rounded text-emerald-400 hover:bg-slate-800 transition cursor-pointer"
-                            title="Lưu"
-                          >
-                            <Save size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={onCancelEdit}
-                            className="p-1 rounded text-rose-400 hover:bg-slate-800 transition cursor-pointer"
-                            title="Hủy"
-                          >
-                            <X size={13} />
-                          </button>
-                        </td>
-                      </>
+                      <PreviewTableRowEdit
+                        idx={idx}
+                        editForm={editForm}
+                        onEditFormChange={onEditFormChange}
+                        onSaveEdit={onSaveEdit}
+                        onCancelEdit={onCancelEdit}
+                        knowledgeBlocks={knowledgeBlocks}
+                      />
                     ) : (
-                      <>
-                        {/* STANDARD READ STATE ROW */}
-                        <td className={`px-4 py-2 font-bold font-mono ${isSelected ? "text-indigo-400" : "text-slate-600"}`}>
-                          {c.courseCode}
-                        </td>
-                        <td className={`px-4 py-2 font-medium ${isSelected ? "text-slate-200" : "text-slate-600"}`}>
-                          {c.courseName}
-                        </td>
-                        <td className="px-4 py-2 text-center font-semibold">{c.credits ?? "-"}</td>
-                        <td className="px-4 py-2 text-center text-slate-400">{c.theoryHours ?? "-"}</td>
-                        <td className="px-4 py-2 text-center text-slate-400">{c.practiceHours ?? "-"}</td>
-                        <td className="px-4 py-2 text-center text-slate-400">{c.projectHours ?? "-"}</td>
-                        <td className="px-4 py-2 text-center text-slate-400">{c.internshipHours ?? "-"}</td>
-                        <td className="px-4 py-2">
-                          <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                            !isSelected
-                              ? "bg-slate-850 text-slate-600"
-                              : c.courseType === "REQUIRED"
-                                ? "bg-indigo-500/10 text-indigo-400"
-                                : "bg-emerald-500/10 text-emerald-400"
-                          }`}>
-                            {c.courseType}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2">
-                          {(() => {
-                            const badges: Record<string, string> = {
-                              GENERAL: "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30",
-                              SECTOR_CORE: "bg-orange-500/15 text-orange-300 border border-orange-500/30",
-                              MAJOR_CORE: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
-                              SPECIALIZED: "bg-sky-500/15 text-sky-300 border border-sky-500/30",
-                              INTERNSHIP: "bg-rose-500/15 text-rose-300 border border-rose-500/30",
-                            };
-                            const kb = c.knowledgeBlock || "GENERAL";
-                            const badgeStyle = badges[kb] || "bg-slate-500/15 text-slate-300 border border-slate-500/30";
-                            const found = knowledgeBlocks.find((k) => k.knowledge_block === kb);
-                            const displayLabel = found ? found.label.toUpperCase() : kb;
-                            return (
-                              <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${badgeStyle}`}>
-                                {displayLabel}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-4 py-2 truncate max-w-32 text-slate-400 text-[11px] font-mono" title={c.prerequisite || ""}>
-                          {c.prerequisite || "-"}
-                        </td>
-                        <td className="px-4 py-2 truncate max-w-32 text-slate-400 text-[11px] font-mono" title={c.corequisite || ""}>
-                          {c.corequisite || "-"}
-                        </td>
-                        <td className="px-4 py-2 text-center text-slate-400">
-                          {c.organizingSemester || "-"}
-                        </td>
-                        <td className="px-4 py-2 text-center text-slate-400 font-semibold">
-                          {c.expectedSemester ?? "-"}
-                        </td>
-                        <td className="px-4 py-2 text-center text-slate-400 font-semibold">
-                          {c.expectedSemester ? Math.ceil(c.expectedSemester / 3) : "-"}
-                        </td>
-                        <td className="px-4 py-2 text-center flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onStartEdit(idx, c)}
-                            className="p-1 rounded text-slate-400 hover:text-indigo-400 hover:bg-slate-850 transition cursor-pointer"
-                            title="Chỉnh sửa môn học này"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDeleteRow(idx, compositeKey)}
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-855 transition cursor-pointer"
-                            title="Xóa môn học này"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </td>
-                      </>
+                      <PreviewTableRowRead
+                        idx={idx}
+                        c={c}
+                        compositeKey={compositeKey}
+                        isSelected={isSelected}
+                        onStartEdit={onStartEdit}
+                        onDeleteRow={onDeleteRow}
+                        knowledgeBlocks={knowledgeBlocks}
+                      />
                     )}
                   </tr>
                 );

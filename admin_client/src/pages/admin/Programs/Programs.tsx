@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePrograms } from "../../../hooks/usePrograms";
 import type { ProgramItem } from "../../../hooks/usePrograms";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ProgramForm } from "./ProgramForm";
 import { Plus, Edit2, Trash2, BookOpen } from "lucide-react";

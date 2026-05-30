@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCurriculumImports } from "../../../hooks/useCurriculumImports";
 import type { ImportItem } from "../../../hooks/useCurriculumImports";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { Plus } from "lucide-react";

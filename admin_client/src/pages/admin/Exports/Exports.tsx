@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useExports } from "../../../hooks/useExports";
 import type { ExportItem } from "../../../hooks/useExports";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, DownloadCloud, Trash2 } from "lucide-react";
 import { ExportForm } from "./ExportForm";

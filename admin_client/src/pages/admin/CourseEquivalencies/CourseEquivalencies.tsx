@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCourseEquivalencies } from "../../../hooks/useCourseEquivalencies";
 import type { EquivalencyItem } from "../../../hooks/useCourseEquivalencies";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { CourseEquivalencyForm } from "./CourseEquivalencyForm";
 import { Plus, Edit2, Trash2, RefreshCw } from "lucide-react";

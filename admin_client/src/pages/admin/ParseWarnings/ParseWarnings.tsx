@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParseWarnings } from "../../../hooks/useParseWarnings";
 import type { WarningItem } from "../../../hooks/useParseWarnings";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { Plus, Edit2, Trash2, AlertTriangle } from "lucide-react";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCoursePrerequisites } from "../../../hooks/useCoursePrerequisites";
 import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { PrerequisiteForm } from "./PrerequisiteForm";
 import { Plus, Edit2, Trash2, GitFork } from "lucide-react";

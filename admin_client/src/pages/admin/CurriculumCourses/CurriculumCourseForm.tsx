@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../../services/api";
 import { Loader2 } from "lucide-react";
+import { HoursInputFields } from "./partials/HoursInputFields";
+import { PrerequisiteInputFields } from "./partials/PrerequisiteInputFields";
 
 interface CourseItem {
   id: string;
@@ -199,7 +201,7 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 ">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Mã môn học
@@ -275,100 +277,27 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Giờ LT (Lý thuyết)
-          </label>
-          <input
-            type="number"
-            placeholder="Ví dụ: 30"
-            value={formTheoryHours}
-            onChange={(e) => setFormTheoryHours(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
-          />
-        </div>
+      {/* Numerical hours input group */}
+      <HoursInputFields
+        theoryHours={formTheoryHours}
+        setTheoryHours={setFormTheoryHours}
+        practiceHours={formPracticeHours}
+        setPracticeHours={setFormPracticeHours}
+        projectHours={formProjectHours}
+        setProjectHours={setFormProjectHours}
+        internshipHours={formInternshipHours}
+        setInternshipHours={setFormInternshipHours}
+      />
 
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Giờ TH (Thực hành)
-          </label>
-          <input
-            type="number"
-            placeholder="Ví dụ: 15"
-            value={formPracticeHours}
-            onChange={(e) => setFormPracticeHours(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Giờ ĐA (Đồ án)
-          </label>
-          <input
-            type="number"
-            placeholder="Ví dụ: 0"
-            value={formProjectHours}
-            onChange={(e) => setFormProjectHours(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Giờ TT (Thực tập)
-          </label>
-          <input
-            type="number"
-            placeholder="Ví dụ: 0"
-            value={formInternshipHours}
-            onChange={(e) => setFormInternshipHours(e.target.value !== "" ? Number(e.target.value) : "")}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            ĐK tiên quyết
-          </label>
-          <input
-            type="text"
-            placeholder="Mã môn học tiên quyết"
-            value={formPrerequisite}
-            onChange={(e) => setFormPrerequisite(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Môn học trước
-          </label>
-          <input
-            type="text"
-            placeholder="Mã môn học trước"
-            value={formCorequisite}
-            onChange={(e) => setFormCorequisite(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all font-mono"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Học kỳ tổ chức
-          </label>
-          <input
-            type="text"
-            placeholder="Ví dụ: 1, 2, 3"
-            value={formOrganizingSemester}
-            onChange={(e) => setFormOrganizingSemester(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
-          />
-        </div>
-      </div>
+      {/* Prerequisite and organizing semesters links group */}
+      <PrerequisiteInputFields
+        prerequisite={formPrerequisite}
+        setPrerequisite={setFormPrerequisite}
+        corequisite={formCorequisite}
+        setCorequisite={setFormCorequisite}
+        organizingSemester={formOrganizingSemester}
+        setOrganizingSemester={setFormOrganizingSemester}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
@@ -380,12 +309,12 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             onChange={(e) => setFormType(e.target.value as "REQUIRED" | "ELECTIVE" | "PE" | "ENGLISH" | "DEFENSE" | "OTHER")}
             className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option className="bg-slate-900 text-slate-100" value="REQUIRED">BẮT BUỘC</option>
-            <option className="bg-slate-900 text-slate-100" value="ELECTIVE">TỰ CHỌN</option>
-            <option className="bg-slate-900 text-slate-100" value="PE">THỂ CHẤT</option>
-            <option className="bg-slate-900 text-slate-100" value="ENGLISH">TIẾNG ANH</option>
-            <option className="bg-slate-900 text-slate-100" value="DEFENSE">QUỐC PHÒNG</option>
-            <option className="bg-slate-900 text-slate-100" value="OTHER">KHÁC</option>
+            <option className="bg-slate-950 text-slate-100" value="REQUIRED">BẮT BUỘC</option>
+            <option className="bg-slate-950 text-slate-100" value="ELECTIVE">TỰ CHỌN</option>
+            <option className="bg-slate-950 text-slate-100" value="PE">THỂ CHẤT</option>
+            <option className="bg-slate-950 text-slate-100" value="ENGLISH">TIẾNG ANH</option>
+            <option className="bg-slate-955 text-slate-100" value="DEFENSE">QUỐC PHÒNG</option>
+            <option className="bg-slate-955 text-slate-100" value="OTHER">KHÁC</option>
           </select>
         </div>
 
@@ -398,9 +327,9 @@ export const CurriculumCourseForm: React.FC<CurriculumCourseFormProps> = ({
             onChange={(e) => setFormKnowledgeBlock(e.target.value)}
             className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
           >
-            <option className="bg-slate-900 text-slate-100" value="">-- Chọn khối kiến thức --</option>
+            <option className="bg-slate-955 text-slate-100" value="">-- Chọn khối kiến thức --</option>
             {knowledgeBlocksList.map((k) => (
-              <option className="bg-slate-900 text-slate-100" key={k.id} value={k.id}>
+              <option className="bg-slate-955 text-slate-100" key={k.id} value={k.id}>
                 {k.label}
               </option>
             ))}

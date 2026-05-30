@@ -1,16 +1,18 @@
 import { useState, useRef } from "react";
-import type { KnowledgeBlockMappingItem } from "../../../hooks/useKnowledgeBlockMappings";
-import { Plus, X, AlertTriangle, Edit2, Trash2 } from "lucide-react";
+import type { KnowledgeBlockMappingItem, KBStatItem } from "../../../hooks/useKnowledgeBlockMappings";
+import { Plus, X, AlertTriangle, Edit2, Trash2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 import { TYPE_CONFIG } from "./knowledgeBlockConfig";
 
 // ─── Single Card Component ─────────────────────────────────────────────────────
 export function KnowledgeBlockCard({
   item,
+  programStats,
   onUpdate,
   onEditLabel,
   onDelete,
 }: {
   item: KnowledgeBlockMappingItem;
+  programStats: KBStatItem[];
   onUpdate: (id: string, payload: { phrases?: string[] }) => Promise<void>;
   onEditLabel: (item: KnowledgeBlockMappingItem) => void;
   onDelete: (item: KnowledgeBlockMappingItem) => void;
@@ -19,10 +21,14 @@ export function KnowledgeBlockCard({
     ...TYPE_CONFIG.OTHER,
     desc: `Khối kiến thức tự định nghĩa cho ${item.label}`,
   };
+
   const [newPhrase, setNewPhrase] = useState("");
   const [saving, setSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showStats, setShowStats] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const totalCourses = programStats.reduce((sum, s) => sum + s.course_count, 0);
 
   const handleAddPhrase = async () => {
     const cleaned = newPhrase.trim().toLowerCase();
@@ -97,6 +103,47 @@ export function KnowledgeBlockCard({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Per-program stats — expandable */}
+      <div className="rounded-xl border border-slate-800/60 bg-slate-950/40 overflow-hidden">
+        <button
+          onClick={() => setShowStats((v) => !v)}
+          disabled={programStats.length === 0}
+          className="w-full flex items-center justify-between px-3 py-2 text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 transition-colors cursor-pointer disabled:cursor-default disabled:hover:bg-transparent"
+        >
+          <span className="flex items-center gap-1.5">
+            <BookOpen size={11} />
+            <span className="font-semibold">
+              {totalCourses > 0 ? `${totalCourses} môn học` : "Chưa có môn học nào"}
+            </span>
+            {programStats.length > 0 && (
+              <span className="text-slate-600">· {programStats.length} chương trình</span>
+            )}
+          </span>
+          {programStats.length > 0 && (
+            showStats ? <ChevronUp size={11} /> : <ChevronDown size={11} />
+          )}
+        </button>
+
+        {showStats && programStats.length > 0 && (
+          <div className="border-t border-slate-800/60 divide-y divide-slate-800/40">
+            {programStats.map((stat) => (
+              <div
+                key={stat.program_id}
+                className="flex items-center justify-between px-3 py-1.5 text-[11px]"
+              >
+                <span className="text-slate-400 truncate max-w-[72%]" title={stat.program_name}>
+                  <span className="font-mono text-slate-500 mr-1.5">{stat.program_code}</span>
+                  {stat.program_name}
+                </span>
+                <span className={`font-bold tabular-nums ${cfg.color}`}>
+                  {stat.course_count}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Phrases list */}

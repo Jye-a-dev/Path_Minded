@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useCurriculumColumnMappings } from "../../../hooks/useCurriculumColumnMappings";
 import type { MappingItem } from "../../../hooks/useCurriculumColumnMappings";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
-import { MappingCard } from "./components/MappingCard";
-import { CreateMappingModal } from "./components/CreateMappingModal";
-import { EditMappingModal } from "./components/EditMappingModal";
+import { MappingCard } from "./partials/MappingCard";
+import { CreateMappingModal } from "./partials/CreateMappingModal";
+import { EditMappingModal } from "./partials/EditMappingModal";
 import { FileSpreadsheet, Plus, Search, RefreshCw, HelpCircle } from "lucide-react";
 
 export default function ColumnMappings() {

@@ -90,3 +90,19 @@ export function parseTTValue(val: unknown): {
 
   return { organizingSem, expectedSem };
 }
+
+export function extractRowValues(row: unknown): unknown[] {
+  if (!row || typeof row !== 'object') return [];
+  const rawValues = (row as Record<string, unknown>).values;
+  const vals: unknown[] = [];
+
+  if (Array.isArray(rawValues)) {
+    for (let i = 1; i < Math.max(rawValues.length, 30); i++)
+      vals.push(rawValues[i] !== undefined ? rawValues[i] : null);
+  } else if (rawValues && typeof rawValues === 'object') {
+    const rawObj = rawValues as Record<number | string, unknown>;
+    for (let i = 1; i < 30; i++)
+      vals.push(rawObj[i] !== undefined ? rawObj[i] : null);
+  }
+  return vals;
+}

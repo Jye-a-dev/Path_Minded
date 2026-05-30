@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useExportLogs } from "../../../hooks/useExportLogs";
 import type { ExportLogItem as LogItem } from "../../../hooks/useExportLogs";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Edit2, Trash2, History } from "lucide-react";
 import { ExportLogForm } from "./ExportLogForm";

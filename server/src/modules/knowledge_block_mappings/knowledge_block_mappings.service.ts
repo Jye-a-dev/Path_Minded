@@ -108,6 +108,40 @@ export class KnowledgeBlockMappingsService implements OnModuleInit {
     return result.rows;
   }
 
+  /** Returns course counts grouped by knowledge_block → program */
+  async getStats(): Promise<
+    {
+      knowledge_block: string;
+      program_id: string;
+      program_code: string;
+      program_name: string;
+      course_count: number;
+    }[]
+  > {
+    const result = await this.pool.query<{
+      knowledge_block: string;
+      program_id: string;
+      program_code: string;
+      program_name: string;
+      course_count: string;
+    }>(`
+      SELECT
+        cc.knowledge_block,
+        p.id        AS program_id,
+        p.program_code,
+        p.program_name,
+        COUNT(cc.id)::int AS course_count
+      FROM curriculum_courses cc
+      JOIN programs p ON p.id = cc.program_id
+      GROUP BY cc.knowledge_block, p.id, p.program_code, p.program_name
+      ORDER BY cc.knowledge_block, p.program_code
+    `);
+    return result.rows.map((r) => ({
+      ...r,
+      course_count: Number(r.course_count),
+    }));
+  }
+
   async findOne(id: string): Promise<KnowledgeBlockMappingResponse> {
     const result = await this.pool.query<KnowledgeBlockMappingEntity>(
       `SELECT * FROM knowledge_block_mappings WHERE id = $1`,

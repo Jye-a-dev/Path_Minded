@@ -18,6 +18,11 @@ export class KnowledgeBlockMappingsController {
     return this.service.findAll();
   }
 
+  @Get('stats')
+  getStats() {
+    return this.service.getStats();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
@@ -25,7 +30,12 @@ export class KnowledgeBlockMappingsController {
 
   @Post()
   create(
-    @Body() body: { knowledge_block: string; label: string; phrases?: string[] },
+    @Body()
+    body: {
+      knowledge_block: string;
+      label: string;
+      phrases?: string[];
+    },
   ) {
     return this.service.create(body);
   }

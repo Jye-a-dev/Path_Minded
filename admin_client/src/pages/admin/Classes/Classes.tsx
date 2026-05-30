@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useClasses } from "../../../hooks/useClasses";
 import type { ClassItem } from "../../../hooks/useClasses";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ClassForm } from "./ClassForm";
 import { Plus, Edit2, Trash2, Building2 } from "lucide-react";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useStudentCourseResults } from "../../../hooks/useStudentCourseResults";
 import type { StudentCourseResultItem as ResultItem } from "../../../hooks/useStudentCourseResults";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { StudentCourseResultForm } from "./StudentCourseResultForm";

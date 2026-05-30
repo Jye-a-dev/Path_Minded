@@ -10,8 +10,17 @@ export interface KnowledgeBlockMappingItem {
   updated_at: string;
 }
 
+export interface KBStatItem {
+  knowledge_block: string;
+  program_id: string;
+  program_code: string;
+  program_name: string;
+  course_count: number;
+}
+
 export function useKnowledgeBlockMappings() {
   const [data, setData] = useState<KnowledgeBlockMappingItem[]>([]);
+  const [statsMap, setStatsMap] = useState<Map<string, KBStatItem[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,8 +28,18 @@ export function useKnowledgeBlockMappings() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<KnowledgeBlockMappingItem[]>("/knowledge_block_mappings");
-      setData(res.data ?? []);
+      const [mappingsRes, statsRes] = await Promise.all([
+        api.get<KnowledgeBlockMappingItem[]>("/knowledge_block_mappings"),
+        api.get<KBStatItem[]>("/knowledge_block_mappings/stats"),
+      ]);
+      setData(mappingsRes.data ?? []);
+
+      const map = new Map<string, KBStatItem[]>();
+      for (const stat of statsRes.data ?? []) {
+        const existing = map.get(stat.knowledge_block) ?? [];
+        map.set(stat.knowledge_block, [...existing, stat]);
+      }
+      setStatsMap(map);
     } catch (err) {
       const e = err as { response?: { data?: { message?: string } }; message?: string };
       setError(e.response?.data?.message || e.message || "Không thể tải dữ liệu");
@@ -66,5 +85,5 @@ export function useKnowledgeBlockMappings() {
     }
   };
 
-  return { data, loading, error, refresh: fetchAll, createItem, updateItem, deleteItem };
+  return { data, statsMap, loading, error, refresh: fetchAll, createItem, updateItem, deleteItem };
 }

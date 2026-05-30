@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranscriptUploads } from "../../../hooks/useTranscriptUploads";
 import type { UploadItem } from "../../../hooks/useTranscriptUploads";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Trash2 } from "lucide-react";
 import { TranscriptUploadForm } from "./TranscriptUploadForm";

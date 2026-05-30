@@ -1,78 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useCourseTypeMappings } from "../../../hooks/useCourseTypeMappings";
 import type { CourseTypeMappingItem, CourseTypeKey } from "../../../hooks/useCourseTypeMappings";
-import { Tags, RefreshCw, Plus, X, AlertTriangle, FileSpreadsheet } from "lucide-react";
-import { Modal } from "../../../components/ui/Modal";
+import { Tags, RefreshCw, Plus } from "lucide-react";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
-import { api } from "../../../services/api";
 import { CourseTypeCard } from "./CourseTypeCard";
-import type { ColMappingItem } from "./courseTypeConfig";
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+import { ExcelColumnMappingSection } from "../../../components/data_display/ExcelColumnMappingSection";
+import { CreateCourseTypeModal } from "./partials/CreateCourseTypeModal";
+import { EditCourseTypeModal } from "./partials/EditCourseTypeModal";
 
 export default function CourseTypeMappings() {
   const { data, loading, error, refresh, createItem, updateItem, deleteItem } = useCourseTypeMappings();
-
-  // Excel Column recognition states
-  const [colMapping, setColMapping] = useState<ColMappingItem | null>(null);
-  const [colSaving, setColSaving] = useState(false);
-  const [newColPhrase, setNewColPhrase] = useState("");
-  const [colError, setColError] = useState<string | null>(null);
-
-  const fetchColMapping = useCallback(async () => {
-    try {
-      const res = await api.get<ColMappingItem[]>("/curriculum_column_mappings");
-      const item = res.data.find((m) => m.field_key === "course_type");
-      if (item) {
-        setColMapping(item);
-      }
-    } catch (err) {
-      console.error("Lỗi khi tải cấu hình cột:", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    const load = async () => {
-      await fetchColMapping();
-    };
-    void load();
-  }, [fetchColMapping]);
-
-  const handleAddColPhrase = async () => {
-    const cleaned = newColPhrase.trim().toLowerCase();
-    if (!cleaned || !colMapping) return;
-    if (colMapping.phrases.includes(cleaned)) {
-      setColError(`"${cleaned}" đã tồn tại`);
-      return;
-    }
-    setColSaving(true);
-    setColError(null);
-    try {
-      const updated = [...colMapping.phrases, cleaned];
-      const res = await api.patch<ColMappingItem>(`/curriculum_column_mappings/${colMapping.id}`, { phrases: updated });
-      setColMapping(res.data);
-      setNewColPhrase("");
-    } catch (err) {
-      setColError(err instanceof Error ? err.message : "Lỗi khi thêm từ khóa");
-    } finally {
-      setColSaving(false);
-    }
-  };
-
-  const handleRemoveColPhrase = async (phrase: string) => {
-    if (!colMapping) return;
-    setColSaving(true);
-    setColError(null);
-    try {
-      const updated = colMapping.phrases.filter((p) => p !== phrase);
-      const res = await api.patch<ColMappingItem>(`/curriculum_column_mappings/${colMapping.id}`, { phrases: updated });
-      setColMapping(res.data);
-    } catch (err) {
-      setColError(err instanceof Error ? err.message : "Lỗi khi xóa từ khóa");
-    } finally {
-      setColSaving(false);
-    }
-  };
 
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -81,102 +18,36 @@ export default function CourseTypeMappings() {
 
   // Active items for edit/delete
   const [activeItem, setActiveItem] = useState<CourseTypeMappingItem | null>(null);
-
-  // Form states
-  const [newTypeCode, setNewTypeCode] = useState("");
-  const [newTypeLabel, setNewTypeLabel] = useState("");
-  const [newTypePhrases, setNewTypePhrases] = useState("");
-  const [editLabel, setEditLabel] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   const handleUpdate = async (id: string, payload: { phrases?: string[]; label?: string }) => {
     await updateItem(id, payload);
   };
 
   const handleOpenCreate = () => {
-    setNewTypeCode("");
-    setNewTypeLabel("");
-    setNewTypePhrases("");
-    setActionError(null);
     setIsCreateOpen(true);
-  };
-
-  const handleCreate = async () => {
-    const code = newTypeCode.trim().toUpperCase();
-    const label = newTypeLabel.trim();
-    if (!code || !label) {
-      setActionError("Mã loại môn và tên loại môn không được để trống");
-      return;
-    }
-    if (!/^[A-Z0-9_]{2,20}$/.test(code)) {
-      setActionError("Mã loại môn phải từ 2-20 ký tự, chỉ gồm chữ in hoa, số và dấu gạch dưới");
-      return;
-    }
-
-    const phrases = newTypePhrases
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-
-    setSubmitting(true);
-    setActionError(null);
-    try {
-      await createItem({ course_type: code, label, phrases });
-      setIsCreateOpen(false);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Có lỗi xảy ra");
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const handleOpenEdit = (item: CourseTypeMappingItem) => {
     setActiveItem(item);
-    setEditLabel(item.label);
-    setActionError(null);
     setIsEditOpen(true);
-  };
-
-  const handleEdit = async () => {
-    if (!activeItem) return;
-    const label = editLabel.trim();
-    if (!label) {
-      setActionError("Tên loại môn không được để trống");
-      return;
-    }
-
-    setSubmitting(true);
-    setActionError(null);
-    try {
-      await updateItem(activeItem.id, { label });
-      setIsEditOpen(false);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Có lỗi xảy ra");
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   const handleOpenDelete = (item: CourseTypeMappingItem) => {
     setActiveItem(item);
     setDeleteConfirmText("");
-    setActionError(null);
     setIsDeleteOpen(true);
   };
 
   const handleDelete = async () => {
     if (!activeItem) return;
-    setActionError(null);
     try {
       await deleteItem(activeItem.id);
       setIsDeleteOpen(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa";
       window.alert(`Lỗi: ${msg}`);
-      throw err; // Keep modal open
+      throw err;
     }
   };
 
@@ -241,88 +112,12 @@ export default function CourseTypeMappings() {
       </div>
 
       {/* Cấu hình Nhận diện Cột Excel */}
-      {colMapping && (
-        <div className="rounded-2xl border border-emerald-500/20 bg-slate-900/30 p-5 backdrop-blur-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/85 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400 border border-emerald-500/20">
-                <FileSpreadsheet size={20} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-                  Nhận diện Cột Loại môn học trong Excel
-                  <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-mono font-bold text-emerald-400">
-                    System Key: {colMapping.field_key}
-                  </span>
-                </h3>
-                <p className="mt-1 text-xs text-slate-400 leading-relaxed">
-                  Định nghĩa các tiêu đề cột trong file Excel (không phân biệt hoa thường, khoảng trắng) để tự động nhận diện cột chứa dữ liệu loại môn (Bắt buộc / Tự chọn).
-                </p>
-              </div>
-            </div>
-            <div className="text-[11px] font-semibold text-slate-400 bg-slate-950/60 px-3 py-1.5 rounded-lg border border-slate-800 shrink-0 self-start sm:self-center">
-              {colMapping.phrases.length} tên cột được cấu hình
-            </div>
-          </div>
-
-          {/* Phrase list */}
-          <div className="flex flex-wrap gap-2 min-h-9">
-            {colMapping.phrases.length === 0 ? (
-              <span className="text-xs text-slate-500 italic">Chưa cấu hình tên cột nào</span>
-            ) : (
-              colMapping.phrases.map((phrase: string) => (
-                <span
-                  key={phrase}
-                  className="group flex items-center gap-1.5 rounded-lg border border-emerald-500/10 bg-emerald-500/5 hover:border-emerald-500/20 px-3 py-1.5 text-xs text-slate-200 transition-all"
-                >
-                  {phrase}
-                  <button
-                    onClick={() => void handleRemoveColPhrase(phrase)}
-                    disabled={colSaving}
-                    className="ml-1 rounded text-slate-400 opacity-60 group-hover:opacity-100 hover:text-rose-400 transition-all cursor-pointer"
-                    title="Xóa tên cột"
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              ))
-            )}
-          </div>
-
-          {colError && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-400 border border-rose-500/20 w-fit">
-              <AlertTriangle size={12} />
-              {colError}
-            </div>
-          )}
-
-          {/* Add Phrase Input */}
-          <div className="flex gap-2.5 max-w-md">
-            <input
-              type="text"
-              value={newColPhrase}
-              onChange={(e) => {
-                setNewColPhrase(e.target.value);
-                setColError(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void handleAddColPhrase();
-              }}
-              placeholder="Thêm tên cột Excel khác (VD: bb/tc)..."
-              disabled={colSaving}
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-950/80 px-3.5 py-2 text-xs text-slate-100 placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 transition-all disabled:opacity-50"
-            />
-            <button
-              onClick={() => void handleAddColPhrase()}
-              disabled={colSaving || !newColPhrase.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer shadow-lg shadow-emerald-600/10"
-            >
-              <Plus size={14} />
-              Thêm
-            </button>
-          </div>
-        </div>
-      )}
+      <ExcelColumnMappingSection
+        fieldKey="course_type"
+        title="Nhận diện Cột Loại môn học trong Excel"
+        description="Định nghĩa các tiêu đề cột trong file Excel (không phân biệt hoa thường, khoảng trắng) để tự động nhận diện cột chứa dữ liệu loại môn (Bắt buộc / Tự chọn)."
+        inputPlaceholder="Thêm tên cột Excel khác (VD: bb/tc)..."
+      />
 
       {/* API Error */}
       {error && (
@@ -370,162 +165,20 @@ export default function CourseTypeMappings() {
       )}
 
       {/* Create Modal */}
-      <Modal
+      <CreateCourseTypeModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Thêm loại môn học mới"
-        size="md"
-      >
-        <div className="space-y-4">
-          {actionError && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-400 border border-rose-500/20">
-              <AlertTriangle size={12} className="shrink-0" />
-              {actionError}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Mã loại môn <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newTypeCode}
-              onChange={(e) => {
-                setNewTypeCode(e.target.value);
-                setActionError(null);
-              }}
-              placeholder="VD: FREE_ELECTIVE, ADVANCED"
-              disabled={submitting}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all font-mono uppercase"
-            />
-            <p className="text-[10px] text-slate-500 leading-normal">
-              Chỉ cho phép chữ in hoa, số và dấu gạch dưới (A-Z, 0-9, _). Từ 2-20 ký tự.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Tên loại môn <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={newTypeLabel}
-              onChange={(e) => {
-                setNewTypeLabel(e.target.value);
-                setActionError(null);
-              }}
-              placeholder="VD: Tự chọn tự do, Môn nâng cao"
-              disabled={submitting}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Từ khóa ban đầu (Phân tách bằng dấu phẩy)
-            </label>
-            <input
-              type="text"
-              value={newTypePhrases}
-              onChange={(e) => {
-                setNewTypePhrases(e.target.value);
-                setActionError(null);
-              }}
-              placeholder="VD: tự do, tự chọn tự do, free, elective"
-              disabled={submitting}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
-            />
-            <p className="text-[10px] text-slate-500 leading-normal">
-              Không phân biệt hoa thường. Các từ khóa sẽ tự động chuyển thành chữ thường.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setIsCreateOpen(false)}
-              disabled={submitting}
-              className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              disabled={submitting || !newTypeCode.trim() || !newTypeLabel.trim()}
-              onClick={handleCreate}
-              className="rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 text-xs font-semibold shadow-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-            >
-              {submitting ? "Đang tạo..." : "Thêm loại môn"}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        onSubmit={createItem}
+      />
 
       {/* Edit Label Modal */}
-      <Modal
+      <EditCourseTypeModal
+        key={activeItem?.id || "none"}
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
-        title="Sửa tên loại môn học"
-        size="sm"
-      >
-        <div className="space-y-4">
-          {actionError && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-400 border border-rose-500/20">
-              <AlertTriangle size={12} className="shrink-0" />
-              {actionError}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Mã loại môn
-            </label>
-            <input
-              type="text"
-              value={activeItem?.course_type || ""}
-              disabled={true}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-500 transition-all font-mono opacity-60 cursor-not-allowed"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Tên loại môn <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={editLabel}
-              onChange={(e) => {
-                setEditLabel(e.target.value);
-                setActionError(null);
-              }}
-              placeholder="Nhập tên loại môn..."
-              disabled={submitting}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => setIsEditOpen(false)}
-              disabled={submitting}
-              className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              disabled={submitting || !editLabel.trim()}
-              onClick={handleEdit}
-              className="rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 text-xs font-semibold shadow-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-            >
-              {submitting ? "Đang lưu..." : "Cập nhật"}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        item={activeItem}
+        onSubmit={updateItem}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

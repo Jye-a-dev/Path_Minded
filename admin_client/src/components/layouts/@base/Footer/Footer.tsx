@@ -27,7 +27,7 @@ export default function Footer({
   className = "mt-auto border-t border-zinc-200 bg-white/70 py-8 text-zinc-500 text-xs select-none",
   brandName,
   brandDescription,
-  brandIndicatorColor = "bg-indigo-655",
+  brandIndicatorColor = "bg-indigo-600",
   links = [],
   bottomLeftText,
   bottomRightText,

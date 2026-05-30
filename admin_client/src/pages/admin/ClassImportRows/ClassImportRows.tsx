@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useClassImportRows } from "../../../hooks/useClassImportRows";
 import type { ClassImportRowItem as RowItem } from "../../../hooks/useClassImportRows";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { ClassImportRowForm } from "./ClassImportRowForm";

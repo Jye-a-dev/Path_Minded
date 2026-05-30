@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useUsers } from "../../../hooks/useUsers";
 import type { UserItem } from "../../../hooks/useUsers";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { UserForm } from "./UserForm";
 import { Plus, Edit2, Trash2, Shield, User } from "lucide-react";

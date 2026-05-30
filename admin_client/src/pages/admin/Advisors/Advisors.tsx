@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAdvisors } from "../../../hooks/useAdvisors";
 import type { AdvisorItem } from "../../../hooks/useAdvisors";
-import { DataTable } from "../../../components/data-display/DataTable";
+import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { AdvisorForm } from "./AdvisorForm";
 import { Plus, Edit2, Trash2, Briefcase, Link2 } from "lucide-react";

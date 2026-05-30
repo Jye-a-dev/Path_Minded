@@ -45,31 +45,26 @@ export interface ParseWarningItem {
 
 export function resolveKB(
   groupName: string | null,
-  courseName: string | null,
-  courseCode: string | null,
   kbMappings: KbMappingRow[],
+  courseName?: string | null,
 ): string {
   const groupClean = (groupName || '').trim();
 
   if (groupClean) {
-    // 1. Exact Code Match
+    // 1. Exact Code Match (e.g. "GENERAL", "MAJOR_CORE")
     const codeMatch = kbMappings.find(
       (m) => m.knowledge_block.toUpperCase() === groupClean.toUpperCase(),
     );
     if (codeMatch) return codeMatch.knowledge_block;
 
-    // 2. Exact Label Match
+    // 2. Exact Label Match (e.g. "Đại cương", "Chuyên ngành")
     const labelMatch = kbMappings.find(
       (m) => m.label.trim().toLowerCase() === groupClean.toLowerCase(),
     );
     if (labelMatch) return labelMatch.knowledge_block;
   }
 
-  // 3. Smart Phrase Match (Longest phrase first to avoid substring conflicts)
-  const groupLower = groupClean.toLowerCase();
-  const nameLower = (courseName || '').toLowerCase();
-  const codeLower = (courseCode || '').toLowerCase();
-
+  // Build phrase list sorted longest-first to avoid substring conflicts
   const allPhrases: { phrase: string; knowledge_block: string }[] = [];
   for (const mapping of kbMappings) {
     if (Array.isArray(mapping.phrases)) {
@@ -84,16 +79,27 @@ export function resolveKB(
       }
     }
   }
-
   allPhrases.sort((a, b) => b.phrase.length - a.phrase.length);
 
-  for (const item of allPhrases) {
-    if (
-      (groupLower && groupLower.includes(item.phrase)) ||
-      nameLower.includes(item.phrase) ||
-      codeLower.includes(item.phrase)
-    ) {
-      return item.knowledge_block;
+  // 3. Phrase match against groupName ONLY (highest confidence)
+  const groupLower = groupClean.toLowerCase();
+  if (groupLower) {
+    for (const item of allPhrases) {
+      if (groupLower.includes(item.phrase)) {
+        return item.knowledge_block;
+      }
+    }
+  }
+
+  // 4. Phrase match against courseName as fallback (lower confidence)
+  //    Only when groupName gave no result — avoids false positives for common words
+  const nameLower = (courseName || '').toLowerCase();
+  if (nameLower) {
+    for (const item of allPhrases) {
+      // Only use longer phrases (>= 5 chars) to reduce false positives from short words
+      if (item.phrase.length >= 5 && nameLower.includes(item.phrase)) {
+        return item.knowledge_block;
+      }
     }
   }
 
@@ -106,14 +112,20 @@ export async function ensureDbSchema(client: PoolClient): Promise<void> {
     ALTER TABLE curriculum_courses 
     DROP CONSTRAINT IF EXISTS curriculum_courses_program_id_course_code_key
   `);
-  try {
-    await client.query(`
-      ALTER TABLE curriculum_courses 
-      ADD CONSTRAINT curriculum_courses_program_id_course_code_course_type_key 
-      UNIQUE (program_id, course_code, course_type)
-    `);
-  } catch {
-    // Ignore if constraint already exists
+
+  const constraintCheck = await client.query(`
+    SELECT 1 FROM pg_constraint WHERE conname = 'curriculum_courses_program_id_course_code_course_type_key'
+  `);
+  if (constraintCheck.rowCount === 0) {
+    try {
+      await client.query(`
+        ALTER TABLE curriculum_courses 
+        ADD CONSTRAINT curriculum_courses_program_id_course_code_course_type_key 
+        UNIQUE (program_id, course_code, course_type)
+      `);
+    } catch {
+      // Ignore if constraint already exists
+    }
   }
 
   // Upgrade database schema dynamically to add Knowledge Block column and table
@@ -218,9 +230,8 @@ export async function parseCurriculumWithPipeline(
     const course = c as ParsedCourseItem;
     const resolved = resolveKB(
       course.knowledgeBlock || course.courseGroup || null,
-      course.courseName || null,
-      course.courseCode || null,
       kbMappings,
+      course.courseName || null,
     );
     return {
       ...course,
@@ -285,9 +296,8 @@ export async function insertCurriculumCourses(
       course.knowledge_block ||
       resolveKB(
         course.courseGroup || null,
-        course.courseName || course.course_name || null,
-        course.courseCode || course.course_code || null,
         kbMappings,
+        course.courseName || course.course_name || null,
       );
 
     await client.query(

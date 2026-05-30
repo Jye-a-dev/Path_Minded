@@ -22,8 +22,8 @@ export interface CourseItem {
   knowledge_block?: string | null;
 }
 
-export function useCurriculumCourses() {
-  const paginated = usePaginatedApi<CourseItem>("/curriculum_courses");
+export function useCurriculumCourses(initialFilters: Record<string, unknown> = {}) {
+  const paginated = usePaginatedApi<CourseItem>("/curriculum_courses", initialFilters);
 
   const bulkDelete = async (ids: (string | number)[]) => {
     const response = await api.delete("/curriculum_courses/bulk", { data: { ids } });

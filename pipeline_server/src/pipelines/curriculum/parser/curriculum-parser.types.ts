@@ -18,4 +18,12 @@ export interface TableHeaders {
   prerequisiteIdx: number;
   corequisiteIdx: number;
   organizingSemesterIdx: number;
+  yearIdx: number;
+}
+
+export interface TableState {
+  semester: number | null;
+  organizingSemester: string | null;
+  courseGroup: string | null;
+  knowledgeBlock: string | null;
 }

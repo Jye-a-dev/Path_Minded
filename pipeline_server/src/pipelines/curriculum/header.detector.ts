@@ -9,11 +9,22 @@ export function matchesMapping(
   columnMappings?: Record<string, string[]>,
 ): boolean {
   const phrases =
-    columnMappings && Array.isArray(columnMappings[key])
+    columnMappings &&
+    Array.isArray(columnMappings[key]) &&
+    columnMappings[key].length > 0
       ? columnMappings[key]
       : defaultPhrases;
-  const lowerVal = cellVal.toLowerCase();
-  return phrases.some((phrase) => lowerVal.includes(phrase.toLowerCase()));
+  const lowerVal = cellVal.toLowerCase().trim();
+  return phrases.some((phrase) => {
+    const lowerPhrase = phrase.toLowerCase();
+    // Short phrases (≤3 chars, e.g. 'lt', 'th', 'tt', 'đa', 'hk') must match
+    // the ENTIRE cell value to avoid false positives (e.g. "khối kiến thức"
+    // contains "th" as a substring in "thức").
+    if (lowerPhrase.length <= 3) {
+      return lowerVal === lowerPhrase;
+    }
+    return lowerVal.includes(lowerPhrase);
+  });
 }
 
 export function detectTableHeaders(
@@ -33,7 +44,8 @@ export function detectTableHeaders(
     knowledgeBlockIdx = -1;
   let prerequisiteIdx = -1,
     corequisiteIdx = -1,
-    organizingSemesterIdx = -1;
+    organizingSemesterIdx = -1,
+    yearIdx = -1;
   let courseNamePriority = 0;
 
   for (let i = 0; i < sliceValues.length; i++) {
@@ -196,6 +208,15 @@ export function detectTableHeaders(
       )
     ) {
       organizingSemesterIdx = actualIdx;
+    } else if (
+      matchesMapping(
+        val,
+        'year',
+        ['năm học', 'năm thứ', 'năm', 'year'],
+        columnMappings,
+      )
+    ) {
+      yearIdx = actualIdx;
     }
   }
 
@@ -214,6 +235,7 @@ export function detectTableHeaders(
       prerequisiteIdx,
       corequisiteIdx,
       organizingSemesterIdx,
+      yearIdx,
     };
   }
   return null;

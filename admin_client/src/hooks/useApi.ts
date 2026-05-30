@@ -29,6 +29,7 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
 
   const prevFiltersRef = useRef<Record<string, unknown>>(initialFilters);
   const prevDebouncedSearchRef = useRef("");
+  const lastRequestIdRef = useRef(0);
 
   // Debounce: update debouncedSearch 300ms after user stops typing
   useEffect(() => {
@@ -39,6 +40,7 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
   }, [search]);
 
   const fetchData = useCallback(async (currentPage: number) => {
+    const requestId = ++lastRequestIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -55,19 +57,23 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
         },
       });
 
-      if (response.data) {
+      if (requestId === lastRequestIdRef.current && response.data) {
         setData(response.data.data ?? []);
         const totalCount = response.data.pagination?.total ?? response.data.total ?? 0;
         setTotal(totalCount);
       }
     } catch (err) {
-      console.error(`Error fetching paginated data for ${endpoint}:`, err);
-      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
-      setError(errObj.response?.data?.message || errObj.message || "Failed to load data");
-      setData([]);
-      setTotal(0);
+      if (requestId === lastRequestIdRef.current) {
+        console.error(`Error fetching paginated data for ${endpoint}:`, err);
+        const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+        setError(errObj.response?.data?.message || errObj.message || "Failed to load data");
+        setData([]);
+        setTotal(0);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === lastRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [endpoint, limit, filters, debouncedSearch]);
 
