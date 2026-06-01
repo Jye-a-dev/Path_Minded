@@ -5,6 +5,7 @@ import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ClassForm } from "./ClassForm";
 import { Plus, Edit2, Trash2, Building2 } from "lucide-react";
+import { useColumnLabels } from "../../../hooks/useColumnLabels";
 
 export default function Classes() {
   const {
@@ -22,6 +23,8 @@ export default function Classes() {
     updateItem,
     deleteItem,
   } = useClasses();
+
+  const { getLabel } = useColumnLabels("CLASS");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassItem | null>(null);
@@ -67,7 +70,7 @@ export default function Classes() {
 
   const columns = [
     {
-      header: "Mã lớp học",
+      header: getLabel("student_code", "Mã lớp học"),
       accessorKey: "class_code",
       render: (row: ClassItem) => (
         <span className="inline-flex items-center gap-1 rounded bg-indigo-950/40 text-indigo-400 font-mono text-xs px-2 py-0.5 border border-indigo-900/40">
@@ -77,7 +80,7 @@ export default function Classes() {
       ),
     },
     {
-      header: "Tên lớp học",
+      header: getLabel("full_name", "Tên lớp học"),
       accessorKey: "class_name",
       render: (row: ClassItem) => (
         <span className="text-slate-200 font-bold">{row.class_name || "N/A"}</span>

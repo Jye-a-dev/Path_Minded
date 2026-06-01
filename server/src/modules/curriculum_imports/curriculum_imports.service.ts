@@ -379,20 +379,39 @@ export class CurriculumImportsService implements OnModuleInit {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    await this.pool.query(
-      `DELETE FROM curriculum_courses WHERE import_id = $1`,
-      [id],
-    );
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    const result = await this.pool.query(
-      `DELETE FROM curriculum_imports WHERE id = $1`,
-      [id],
-    );
+      // 1. Delete associated courses
+      await client.query(
+        `DELETE FROM curriculum_courses WHERE import_id = $1`,
+        [id],
+      );
 
-    if (result.rowCount === 0) {
-      throw new NotFoundException('curriculum_imports not found');
+      // 2. Delete associated parse warnings
+      await client.query(
+        `DELETE FROM parse_warnings WHERE source_type = 'CURRICULUM' AND source_id = $1`,
+        [id],
+      );
+
+      // 3. Delete the curriculum import session
+      const result = await client.query(
+        `DELETE FROM curriculum_imports WHERE id = $1`,
+        [id],
+      );
+
+      if (result.rowCount === 0) {
+        throw new NotFoundException('curriculum_imports not found');
+      }
+
+      await client.query('COMMIT');
+      return { message: 'deleted' };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    return { message: 'deleted' };
   }
 }

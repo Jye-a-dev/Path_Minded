@@ -1,20 +1,22 @@
 import { type CourseItem } from "../../../hooks/useCurriculumCourses";
+import { type GetLabelFn } from "../../../hooks/useColumnLabels";
 import { Bookmark, Edit2, Trash2 } from "lucide-react";
 
 export const getCurriculumCoursesColumns = (
   handleOpenEdit: (item: CourseItem) => void,
   handleDelete: (id: string) => void,
-  knowledgeBlocks: Array<{ id: string; label: string }> = []
+  knowledgeBlocks: Array<{ id: string; label: string }> = [],
+  getLabel: GetLabelFn = (k, f) => f ?? k
 ) => [
   {
-    header: "Mã môn",
+    header: getLabel("course_code", "Mã môn"),
     accessorKey: "course_code",
     render: (row: CourseItem) => (
       <span className="font-mono text-xs font-bold text-slate-200">{row.course_code}</span>
     ),
   },
   {
-    header: "Tên môn học",
+    header: getLabel("course_name", "Tên môn học"),
     accessorKey: "course_name",
     render: (row: CourseItem) => (
       <div className="flex items-center gap-2 min-w-60">
@@ -24,42 +26,42 @@ export const getCurriculumCoursesColumns = (
     ),
   },
   {
-    header: "Số tín chỉ",
+    header: getLabel("credits", "Số tín chỉ"),
     accessorKey: "credits",
     render: (row: CourseItem) => (
       <span className="text-slate-400 font-semibold">{row.credits ?? "N/A"}</span>
     ),
   },
   {
-    header: "LT",
+    header: getLabel("theory_hours", "LT"),
     accessorKey: "theory_hours",
     render: (row: CourseItem) => (
       <span className="text-slate-400 text-center font-medium block">{row.theory_hours ?? "-"}</span>
     ),
   },
   {
-    header: "TH",
+    header: getLabel("practice_hours", "TH"),
     accessorKey: "practice_hours",
     render: (row: CourseItem) => (
       <span className="text-slate-400 text-center font-medium block">{row.practice_hours ?? "-"}</span>
     ),
   },
   {
-    header: "ĐA",
+    header: getLabel("project_hours", "ĐA"),
     accessorKey: "project_hours",
     render: (row: CourseItem) => (
       <span className="text-slate-400 text-center font-medium block">{row.project_hours ?? "-"}</span>
     ),
   },
   {
-    header: "TT",
+    header: getLabel("internship_hours", "TT"),
     accessorKey: "internship_hours",
     render: (row: CourseItem) => (
       <span className="text-slate-400 text-center font-medium block">{row.internship_hours ?? "-"}</span>
     ),
   },
   {
-    header: "Loại môn",
+    header: getLabel("course_type", "Loại môn"),
     accessorKey: "course_type",
     render: (row: CourseItem) => {
       const badges = {
@@ -88,7 +90,7 @@ export const getCurriculumCoursesColumns = (
     },
   },
   {
-    header: "Khối kiến thức",
+    header: getLabel("knowledge_block", "Khối kiến thức"),
     accessorKey: "knowledge_block",
     render: (row: CourseItem) => {
       const badges: Record<string, string> = {
@@ -100,11 +102,11 @@ export const getCurriculumCoursesColumns = (
       };
       const kb = row.knowledge_block;
       if (!kb) return <span className="text-slate-600 font-medium">-</span>;
-      
+
       const badgeStyle = badges[kb] || "bg-slate-500/15 text-slate-300 border-slate-500/30";
       const found = knowledgeBlocks.find((k) => k.id === kb);
       const displayLabel = found ? found.label.toUpperCase() : kb;
-      
+
       return (
         <span
           className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${badgeStyle}`}
@@ -115,7 +117,7 @@ export const getCurriculumCoursesColumns = (
     },
   },
   {
-    header: "ĐK tiên quyết",
+    header: getLabel("prerequisite", "ĐK tiên quyết"),
     accessorKey: "prerequisite",
     render: (row: CourseItem) => (
       <span className="font-mono text-[11px] text-slate-400 block min-w-30 whitespace-nowrap" title={row.prerequisite || ""}>
@@ -124,7 +126,7 @@ export const getCurriculumCoursesColumns = (
     ),
   },
   {
-    header: "Học trước",
+    header: getLabel("corequisite", "Học trước"),
     accessorKey: "corequisite",
     render: (row: CourseItem) => (
       <span className="font-mono text-[11px] text-slate-400 block min-w-30 whitespace-nowrap" title={row.corequisite || ""}>
@@ -133,14 +135,14 @@ export const getCurriculumCoursesColumns = (
     ),
   },
   {
-    header: "HK tổ chức",
+    header: getLabel("organizing_semester", "HK tổ chức"),
     accessorKey: "organizing_semester",
     render: (row: CourseItem) => (
       <span className="text-slate-400 text-center font-medium block">{row.organizing_semester || "-"}</span>
     ),
   },
   {
-    header: "Học kỳ",
+    header: getLabel("expected_semester", "Học kỳ"),
     accessorKey: "expected_semester",
     render: (row: CourseItem) => (
       <span className="text-slate-400 text-center font-semibold block">{row.expected_semester ?? "N/A"}</span>

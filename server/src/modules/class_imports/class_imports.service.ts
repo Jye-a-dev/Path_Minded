@@ -307,15 +307,43 @@ export class ClassImportsService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.pool.query(
-      `DELETE FROM class_imports WHERE id = $1`,
-      [id],
-    );
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (result.rowCount === 0) {
-      throw new NotFoundException('class_imports not found');
+      // 1. Delete associated students that were imported in this session
+      await client.query(
+        `DELETE FROM students 
+         WHERE student_code IN (
+           SELECT student_code FROM class_import_rows WHERE import_id = $1
+         )`,
+        [id],
+      );
+
+      // 2. Delete associated parse warnings
+      await client.query(
+        `DELETE FROM parse_warnings 
+         WHERE source_type = 'CLASS' AND source_id = $1`,
+        [id],
+      );
+
+      // 3. Delete the class import record (cascades to class_import_rows)
+      const result = await client.query(
+        `DELETE FROM class_imports WHERE id = $1`,
+        [id],
+      );
+
+      if (result.rowCount === 0) {
+        throw new NotFoundException('class_imports not found');
+      }
+
+      await client.query('COMMIT');
+      return { message: 'deleted' };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    return { message: 'deleted' };
   }
 }

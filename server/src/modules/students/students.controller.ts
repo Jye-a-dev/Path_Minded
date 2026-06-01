@@ -221,4 +221,14 @@ export class StudentsController {
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.studentsService.remove(id);
   }
+
+  @ApiOperation({ summary: 'Delete ALL students (hard delete — irreversible)' })
+  @ApiOkResponse({
+    description: 'All students deleted',
+    schema: { example: { message: 'all students deleted', deleted: 120 } },
+  })
+  @Delete()
+  removeAll(): Promise<{ message: string; deleted: number }> {
+    return this.studentsService.removeAll();
+  }
 }

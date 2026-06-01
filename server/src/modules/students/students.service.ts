@@ -282,4 +282,9 @@ export class StudentsService {
     }
     return { message: 'deleted' };
   }
+
+  async removeAll(): Promise<{ message: string; deleted: number }> {
+    const result = await this.pool.query('DELETE FROM students');
+    return { message: 'all students deleted', deleted: result.rowCount ?? 0 };
+  }
 }

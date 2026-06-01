@@ -10,6 +10,7 @@ import { Plus, Trash2, ArrowLeft } from "lucide-react";
 import { api } from "../../../services/api";
 import { ColumnVisibilityToggle } from "./partials/ColumnVisibilityToggle";
 import { CurriculumCoursesFilters } from "./partials/CurriculumCoursesFilters";
+import { useColumnLabels } from "../../../hooks/useColumnLabels";
 
 interface DropdownItem {
   id: string;
@@ -53,6 +54,8 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
     bulkDelete,
     deleteAll,
   } = useCurriculumCourses({ program_id: selectedProgramId });
+
+  const { getLabel } = useColumnLabels("CURRICULUM");
 
   const [programsList, setProgramsList] = useState<DropdownItem[]>([]);
   const [knowledgeBlocks, setKnowledgeBlocks] = useState<DropdownItem[]>([]);
@@ -261,7 +264,7 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
     });
   };
 
-  const allColumns = getCurriculumCoursesColumns(handleOpenEdit, handleDelete, rawKnowledgeBlocks);
+  const allColumns = getCurriculumCoursesColumns(handleOpenEdit, handleDelete, rawKnowledgeBlocks, getLabel);
   const columns = allColumns.filter((col) => {
     if (!col.accessorKey) return true;
     return visibleColumns.includes(col.accessorKey as string);

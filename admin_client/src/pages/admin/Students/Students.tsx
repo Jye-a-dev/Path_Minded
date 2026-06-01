@@ -4,7 +4,10 @@ import type { StudentItem } from "../../../hooks/useStudents";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { StudentForm } from "./StudentForm";
-import { Plus, Edit2, Trash2, GraduationCap } from "lucide-react";
+import { Plus, Edit2, Trash2, GraduationCap, Loader2 } from "lucide-react";
+import { api } from "../../../services/api";
+import { useColumnLabels } from "../../../hooks/useColumnLabels";
+import { useClassLookup } from "../../../hooks/useClassLookup";
 
 export default function Students() {
   const {
@@ -23,10 +26,17 @@ export default function Students() {
     createItem,
     updateItem,
     deleteItem,
+    refresh,
   } = useStudents();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<StudentItem | null>(null);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteAllError, setDeleteAllError] = useState<string | null>(null);
+
+  const { getLabel } = useColumnLabels("CLASS");
+  const { getClassName } = useClassLookup();
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -69,16 +79,31 @@ export default function Students() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    setDeleteAllLoading(true);
+    setDeleteAllError(null);
+    try {
+      await api.delete("/students");
+      setDeleteAllOpen(false);
+      await refresh();
+    } catch (err) {
+      const errObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setDeleteAllError(errObj.response?.data?.message || errObj.message || "Xóa tất cả sinh viên thất bại.");
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   const columns = [
     {
-      header: "Mã số",
+      header: getLabel("student_code", "Mã số"),
       accessorKey: "student_code",
       render: (row: StudentItem) => (
         <span className="font-mono text-xs font-bold text-slate-200">{row.student_code}</span>
       ),
     },
     {
-      header: "Họ và tên",
+      header: getLabel("full_name", "Họ và tên"),
       accessorKey: "full_name",
       render: (row: StudentItem) => (
         <div className="flex items-center gap-2">
@@ -118,10 +143,10 @@ export default function Students() {
       },
     },
     {
-      header: "Mã lớp",
+      header: "Lớp học",
       accessorKey: "class_id",
       render: (row: StudentItem) => (
-        <span className="text-xs text-slate-400">{row.class_id || "Chưa phân lớp"}</span>
+        <span className="text-xs font-medium text-slate-300">{getClassName(row.class_id)}</span>
       ),
     },
     {
@@ -196,13 +221,23 @@ export default function Students() {
           </select>
         }
         rightActions={
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
-          >
-            <Plus size={16} />
-            Tạo sinh viên
-          </button>
+          <>
+            <button
+              onClick={() => { setDeleteAllError(null); setDeleteAllOpen(true); }}
+              disabled={total === 0 || loading}
+              className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-300 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer"
+            >
+              <Trash2 size={15} />
+              Xóa tất cả
+            </button>
+            <button
+              onClick={handleOpenCreate}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+            >
+              <Plus size={16} />
+              Tạo sinh viên
+            </button>
+          </>
         }
       />
 
@@ -219,6 +254,58 @@ export default function Students() {
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
         />
+      </Modal>
+
+      {/* Delete All Confirmation Modal */}
+      <Modal
+        isOpen={deleteAllOpen}
+        onClose={() => !deleteAllLoading && setDeleteAllOpen(false)}
+        title="Xác nhận xóa tất cả sinh viên"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-4">
+            <p className="text-sm font-semibold text-rose-300">
+              ⚠️ Hành động này <span className="font-black underline">không thể hoàn tác</span>.
+            </p>
+            <p className="mt-1.5 text-xs text-rose-400/80">
+              Toàn bộ <span className="font-bold text-rose-300">{total.toLocaleString()} sinh viên</span> trong cơ sở dữ liệu sẽ bị xóa vĩnh viễn, bao gồm tất cả dữ liệu liên kết.
+            </p>
+          </div>
+
+          {deleteAllError && (
+            <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-400">
+              {deleteAllError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setDeleteAllOpen(false)}
+              disabled={deleteAllLoading}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-50 transition-all cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              onClick={handleDeleteAll}
+              disabled={deleteAllLoading}
+              className="flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 disabled:opacity-60 disabled:pointer-events-none transition-all cursor-pointer"
+            >
+              {deleteAllLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} />
+                  Xóa tất cả {total.toLocaleString()} sinh viên
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
