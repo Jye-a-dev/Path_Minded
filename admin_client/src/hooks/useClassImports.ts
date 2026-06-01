@@ -16,13 +16,12 @@ export interface ClassImportItem {
 export function useClassImports() {
   const paginated = usePaginatedApi<ClassImportItem>("/class_imports");
 
-  const createImport = async (payload: { class_id: string; textContent: string }) => {
-    const fullPayload = {
-      sourceType: "text",
-      file_name: `pasted_class_import_${Date.now()}.csv`,
-      ...payload,
-    };
-    const response = await api.post("/class_imports", fullPayload);
+  const createImport = async (formData: FormData) => {
+    const response = await api.post("/class_imports", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     await paginated.refresh();
     return response.data;
   };

@@ -68,14 +68,14 @@ export class CoursePrerequisitesService {
 
       if (key === 'search') {
         clauses.push(
-          `(course_code ILIKE $${idx} OR prerequisite_code ILIKE $${idx})`,
+          `(cp.course_code ILIKE $${idx} OR cp.prerequisite_course_code ILIKE $${idx})`,
         );
-        values.push(`%${value}%`);
+        values.push(`%${value as string}%`);
         idx++;
         return;
       }
 
-      clauses.push(`${key} = $${idx++}`);
+      clauses.push(`cp.${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });
 
@@ -94,7 +94,21 @@ export class CoursePrerequisitesService {
     const offset = Number(query.offset ?? 0);
 
     const result = await this.pool.query<CoursePrerequisiteEntity>(
-      `SELECT * FROM course_prerequisites ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT cp.*, 
+              c1.course_name AS course_name, 
+              c2.course_name AS prerequisite_course_name
+       FROM course_prerequisites cp
+       LEFT JOIN (
+         SELECT DISTINCT ON (program_id, course_code) program_id, course_code, course_name 
+         FROM curriculum_courses
+       ) c1 ON cp.program_id = c1.program_id AND cp.course_code = c1.course_code
+       LEFT JOIN (
+         SELECT DISTINCT ON (program_id, course_code) program_id, course_code, course_name 
+         FROM curriculum_courses
+       ) c2 ON cp.program_id = c2.program_id AND cp.prerequisite_course_code = c2.course_code
+       ${where} 
+       ORDER BY cp.id DESC 
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -110,7 +124,7 @@ export class CoursePrerequisitesService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM course_prerequisites ${where}`,
+      `SELECT COUNT(*) AS total FROM course_prerequisites cp ${where}`,
       values,
     );
 
@@ -118,7 +132,21 @@ export class CoursePrerequisitesService {
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
     const result = await this.pool.query<CoursePrerequisiteEntity>(
-      `SELECT * FROM course_prerequisites ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT cp.*, 
+              c1.course_name AS course_name, 
+              c2.course_name AS prerequisite_course_name
+       FROM course_prerequisites cp
+       LEFT JOIN (
+         SELECT DISTINCT ON (program_id, course_code) program_id, course_code, course_name 
+         FROM curriculum_courses
+       ) c1 ON cp.program_id = c1.program_id AND cp.course_code = c1.course_code
+       LEFT JOIN (
+         SELECT DISTINCT ON (program_id, course_code) program_id, course_code, course_name 
+         FROM curriculum_courses
+       ) c2 ON cp.program_id = c2.program_id AND cp.prerequisite_course_code = c2.course_code
+       ${where} 
+       ORDER BY cp.id DESC 
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -131,7 +159,7 @@ export class CoursePrerequisitesService {
   async count(query: Record<string, unknown>): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM course_prerequisites ${where}`,
+      `SELECT COUNT(*) AS count FROM course_prerequisites cp ${where}`,
       values,
     );
 

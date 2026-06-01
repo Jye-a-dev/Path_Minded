@@ -21,6 +21,7 @@ export default function ColumnMappings() {
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "system" | "custom">("all");
+  const [filterFunction, setFilterFunction] = useState<"all" | "curriculum" | "class">("all");
 
   // Modal open/close flags
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -47,6 +48,8 @@ export default function ColumnMappings() {
     "organizing_semester",
     "student_code",
     "full_name",
+    "ho_lot",
+    "ten",
     "email",
   ];
 
@@ -105,7 +108,12 @@ export default function ColumnMappings() {
       (filterType === "system" && isSystem) ||
       (filterType === "custom" && !isSystem);
 
-    return matchesSearch && matchesType;
+    const matchesFunction =
+      filterFunction === "all" ||
+      (filterFunction === "curriculum" && item.mapping_type === "CURRICULUM") ||
+      (filterFunction === "class" && item.mapping_type === "CLASS");
+
+    return matchesSearch && matchesType && matchesFunction;
   });
 
   return (
@@ -147,8 +155,27 @@ export default function ColumnMappings() {
             placeholder="Tìm kiếm theo khóa, nhãn hiển thị hoặc từ khóa khớp..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950/80 py-2.5 pl-10 pr-4 text-xs text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950/80 py-2.5 pl-10 pr-4 text-xs text-slate-100 placeholder-slate-650 focus:border-indigo-500 focus:outline-none transition-all"
           />
+        </div>
+
+        {/* Function Filter dropdown */}
+        <div className="w-full md:w-auto">
+          <select
+            value={filterFunction}
+            onChange={(e) => setFilterFunction(e.target.value as "all" | "curriculum" | "class")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-950/80 py-2 px-3 text-xs font-semibold text-slate-400 focus:border-indigo-500 focus:text-white focus:outline-none transition-all cursor-pointer min-w-45"
+          >
+            <option className="bg-slate-900 text-slate-400 font-medium" value="all">
+              Tất cả chức năng
+            </option>
+            <option className="bg-slate-900 text-slate-200 font-medium" value="curriculum">
+              Nhập CTĐT
+            </option>
+            <option className="bg-slate-900 text-slate-200 font-medium" value="class">
+              Nhập lớp học / sinh viên
+            </option>
+          </select>
         </div>
 
         {/* Filter Pills buttons */}

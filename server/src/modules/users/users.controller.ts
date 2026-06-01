@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -27,6 +28,15 @@ import {
   UsersPaginationResponse,
 } from './interfaces/users.interfaces';
 import { UserService } from './user.service';
+import type { Request } from 'express';
+
+interface AuthRequest extends Request {
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
 
 @ApiTags('Users')
 @UseGuards(RolesGuard)
@@ -123,6 +133,46 @@ export class UsersController {
   @Get('count')
   count(@Query() query: QueryUsersDto): Promise<{ count: number }> {
     return this.usersService.countUsers(query);
+  }
+
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiOkResponse({
+    description: 'Current user detail',
+    schema: {
+      example: {
+        id: '9df8ca89-38f4-4d95-a44b-cd91a461d413',
+        email: 'user@example.com',
+        role: 'STUDENT',
+      },
+    },
+  })
+  @Get('me')
+  findMe(@Req() req: AuthRequest): Promise<UserResponse> {
+    return this.usersService.findOne(req.user.id);
+  }
+
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiBody({ type: UpdateUsersDto })
+  @ApiOkResponse({
+    description: 'Current user updated',
+    schema: {
+      example: {
+        id: '9df8ca89-38f4-4d95-a44b-cd91a461d413',
+        email: 'newmail@example.com',
+        role: 'STUDENT',
+      },
+    },
+  })
+  @Patch('me')
+  updateMe(
+    @Req() req: AuthRequest,
+    @Body() payload: UpdateUsersDto,
+  ): Promise<UserResponse> {
+    // Prevent non-admins from changing their role
+    if (req.user?.role !== 'ADMIN' && payload.role) {
+      delete payload.role;
+    }
+    return this.usersService.update(req.user.id, payload);
   }
 
   @ApiOperation({ summary: 'Get user by id' })

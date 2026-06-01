@@ -6,7 +6,7 @@ interface EditMappingModalProps {
   isOpen: boolean;
   onClose: () => void;
   mapping: MappingItem | null;
-  onSubmit: (id: string, payload: { display_label: string }) => Promise<void>;
+  onSubmit: (id: string, payload: { display_label: string; mapping_type: "CURRICULUM" | "CLASS" }) => Promise<void>;
 }
 
 export const EditMappingModal: React.FC<EditMappingModalProps> = ({
@@ -17,6 +17,9 @@ export const EditMappingModal: React.FC<EditMappingModalProps> = ({
 }) => {
   const [displayLabel, setDisplayLabel] = useState(
     mapping ? mapping.display_label : "",
+  );
+  const [mappingType, setMappingType] = useState<"CURRICULUM" | "CLASS">(
+    mapping ? mapping.mapping_type : "CURRICULUM"
   );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +38,7 @@ export const EditMappingModal: React.FC<EditMappingModalProps> = ({
     try {
       await onSubmit(mapping.id, {
         display_label: displayLabel.trim(),
+        mapping_type: mappingType,
       });
       onClose();
     } catch (err) {
@@ -77,6 +81,20 @@ export const EditMappingModal: React.FC<EditMappingModalProps> = ({
             onChange={(e) => setDisplayLabel(e.target.value)}
             className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Phân loại chức năng <span className="text-rose-500">*</span>
+          </label>
+          <select
+            value={mappingType}
+            onChange={(e) => setMappingType(e.target.value as "CURRICULUM" | "CLASS")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+          >
+            <option value="CURRICULUM">Nhập chương trình đào tạo (CURRICULUM)</option>
+            <option value="CLASS">Nhập lớp học / sinh viên (CLASS)</option>
+          </select>
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">

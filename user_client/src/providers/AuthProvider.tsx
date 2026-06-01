@@ -5,40 +5,40 @@ import { api } from "../services/api";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => {
-    return sessionStorage.getItem("admin_token");
+    return sessionStorage.getItem("user_token");
   });
 
   const [user, setUser] = useState<User | null>(() => {
-    const storedUser = sessionStorage.getItem("admin_user");
+    const storedUser = sessionStorage.getItem("user_user");
     if (storedUser) {
       try {
         return JSON.parse(storedUser) as User;
       } catch {
-        sessionStorage.removeItem("admin_token");
-        sessionStorage.removeItem("admin_user");
+        sessionStorage.removeItem("user_token");
+        sessionStorage.removeItem("user_user");
       }
     }
     return null;
   });
 
   const [loading, setLoading] = useState(() => {
-    const hasAccessToken = !!sessionStorage.getItem("admin_token");
-    const hasRefreshToken = !!(localStorage.getItem("admin_refresh_token") || sessionStorage.getItem("admin_refresh_token"));
+    const hasAccessToken = !!sessionStorage.getItem("user_token");
+    const hasRefreshToken = !!(localStorage.getItem("user_refresh_token") || sessionStorage.getItem("user_refresh_token"));
     return !hasAccessToken && hasRefreshToken;
   });
 
   const login = (newToken: string, newRefreshToken: string, newUser: User, remember: boolean = false) => {
-    sessionStorage.setItem("admin_token", newToken);
-    sessionStorage.setItem("admin_user", JSON.stringify(newUser));
+    sessionStorage.setItem("user_token", newToken);
+    sessionStorage.setItem("user_user", JSON.stringify(newUser));
     
     if (remember) {
-      localStorage.setItem("admin_remember", "true");
-      localStorage.setItem("admin_refresh_token", newRefreshToken);
-      sessionStorage.removeItem("admin_refresh_token");
+      localStorage.setItem("user_remember", "true");
+      localStorage.setItem("user_refresh_token", newRefreshToken);
+      sessionStorage.removeItem("user_refresh_token");
     } else {
-      localStorage.removeItem("admin_remember");
-      localStorage.removeItem("admin_refresh_token");
-      sessionStorage.setItem("admin_refresh_token", newRefreshToken);
+      localStorage.removeItem("user_remember");
+      localStorage.removeItem("user_refresh_token");
+      sessionStorage.setItem("user_refresh_token", newRefreshToken);
     }
 
     setToken(newToken);
@@ -46,25 +46,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    sessionStorage.removeItem("admin_token");
-    sessionStorage.removeItem("admin_user");
-    sessionStorage.removeItem("admin_refresh_token");
-    localStorage.removeItem("admin_refresh_token");
-    localStorage.removeItem("admin_remember");
+    sessionStorage.removeItem("user_token");
+    sessionStorage.removeItem("user_user");
+    sessionStorage.removeItem("user_refresh_token");
+    localStorage.removeItem("user_refresh_token");
+    localStorage.removeItem("user_remember");
     setToken(null);
     setUser(null);
   };
 
   useEffect(() => {
     const initAuth = async () => {
-      const hasAccessToken = !!sessionStorage.getItem("admin_token");
-      const refreshToken = localStorage.getItem("admin_refresh_token") || sessionStorage.getItem("admin_refresh_token");
+      const hasAccessToken = !!sessionStorage.getItem("user_token");
+      const refreshToken = localStorage.getItem("user_refresh_token") || sessionStorage.getItem("user_refresh_token");
 
       if (!hasAccessToken && refreshToken) {
         try {
           const response = await api.post("/auth/refresh", { refreshToken });
           if (response.data?.accessToken && response.data?.user) {
-            const remember = localStorage.getItem("admin_remember") === "true";
+            const remember = localStorage.getItem("user_remember") === "true";
             login(
               response.data.accessToken,
               response.data.refreshToken || refreshToken,

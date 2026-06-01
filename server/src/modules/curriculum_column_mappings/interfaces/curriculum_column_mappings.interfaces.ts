@@ -3,6 +3,7 @@ export type CurriculumColumnMappingEntity = {
   field_key: string;
   display_label: string;
   phrases: string[];
+  mapping_type?: string;
   created_at?: Date;
   updated_at?: Date;
 };

@@ -27,28 +27,48 @@ export class CurriculumColumnMappingsService implements OnModuleInit {
           field_key VARCHAR(50) NOT NULL UNIQUE,
           display_label VARCHAR(100) NOT NULL,
           phrases TEXT[] NOT NULL DEFAULT '{}',
+          mapping_type VARCHAR(50) DEFAULT 'CURRICULUM',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
+      // Alter table to add mapping_type column if it doesn't exist yet on already-created tables
       await client.query(`
-        INSERT INTO curriculum_column_mappings (field_key, display_label, phrases) VALUES
-        ('course_code',         'Mã học phần',          ARRAY['mã học phần', 'mã hp', 'mã môn', 'code', 'course code', 'mã môn học']),
-        ('course_name',         'Tên học phần',         ARRAY['tên học phần', 'tên hp', 'tên môn', 'name', 'course name', 'tên môn học']),
-        ('credits',             'Số tín chỉ',           ARRAY['tín chỉ', 'số tc', 'credits', 'stc', 'credit', 'số tín chỉ']),
-        ('theory_hours',        'Giờ lý thuyết (LT)',   ARRAY['lt', 'lý thuyết', 'theory', 'lý thuyết']),
-        ('practice_hours',      'Giờ thực hành (TH)',   ARRAY['th', 'thực hành', 'practice', 'thực hành']),
-        ('project_hours',       'Giờ đồ án (ĐA)',       ARRAY['đa', 'đồ án', 'project', 'đồ án']),
-        ('internship_hours',    'Giờ thực tập (TT)',    ARRAY['tt', 'thực tập', 'internship', 'thực tập']),
-        ('expected_semester',   'Học kỳ phân bổ',       ARRAY['phân bổ học kỳ', 'học kỳ', 'semester', 'hk', 'học kì']),
-        ('course_type',         'Loại môn (BB/TC)',     ARRAY['bắt buộc', 'tự chọn', 'bb/tc', 'req', 'elec', 'bắt buộc/tự chọn', 'loại môn']),
-        ('prerequisite',        'Môn tiên quyết',       ARRAY['tiên quyết', 'prereq', 'đk tiên quyết', 'điều kiện tiên quyết']),
-        ('corequisite',         'Môn học trước',        ARRAY['học trước', 'coreq', 'đk học trước', 'điều kiện học trước']),
-        ('organizing_semester',  'Học kỳ tổ chức',       ARRAY['hk tổ chức', 'học kỳ tổ chức', 'organizing semester']),
-        ('knowledge_block',     'Khối kiến thức',       ARRAY['khối kiến thức', 'khối kt', 'nhóm học phần', 'phân loại khối', 'knowledge block', 'knowledge_block', 'nhóm môn'])
+        ALTER TABLE curriculum_column_mappings 
+        ADD COLUMN IF NOT EXISTS mapping_type VARCHAR(50) DEFAULT 'CURRICULUM'
+      `);
+
+      await client.query(`
+        INSERT INTO curriculum_column_mappings (field_key, display_label, phrases, mapping_type) VALUES
+        ('course_code',         'Mã học phần',          ARRAY['mã học phần', 'mã hp', 'mã môn', 'code', 'course code', 'mã môn học'], 'CURRICULUM'),
+        ('course_name',         'Tên học phần',         ARRAY['tên học phần', 'tên hp', 'tên môn', 'name', 'course name', 'tên môn học'], 'CURRICULUM'),
+        ('credits',             'Số tín chỉ',           ARRAY['tín chỉ', 'số tc', 'credits', 'stc', 'credit', 'số tín chỉ'], 'CURRICULUM'),
+        ('theory_hours',        'Giờ lý thuyết (LT)',   ARRAY['lt', 'lý thuyết', 'theory', 'lý thuyết'], 'CURRICULUM'),
+        ('practice_hours',      'Giờ thực hành (TH)',   ARRAY['th', 'thực hành', 'practice', 'thực hành'], 'CURRICULUM'),
+        ('project_hours',       'Giờ đồ án (ĐA)',       ARRAY['đa', 'đồ án', 'project', 'đồ án'], 'CURRICULUM'),
+        ('internship_hours',    'Giờ thực tập (TT)',    ARRAY['tt', 'thực tập', 'internship', 'thực tập'], 'CURRICULUM'),
+        ('expected_semester',   'Học kỳ phân bổ',       ARRAY['phân bổ học kỳ', 'học kỳ', 'semester', 'hk', 'học kì'], 'CURRICULUM'),
+        ('course_type',         'Loại môn (BB/TC)',     ARRAY['bắt buộc', 'tự chọn', 'bb/tc', 'req', 'elec', 'bắt buộc/tự chọn', 'loại môn'], 'CURRICULUM'),
+        ('prerequisite',        'Môn tiên quyết',       ARRAY['tiên quyết', 'prereq', 'đk tiên quyết', 'điều kiện tiên quyết'], 'CURRICULUM'),
+        ('corequisite',         'Môn học trước',        ARRAY['học trước', 'coreq', 'đk học trước', 'điều kiện học trước'], 'CURRICULUM'),
+        ('organizing_semester',  'Học kỳ tổ chức',       ARRAY['hk tổ chức', 'học kỳ tổ chức', 'organizing semester'], 'CURRICULUM'),
+        ('knowledge_block',     'Khối kiến thức',       ARRAY['khối kiến thức', 'khối kt', 'nhóm học phần', 'phân loại khối', 'knowledge block', 'knowledge_block', 'nhóm môn'], 'CURRICULUM'),
+        ('student_code',        'Mã sinh viên (Lớp)',   ARRAY['mã sinh viên', 'mã sv', 'student code', 'student_code', 'mssv', 'ms sv'], 'CLASS'),
+        ('full_name',           'Họ và tên (Lớp)',      ARRAY['họ và tên', 'họ tên', 'full name', 'full_name', 'tên sinh viên', 'tên sv', 'name'], 'CLASS'),
+        ('ho_lot',              'Họ lót / Họ đệm (Lớp)', ARRAY['họ lót', 'họ đệm', 'họ tên đệm', 'họ và tên đệm', 'họ và chữ đệm', 'họ'], 'CLASS'),
+        ('ten',                 'Tên sinh viên (Lớp)',   ARRAY['tên', 'tên sv', 'tên học sinh', 'tên sinh viên'], 'CLASS'),
+        ('email',               'Email (Lớp)',           ARRAY['email', 'mail', 'thư điện tử'], 'CLASS')
         ON CONFLICT (field_key) DO NOTHING
       `);
+
+      // Update existing rows mapping types in the DB to ensure CLASS category is set
+      await client.query(`
+        UPDATE curriculum_column_mappings 
+        SET mapping_type = 'CLASS' 
+        WHERE field_key IN ('student_code', 'full_name', 'ho_lot', 'ten', 'email')
+      `);
+
       console.log('CurriculumColumnMappings seed completed.');
     } catch (err) {
       console.error('Failed to seed curriculum_column_mappings:', err);
@@ -60,14 +80,17 @@ export class CurriculumColumnMappingsService implements OnModuleInit {
   async create(
     payload: Record<string, unknown>,
   ): Promise<CurriculumColumnMappingResponse> {
-    const keys = Object.keys(payload);
+    const cleanedPayload = Object.fromEntries(
+      Object.entries(payload).filter(([_, value]) => value !== undefined),
+    );
+    const keys = Object.keys(cleanedPayload);
     if (keys.length === 0) {
       throw new BadRequestException('payload is required');
     }
 
     const cols = keys.join(', ');
     const params = keys.map((_, i) => '$' + (i + 1)).join(', ');
-    const values = keys.map((key) => payload[key] ?? null);
+    const values = keys.map((key) => cleanedPayload[key] ?? null);
 
     try {
       const result = await this.pool.query<CurriculumColumnMappingEntity>(
@@ -187,13 +210,16 @@ export class CurriculumColumnMappingsService implements OnModuleInit {
     id: string,
     payload: Record<string, unknown>,
   ): Promise<CurriculumColumnMappingResponse> {
-    const keys = Object.keys(payload);
+    const cleanedPayload = Object.fromEntries(
+      Object.entries(payload).filter(([_, value]) => value !== undefined),
+    );
+    const keys = Object.keys(cleanedPayload);
     if (keys.length === 0) {
       throw new BadRequestException('at least one field is required');
     }
 
     const sets = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
-    const values = keys.map((key) => payload[key] ?? null);
+    const values = keys.map((key) => cleanedPayload[key] ?? null);
 
     try {
       const result = await this.pool.query<CurriculumColumnMappingEntity>(

@@ -12,7 +12,7 @@ export const api = axios.create({
 // Interceptor to automatically add Bearer token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem("admin_token");
+    const token = sessionStorage.getItem("user_token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,7 +36,7 @@ api.interceptors.response.use(
       !originalRequest.url?.includes("/auth/refresh")
     ) {
       originalRequest._retry = true;
-      const refreshToken = localStorage.getItem("admin_refresh_token") || sessionStorage.getItem("admin_refresh_token");
+      const refreshToken = localStorage.getItem("user_refresh_token") || sessionStorage.getItem("user_refresh_token");
 
       if (refreshToken) {
         try {
@@ -51,16 +51,16 @@ api.interceptors.response.use(
             const newRefreshToken = response.data.refreshToken || refreshToken;
 
             // Store new tokens
-            sessionStorage.setItem("admin_token", newToken);
-            if (localStorage.getItem("admin_remember") === "true") {
-              localStorage.setItem("admin_refresh_token", newRefreshToken);
-              sessionStorage.removeItem("admin_refresh_token");
+            sessionStorage.setItem("user_token", newToken);
+            if (localStorage.getItem("user_remember") === "true") {
+              localStorage.setItem("user_refresh_token", newRefreshToken);
+              sessionStorage.removeItem("user_refresh_token");
             } else {
-              sessionStorage.setItem("admin_refresh_token", newRefreshToken);
-              localStorage.removeItem("admin_refresh_token");
+              sessionStorage.setItem("user_refresh_token", newRefreshToken);
+              localStorage.removeItem("user_refresh_token");
             }
             if (response.data.user) {
-              sessionStorage.setItem("admin_user", JSON.stringify(response.data.user));
+              sessionStorage.setItem("user_user", JSON.stringify(response.data.user));
             }
 
             // Retry original request with new token
@@ -75,11 +75,11 @@ api.interceptors.response.use(
       }
 
       // If no refresh token or refresh failed, clean up and redirect to login
-      sessionStorage.removeItem("admin_token");
-      sessionStorage.removeItem("admin_refresh_token");
-      localStorage.removeItem("admin_refresh_token");
-      sessionStorage.removeItem("admin_user");
-      localStorage.removeItem("admin_remember");
+      sessionStorage.removeItem("user_token");
+      sessionStorage.removeItem("user_refresh_token");
+      localStorage.removeItem("user_refresh_token");
+      sessionStorage.removeItem("user_user");
+      localStorage.removeItem("user_remember");
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }

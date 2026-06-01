@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useClassImports } from "../../../hooks/useClassImports";
 import type { ClassImportItem as ImportItem } from "../../../hooks/useClassImports";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { Plus, CheckCircle2, Trash2, Loader2 } from "lucide-react";
 import { ClassImportForm } from "./ClassImportForm";
+import { api } from "../../../services/api";
+import { ClassImportsFilters } from "./partials/ClassImportsFilters";
 
 export default function ClassImports() {
   const {
@@ -18,6 +20,9 @@ export default function ClassImports() {
     setPage,
     setLimit,
     setSearch,
+    filters,
+    updateFilters,
+    clearFilters,
     deleteItem,
     createImport,
     confirmImport,
@@ -25,6 +30,19 @@ export default function ClassImports() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [classesList, setClassesList] = useState<{ id: string; class_code: string; class_name?: string }[]>([]);
+
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await api.get("/classes?limit=100");
+        setClassesList(response.data || []);
+      } catch (err) {
+        console.error("Failed to fetch classes list:", err);
+      }
+    };
+    void fetchClasses();
+  }, []);
 
   const handleOpenCreate = () => {
     setModalOpen(true);
@@ -34,8 +52,8 @@ export default function ClassImports() {
     setModalOpen(false);
   };
 
-  const handleSubmit = async (payload: { class_id: string; textContent: string }) => {
-    await createImport(payload);
+  const handleSubmit = async (formData: FormData) => {
+    await createImport(formData);
     setModalOpen(false);
   };
 
@@ -175,6 +193,14 @@ export default function ClassImports() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Tìm kiếm phiên nhập lớp..."
+        filters={
+          <ClassImportsFilters
+            filters={filters}
+            updateFilters={updateFilters}
+            clearFilters={clearFilters}
+            classesList={classesList}
+          />
+        }
         rightActions={
           <button
             onClick={handleOpenCreate}

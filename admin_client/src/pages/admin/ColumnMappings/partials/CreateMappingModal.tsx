@@ -8,6 +8,7 @@ interface CreateMappingModalProps {
     field_key: string;
     display_label: string;
     phrases: string[];
+    mapping_type: "CURRICULUM" | "CLASS";
   }) => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ export const CreateMappingModal: React.FC<CreateMappingModalProps> = ({
   const [fieldKey, setFieldKey] = useState("");
   const [displayLabel, setDisplayLabel] = useState("");
   const [rawPhrases, setRawPhrases] = useState("");
+  const [mappingType, setMappingType] = useState<"CURRICULUM" | "CLASS">("CURRICULUM");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,6 +52,7 @@ export const CreateMappingModal: React.FC<CreateMappingModalProps> = ({
         field_key: fieldKey.trim(),
         display_label: displayLabel.trim(),
         phrases: phrasesArray,
+        mapping_type: mappingType,
       });
       onClose();
     } catch (err) {
@@ -98,6 +101,20 @@ export const CreateMappingModal: React.FC<CreateMappingModalProps> = ({
             onChange={(e) => setDisplayLabel(e.target.value)}
             className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-700 focus:border-indigo-500 focus:outline-none transition-all"
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Phân loại chức năng <span className="text-rose-500">*</span>
+          </label>
+          <select
+            value={mappingType}
+            onChange={(e) => setMappingType(e.target.value as "CURRICULUM" | "CLASS")}
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer"
+          >
+            <option value="CURRICULUM">Nhập chương trình đào tạo (CURRICULUM)</option>
+            <option value="CLASS">Nhập lớp học / sinh viên (CLASS)</option>
+          </select>
         </div>
 
         <div className="space-y-1.5">

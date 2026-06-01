@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCoursePrerequisites } from "../../../hooks/useCoursePrerequisites";
 import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { PrerequisiteForm } from "./PrerequisiteForm";
 import { Plus, Edit2, Trash2, GitFork } from "lucide-react";
+import { api } from "../../../services/api";
+import { CoursePrerequisitesFilters } from "./partials/CoursePrerequisitesFilters";
 
 export default function CoursePrerequisites() {
   const {
@@ -18,6 +20,9 @@ export default function CoursePrerequisites() {
     setPage,
     setLimit,
     setSearch,
+    filters,
+    updateFilters,
+    clearFilters,
     createItem,
     updateItem,
     deleteItem,
@@ -25,6 +30,19 @@ export default function CoursePrerequisites() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PrerequisiteItem | null>(null);
+  const [programsList, setProgramsList] = useState<{ id: string; program_code: string; program_name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const response = await api.get("/programs?limit=100");
+        setProgramsList(response.data || []);
+      } catch (err) {
+        console.error("Failed to fetch programs list:", err);
+      }
+    };
+    void fetchPrograms();
+  }, []);
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -66,21 +84,31 @@ export default function CoursePrerequisites() {
 
   const columns = [
     {
-      header: "Mã môn học",
+      header: "Môn học chính",
       accessorKey: "course_code",
       render: (row: PrerequisiteItem) => (
-        <span className="font-mono text-xs font-bold text-slate-200">{row.course_code}</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-mono text-xs font-bold text-indigo-400">{row.course_code}</span>
+          {row.course_name && (
+            <span className="text-[11px] text-slate-400 font-medium">{row.course_name}</span>
+          )}
+        </div>
       ),
     },
     {
       header: "Môn học tiên quyết",
       accessorKey: "prerequisite_course_code",
       render: (row: PrerequisiteItem) => (
-        <div className="flex items-center gap-1.5">
-          <GitFork size={14} className="text-indigo-400 rotate-180" />
-          <span className="font-mono text-xs font-bold text-slate-300">
-            {row.prerequisite_course_code}
-          </span>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <GitFork size={14} className="text-indigo-400 rotate-180" />
+            <span className="font-mono text-xs font-bold text-slate-300">
+              {row.prerequisite_course_code}
+            </span>
+          </div>
+          {row.prerequisite_course_name && (
+            <span className="text-[11px] text-slate-400 font-medium pl-5">{row.prerequisite_course_name}</span>
+          )}
         </div>
       ),
     },
@@ -160,6 +188,14 @@ export default function CoursePrerequisites() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Tìm kiếm mã môn học..."
+        filters={
+          <CoursePrerequisitesFilters
+            filters={filters}
+            updateFilters={updateFilters}
+            clearFilters={clearFilters}
+            programsList={programsList}
+          />
+        }
         rightActions={
           <button
             onClick={handleOpenCreate}

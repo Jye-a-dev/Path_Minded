@@ -34,10 +34,21 @@ export const MappingCard: React.FC<MappingCardProps> = ({
           <h3 className="text-sm font-bold text-white tracking-tight group-hover:text-indigo-400 transition-colors">
             {item.display_label}
           </h3>
-          <div className="flex items-center gap-1">
-            <span className="font-mono text-[10px] font-semibold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span className="font-mono text-[9px] font-semibold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
               {item.field_key}
             </span>
+            {item.mapping_type && (
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                  item.mapping_type === "CLASS"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                    : "bg-indigo-500/10 text-indigo-400 border-indigo-500/25"
+                }`}
+              >
+                {item.mapping_type === "CLASS" ? "Nhập Lớp" : "Nhập CTĐT"}
+              </span>
+            )}
           </div>
         </div>
 

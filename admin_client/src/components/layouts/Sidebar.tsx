@@ -28,7 +28,7 @@ import {
 interface SidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
-  user: { email: string; role: string } | null;
+  user: { email: string; role: string; display_name?: string | null } | null;
   onLogout: () => void;
 }
 
@@ -62,8 +62,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: "Phiên nhập liệu",
       items: [
         { label: "Nhập chương trình", to: "/admin/curriculum_imports", icon: UploadCloud },
-        { label: "Tải bảng điểm lên", to: "/admin/transcript_uploads", icon: FileUp },
         { label: "Nhập lớp học", to: "/admin/class_imports", icon: FolderInput },
+        { label: "Tải bảng điểm lên", to: "/admin/transcript_uploads", icon: FileUp },
         { label: "Chi tiết nhập lớp", to: "/admin/class_import_rows", icon: ListOrdered },
       ],
     },
@@ -164,15 +164,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer/User Info Section */}
       <div className="border-t border-slate-800/80 bg-slate-900/40 p-4">
         <div className="flex items-center justify-between rounded-xl bg-slate-900/45 p-3 border border-slate-800/50">
-          <div className="flex items-center gap-2 overflow-hidden">
+          <Link
+            to="/admin/me"
+            className="flex items-center gap-2 overflow-hidden hover:opacity-80 transition-opacity"
+            onClick={() => setSidebarOpen(false)}
+          >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-200">
               <User size={18} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-white">{user?.email}</p>
+              <p className="truncate text-xs font-medium text-white">{user?.display_name || user?.email}</p>
               <p className="text-[10px] text-slate-400 font-semibold uppercase">{user?.role}</p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={onLogout}
             title="Đăng xuất"

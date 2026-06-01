@@ -40,7 +40,9 @@ export class ClassImportsService {
     const mappingResult = await this.pool.query<{
       field_key: string;
       phrases: string[];
-    }>('SELECT field_key, phrases FROM curriculum_column_mappings');
+    }>(
+      "SELECT field_key, phrases FROM curriculum_column_mappings WHERE mapping_type = 'CLASS'",
+    );
     const mappingConfig: Record<string, string[]> = {};
     mappingResult.rows.forEach((row) => {
       mappingConfig[row.field_key] = row.phrases;

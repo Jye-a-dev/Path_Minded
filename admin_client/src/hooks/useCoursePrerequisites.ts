@@ -6,6 +6,8 @@ export interface PrerequisiteItem {
   course_code: string;
   prerequisite_course_code: string;
   prerequisite_type: "REQUIRED" | "RECOMMENDED" | "PREVIOUS" | "OTHER";
+  course_name?: string;
+  prerequisite_course_name?: string;
 }
 
 export function useCoursePrerequisites() {

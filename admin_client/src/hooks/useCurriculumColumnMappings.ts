@@ -5,6 +5,7 @@ export interface MappingItem {
   field_key: string;
   display_label: string;
   phrases: string[];
+  mapping_type: "CURRICULUM" | "CLASS";
   created_at?: string;
   updated_at?: string;
 }

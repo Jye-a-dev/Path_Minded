@@ -148,6 +148,15 @@ export class ClassImportParser {
         'tên sv',
         'name',
       ],
+      ho_lot: [
+        'họ lót',
+        'họ đệm',
+        'họ tên đệm',
+        'họ và tên đệm',
+        'họ và chữ đệm',
+        'họ',
+      ],
+      ten: ['tên', 'tên sv', 'tên học sinh', 'tên sinh viên'],
       email: ['email', 'mail', 'thư điện tử'],
     };
 
@@ -163,11 +172,15 @@ export class ClassImportParser {
     let studentCodeIdx = 0;
     let fullNameIdx = 1;
     let emailIdx = 2;
+    let hoLotIdx = -1;
+    let tenIdx = -1;
 
     if (headerRow) {
       let foundCode = false;
       let foundName = false;
       let foundEmail = false;
+      let foundHoLot = false;
+      let foundTen = false;
 
       for (let i = 0; i < headerRow.length; i++) {
         const colName = headerRow[i];
@@ -182,6 +195,12 @@ export class ClassImportParser {
         } else if (!foundEmail && matchesMapping(colName, 'email')) {
           emailIdx = i;
           foundEmail = true;
+        } else if (!foundHoLot && matchesMapping(colName, 'ho_lot')) {
+          hoLotIdx = i;
+          foundHoLot = true;
+        } else if (!foundTen && matchesMapping(colName, 'ten')) {
+          tenIdx = i;
+          foundTen = true;
         }
       }
     }
@@ -191,7 +210,15 @@ export class ClassImportParser {
       const studentCode = String(vals[studentCodeIdx] ?? '')
         .trim()
         .toUpperCase();
-      const fullName = String(vals[fullNameIdx] ?? '').trim();
+
+      let fullName = '';
+      if (hoLotIdx !== -1 && tenIdx !== -1) {
+        const hoLot = String(vals[hoLotIdx] ?? '').trim();
+        const ten = String(vals[tenIdx] ?? '').trim();
+        fullName = `${hoLot} ${ten}`.trim();
+      } else {
+        fullName = String(vals[fullNameIdx] ?? '').trim();
+      }
 
       if (!studentCode || !fullName) {
         warnings.push({

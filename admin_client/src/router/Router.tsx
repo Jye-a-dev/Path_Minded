@@ -27,6 +27,7 @@ import ParseWarnings from "../pages/admin/ParseWarnings/ParseWarnings";
 import ColumnMappings from "../pages/admin/ColumnMappings/ColumnMappings";
 import CourseTypeMappings from "../pages/admin/CourseTypeMappings/CourseTypeMappings";
 import KnowledgeBlockMappings from "../pages/admin/KnowledgeBlockMappings/KnowledgeBlockMappings";
+import Profile from "../pages/admin/Profile/Profile";
 
 const routes = [
   // Public Routes
@@ -48,6 +49,7 @@ const routes = [
         element: <AdminLayout />,
         children: [
           { index: true, element: <Dashboard /> },
+          { path: "me", element: <Profile /> },
           { path: "users", element: <Users /> },
           { path: "advisors", element: <Advisors /> },
           { path: "programs", element: <Programs /> },

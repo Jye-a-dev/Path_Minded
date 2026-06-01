@@ -176,7 +176,9 @@ export async function parseCurriculumWithPipeline(
   const mappingResult = await queryExecutor.query<{
     field_key: string;
     phrases: string[];
-  }>('SELECT field_key, phrases FROM curriculum_column_mappings');
+  }>(
+    "SELECT field_key, phrases FROM curriculum_column_mappings WHERE mapping_type = 'CURRICULUM'",
+  );
   const mappingConfig: Record<string, string[]> = {};
   mappingResult.rows.forEach((row) => {
     mappingConfig[row.field_key] = row.phrases;
@@ -278,12 +280,40 @@ export async function saveParseWarnings(
   }
 }
 
+export function parsePrerequisites(prereqStr: string | null): string[] {
+  if (!prereqStr) return [];
+  const str = prereqStr.trim().toUpperCase();
+  if (['KHÔNG', 'NONE', '-', 'N/A', '', 'KHÔNG CÓ'].includes(str)) return [];
+
+  // Match typical course code format, e.g. "INT1008", "INT 1008", "PHY1100", "MAT-101", "71ENG010012", etc.
+  const regex = /\b\d*[A-Z]{2,6}\s*-?\s*\d{3,8}\b/g;
+  const matches = str.match(regex);
+  if (matches) {
+    return matches.map((m) => m.replace(/\s+/g, '').replace(/-/g, ''));
+  }
+
+  // Fallback: split by commas/semicolons and clean up
+  return str
+    .split(/[,;&+/\n]|\bVÀ\b/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 5 && token.length <= 15)
+    .map((token) => token.replace(/[^A-Z0-9]/g, ''));
+}
+
 export async function insertCurriculumCourses(
   client: PoolClient,
   programId: string | null,
   importId: string,
   courses: ParsedCourseItem[],
 ): Promise<void> {
+  // Clear old prerequisites for this program first to avoid duplicates
+  if (programId) {
+    await client.query(
+      `DELETE FROM course_prerequisites WHERE program_id = $1`,
+      [programId],
+    );
+  }
+
   // Fetch knowledge block mappings from database for auto-resolution
   const kbMappingsResult = await client.query<KbMappingRow>(
     'SELECT knowledge_block, label, phrases FROM knowledge_block_mappings',
@@ -299,6 +329,8 @@ export async function insertCurriculumCourses(
         kbMappings,
         course.courseName || course.course_name || null,
       );
+
+    const courseCode = course.courseCode || course.course_code;
 
     await client.query(
       `INSERT INTO curriculum_courses (
@@ -325,7 +357,7 @@ export async function insertCurriculumCourses(
       [
         programId,
         importId,
-        course.courseCode || course.course_code,
+        courseCode,
         course.courseName || course.course_name,
         course.credits ?? null,
         course.expectedSemester || course.expected_semester || null,
@@ -358,5 +390,21 @@ export async function insertCurriculumCourses(
         course.organizingSemester || course.organizing_semester || null,
       ],
     );
+
+    const prereqStr = course.prerequisite || null;
+    if (programId && courseCode && prereqStr) {
+      const prereqs = parsePrerequisites(prereqStr);
+      for (const prereqCode of prereqs) {
+        if (prereqCode === courseCode) continue;
+
+        await client.query(
+          `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
+           VALUES ($1, $2, $3, 'REQUIRED')
+           ON CONFLICT (program_id, course_code, prerequisite_course_code) 
+           DO NOTHING`,
+          [programId, courseCode, prereqCode],
+        );
+      }
+    }
   }
 }

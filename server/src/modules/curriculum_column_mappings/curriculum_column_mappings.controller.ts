@@ -20,6 +20,8 @@ import {
   CurriculumColumnMappingResponse,
 } from './interfaces/curriculum_column_mappings.interfaces';
 import { CurriculumColumnMappingsService } from './curriculum_column_mappings.service';
+import { CreateCurriculumColumnMappingDto } from './dto/create-curriculum-column-mapping.dto';
+import { UpdateCurriculumColumnMappingDto } from './dto/update-curriculum-column-mapping.dto';
 
 @ApiTags('Curriculum Column Mappings')
 @Controller('curriculum_column_mappings')
@@ -50,9 +52,9 @@ export class CurriculumColumnMappingsController {
   })
   @Post()
   create(
-    @Body() payload: Record<string, any>,
+    @Body() payload: CreateCurriculumColumnMappingDto,
   ): Promise<CurriculumColumnMappingResponse> {
-    return this.service.create(payload);
+    return this.service.create(payload as unknown as Record<string, unknown>);
   }
 
   @ApiOperation({ summary: 'Find all' })
@@ -155,9 +157,12 @@ export class CurriculumColumnMappingsController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() payload: Record<string, any>,
+    @Body() payload: UpdateCurriculumColumnMappingDto,
   ): Promise<CurriculumColumnMappingResponse> {
-    return this.service.update(id, payload);
+    return this.service.update(
+      id,
+      payload as unknown as Record<string, unknown>,
+    );
   }
 
   @ApiOperation({ summary: 'Delete by id' })

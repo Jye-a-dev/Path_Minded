@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
@@ -21,14 +22,60 @@ import {
   saveParseWarnings,
   insertCurriculumCourses,
   ParsedCourseItem,
+  parsePrerequisites,
 } from './curriculum_imports.helper';
 
 @Injectable()
-export class CurriculumImportsService {
+export class CurriculumImportsService implements OnModuleInit {
   constructor(
     @Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool,
     private readonly courseTypeMappingsService: CourseTypeMappingsService,
   ) {}
+
+  async onModuleInit() {
+    console.log(
+      'Running automated one-off prerequisite parsing and migration...',
+    );
+    const client = await this.pool.connect();
+    try {
+      // Fetch all courses that have prerequisites from database
+      const coursesResult = await client.query<{
+        program_id: string;
+        course_code: string;
+        prerequisite: string | null;
+      }>(
+        `SELECT program_id, course_code, prerequisite 
+         FROM curriculum_courses 
+         WHERE prerequisite IS NOT NULL AND prerequisite <> ''`,
+      );
+
+      const courses = coursesResult.rows;
+      if (courses.length > 0) {
+        console.log(
+          `Found ${courses.length} courses with prerequisites. Populating course_prerequisites table...`,
+        );
+        for (const course of courses) {
+          const prereqs = parsePrerequisites(course.prerequisite);
+          for (const prereqCode of prereqs) {
+            if (prereqCode === course.course_code) continue;
+
+            await client.query(
+              `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
+               VALUES ($1, $2, $3, 'REQUIRED')
+               ON CONFLICT (program_id, course_code, prerequisite_course_code) 
+               DO NOTHING`,
+              [course.program_id, course.course_code, prereqCode],
+            );
+          }
+        }
+        console.log('Automated prerequisite migration completed.');
+      }
+    } catch (err) {
+      console.error('Failed to run prerequisite migration:', err);
+    } finally {
+      client.release();
+    }
+  }
 
   async create(
     payload: Record<string, unknown>,
