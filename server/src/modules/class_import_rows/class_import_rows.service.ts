@@ -56,22 +56,38 @@ export class ClassImportRowsService {
     const values: Array<string | number | boolean> = [];
     let idx = 1;
 
+    const SKIP_KEYS = new Set(['page', 'limit', 'offset']);
+    const JOIN_CI_KEYS = new Set(['class_id', 'import_status']);
+    const JOIN_PROGRAM_KEYS = new Set(['program_id']);
+    const JOIN_MAJOR_KEYS = new Set(['major_name']);
+
     Object.entries(query).forEach(([key, value]) => {
-      if (
-        value === undefined ||
-        key === 'page' ||
-        key === 'limit' ||
-        key === 'offset'
-      ) {
-        return;
-      }
+      if (value === undefined || SKIP_KEYS.has(key)) return;
 
       if (key === 'search') {
         clauses.push(
-          `(cir.student_code ILIKE $${idx} OR cir.full_name ILIKE $${idx})`,
+          `(cir.student_code ILIKE $${idx} OR cir.full_name ILIKE $${idx} OR cir.email ILIKE $${idx})`,
         );
         values.push(`%${value as string}%`);
         idx++;
+        return;
+      }
+
+      if (JOIN_CI_KEYS.has(key)) {
+        clauses.push(`ci.${key} = $${idx++}`);
+        values.push(value as string | number | boolean);
+        return;
+      }
+
+      if (JOIN_PROGRAM_KEYS.has(key)) {
+        clauses.push(`c.${key} = $${idx++}`);
+        values.push(value as string | number | boolean);
+        return;
+      }
+
+      if (JOIN_MAJOR_KEYS.has(key)) {
+        clauses.push(`p.${key} = $${idx++}`);
+        values.push(value as string | number | boolean);
         return;
       }
 
@@ -98,6 +114,7 @@ export class ClassImportRowsService {
        FROM class_import_rows cir
        LEFT JOIN class_imports ci ON cir.import_id = ci.id
        LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
        ${where}
        ORDER BY cir.id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
@@ -115,7 +132,12 @@ export class ClassImportRowsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM class_import_rows cir ${where}`,
+      `SELECT COUNT(*) AS total
+       FROM class_import_rows cir
+       LEFT JOIN class_imports ci ON cir.import_id = ci.id
+       LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
+       ${where}`,
       values,
     );
 
@@ -127,6 +149,7 @@ export class ClassImportRowsService {
        FROM class_import_rows cir
        LEFT JOIN class_imports ci ON cir.import_id = ci.id
        LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
        ${where}
        ORDER BY cir.id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],

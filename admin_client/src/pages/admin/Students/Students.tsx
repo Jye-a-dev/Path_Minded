@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useStudents } from "../../../hooks/useStudents";
 import type { StudentItem } from "../../../hooks/useStudents";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { StudentForm } from "./StudentForm";
-import { Plus, Edit2, Trash2, GraduationCap, Loader2, ChevronLeft, FolderInput } from "lucide-react";
+import { Plus, Edit2, Trash2, GraduationCap, Loader2, ChevronLeft, FolderInput, ExternalLink } from "lucide-react";
 import { api } from "../../../services/api";
 import { useColumnLabels } from "../../../hooks/useColumnLabels";
 import { useClassLookup } from "../../../hooks/useClassLookup";
 
 export default function Students() {
+  const navigate = useNavigate();
   const {
     data,
     total,
@@ -175,9 +177,19 @@ export default function Students() {
     {
       header: getLabel("email", "Email"),
       accessorKey: "email",
-      render: (row: StudentItem) => (
-        <span className="text-xs text-slate-300 font-mono">{row.email || "Chưa liên kết"}</span>
-      ),
+      render: (row: StudentItem) =>
+        row.email ? (
+          <button
+            onClick={() => navigate(`/admin/class_import_rows?email=${encodeURIComponent(row.email!)}`)}
+            className="group flex items-center gap-1 text-xs font-mono text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+            title="Xem dòng nhập liên quan đến email này"
+          >
+            <span className="underline underline-offset-2 decoration-dotted">{row.email}</span>
+            <ExternalLink size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+        ) : (
+          <span className="text-xs text-slate-500 italic">Chưa liên kết</span>
+        ),
     },
     {
       header: "Khóa",
