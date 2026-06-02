@@ -119,10 +119,11 @@ export class StudentsService {
 
     const result = await this.pool.query<StudentResponse>(
       `
-        SELECT id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, created_at, updated_at
-        FROM students
+        SELECT s.id, s.user_id, s.student_code, s.full_name, s.class_id, s.program_id, s.cohort_year, s.status, s.created_at, s.updated_at, u.email
+        FROM students s
+        LEFT JOIN users u ON s.user_id = u.id
         ${where}
-        ORDER BY created_at DESC
+        ORDER BY s.created_at DESC
         LIMIT $${idx}
         OFFSET $${idx + 1}
       `,
@@ -150,10 +151,11 @@ export class StudentsService {
 
     const result = await this.pool.query<StudentResponse>(
       `
-        SELECT id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, created_at, updated_at
-        FROM students
+        SELECT s.id, s.user_id, s.student_code, s.full_name, s.class_id, s.program_id, s.cohort_year, s.status, s.created_at, s.updated_at, u.email
+        FROM students s
+        LEFT JOIN users u ON s.user_id = u.id
         ${where}
-        ORDER BY created_at DESC
+        ORDER BY s.created_at DESC
         LIMIT $${idx}
         OFFSET $${idx + 1}
       `,
@@ -178,9 +180,10 @@ export class StudentsService {
   async findOne(id: string): Promise<StudentResponse> {
     const result = await this.pool.query<StudentResponse>(
       `
-        SELECT id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, created_at, updated_at
-        FROM students
-        WHERE id = $1
+        SELECT s.id, s.user_id, s.student_code, s.full_name, s.class_id, s.program_id, s.cohort_year, s.status, s.created_at, s.updated_at, u.email
+        FROM students s
+        LEFT JOIN users u ON s.user_id = u.id
+        WHERE s.id = $1
       `,
       [id],
     );
@@ -286,5 +289,42 @@ export class StudentsService {
   async removeAll(): Promise<{ message: string; deleted: number }> {
     const result = await this.pool.query('DELETE FROM students');
     return { message: 'all students deleted', deleted: result.rowCount ?? 0 };
+  }
+
+  /**
+   * Match students to users by name:
+   * For every student where user_id IS NULL,
+   * find a user whose LOWER(TRIM(display_name)) = LOWER(TRIM(students.full_name))
+   * and update students.user_id with that user's id.
+   */
+  async syncUsers(
+    classId?: string,
+  ): Promise<{ message: string; synced: number }> {
+    const classFilter = classId ? `AND s.class_id = $1` : '';
+    const values = classId ? [classId] : [];
+
+    const result = await this.pool.query<{ count: string }>(
+      `WITH matched AS (
+         SELECT s.id AS student_id, u.id AS user_id
+         FROM students s
+         JOIN users u
+           ON LOWER(TRIM(u.display_name)) = LOWER(TRIM(s.full_name))
+         WHERE s.user_id IS NULL
+           AND u.display_name IS NOT NULL
+           ${classFilter}
+       )
+       UPDATE students
+       SET user_id = matched.user_id,
+           updated_at = CURRENT_TIMESTAMP
+       FROM matched
+       WHERE students.id = matched.student_id
+       RETURNING students.id`,
+      values,
+    );
+
+    return {
+      message: 'sync completed',
+      synced: result.rows.length,
+    };
   }
 }

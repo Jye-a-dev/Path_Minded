@@ -3,6 +3,7 @@ import { usePaginatedApi } from "./useApi";
 export interface StudentItem {
   id: string;
   user_id?: string;
+  email?: string;
   student_code: string;
   full_name: string;
   class_id?: string;

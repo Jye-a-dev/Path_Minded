@@ -225,4 +225,24 @@ export class UsersController {
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.usersService.remove(id);
   }
+
+  @ApiOperation({ summary: 'Bulk delete users by ids' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { ids: { type: 'array', items: { type: 'string' } } },
+      required: ['ids'],
+    },
+  })
+  @ApiOkResponse({
+    description: 'Bulk delete result',
+    schema: { example: { message: 'deleted', deleted: 5 } },
+  })
+  @Roles('ADMIN')
+  @Delete()
+  removeMany(
+    @Body() body: { ids: string[] },
+  ): Promise<{ message: string; deleted: number }> {
+    return this.usersService.removeMany(body.ids);
+  }
 }

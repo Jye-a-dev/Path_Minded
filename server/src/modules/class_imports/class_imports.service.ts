@@ -125,7 +125,16 @@ export class ClassImportsService {
     }
   }
 
-  async confirm(id: string): Promise<{ message: string }> {
+  async confirm(
+    id: string,
+    payload?: {
+      students?: {
+        student_code: string;
+        full_name: string;
+        email: string | null;
+      }[];
+    },
+  ): Promise<{ message: string }> {
     const importResult = await this.pool.query<ClassImportEntity>(
       `SELECT * FROM class_imports WHERE id = $1`,
       [id],
@@ -140,33 +149,78 @@ export class ClassImportsService {
       throw new BadRequestException('Import is not in PENDING state');
     }
 
-    const rowsResult = await this.pool.query(
-      `SELECT * FROM class_import_rows WHERE import_id = $1 AND row_status = 'PENDING'`,
-      [id],
-    );
-
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
 
-      for (const row of rowsResult.rows) {
-        // Upsert student
+      const studentsToImport = payload?.students;
+      if (!studentsToImport || !Array.isArray(studentsToImport)) {
+        throw new BadRequestException('students array is required');
+      }
+
+      // Fetch program_id and cohort_year of the class
+      let programId: string | null = null;
+      let cohortYear: number | null = null;
+      if (importRecord.class_id) {
+        const classResult = await client.query<{
+          program_id: string | null;
+          cohort_year: number | null;
+        }>(`SELECT program_id, cohort_year FROM classes WHERE id = $1`, [
+          importRecord.class_id,
+        ]);
+        if (classResult.rows.length > 0) {
+          programId = classResult.rows[0].program_id;
+          cohortYear = classResult.rows[0].cohort_year;
+        }
+      }
+
+      for (const student of studentsToImport) {
+        // Upsert student only — do NOT create user accounts during class import
         await client.query(
-          `INSERT INTO students (student_code, full_name, class_id)
-           VALUES ($1, $2, $3)
+          `INSERT INTO students (student_code, full_name, class_id, program_id, cohort_year)
+           VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (student_code) 
            DO UPDATE SET 
              full_name = EXCLUDED.full_name,
              class_id = COALESCE(EXCLUDED.class_id, students.class_id),
+             program_id = COALESCE(EXCLUDED.program_id, students.program_id),
+             cohort_year = COALESCE(EXCLUDED.cohort_year, students.cohort_year),
              updated_at = CURRENT_TIMESTAMP`,
-          [row.student_code, row.full_name, importRecord.class_id || null],
+          [
+            student.student_code,
+            student.full_name,
+            importRecord.class_id || null,
+            programId,
+            cohortYear,
+          ],
         );
+      }
 
-        // Update row status
-        await client.query(
-          `UPDATE class_import_rows SET row_status = 'SUCCESS' WHERE id = $1`,
-          [row.id],
-        );
+      // Mark all pending rows for this import session as SUCCESS or FAILED based on whether they were imported
+      const dbRowsResult = await this.pool.query<{
+        id: string;
+        student_code: string;
+      }>(
+        `SELECT id, student_code FROM class_import_rows WHERE import_id = $1 AND row_status = 'PENDING'`,
+        [id],
+      );
+
+      const importedCodesSet = new Set(
+        studentsToImport.map((s) => s.student_code),
+      );
+
+      for (const row of dbRowsResult.rows) {
+        if (importedCodesSet.has(row.student_code)) {
+          await client.query(
+            `UPDATE class_import_rows SET row_status = 'SUCCESS' WHERE id = $1`,
+            [row.id],
+          );
+        } else {
+          await client.query(
+            `UPDATE class_import_rows SET row_status = 'FAILED', row_error = 'Bỏ qua bởi người dùng' WHERE id = $1`,
+            [row.id],
+          );
+        }
       }
 
       await client.query(
@@ -196,17 +250,25 @@ export class ClassImportsService {
     let idx = 1;
 
     if (query.import_status) {
-      clauses.push(`import_status = $${idx++}`);
+      clauses.push(`ci.import_status = $${idx++}`);
       values.push(query.import_status);
     }
     if (query.class_id) {
-      clauses.push(`class_id = $${idx++}`);
+      clauses.push(`ci.class_id = $${idx++}`);
       values.push(query.class_id);
     }
     if (query.search) {
-      clauses.push(`file_name ILIKE $${idx}`);
+      clauses.push(`ci.file_name ILIKE $${idx}`);
       values.push(`%${query.search}%`);
       idx++;
+    }
+    if (query.program_id) {
+      clauses.push(`c.program_id = $${idx++}`);
+      values.push(query.program_id);
+    }
+    if (query.major_name) {
+      clauses.push(`p.major_name = $${idx++}`);
+      values.push(query.major_name);
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -220,7 +282,11 @@ export class ClassImportsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<ClassImportEntity>(
-      `SELECT * FROM class_imports ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT ci.* FROM class_imports ci 
+       LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
+       ${where} 
+       ORDER BY ci.uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -236,7 +302,10 @@ export class ClassImportsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM class_imports ${where}`,
+      `SELECT COUNT(ci.id) AS total FROM class_imports ci 
+       LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
+       ${where}`,
       values,
     );
 
@@ -245,7 +314,11 @@ export class ClassImportsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<ClassImportEntity>(
-      `SELECT * FROM class_imports ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT ci.* FROM class_imports ci 
+       LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
+       ${where} 
+       ORDER BY ci.uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -258,7 +331,10 @@ export class ClassImportsService {
   async count(query: QueryClassImportsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM class_imports ${where}`,
+      `SELECT COUNT(ci.id) AS count FROM class_imports ci 
+       LEFT JOIN classes c ON ci.class_id = c.id
+       LEFT JOIN programs p ON c.program_id = p.id
+       ${where}`,
       values,
     );
 

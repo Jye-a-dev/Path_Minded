@@ -26,8 +26,11 @@ export function useClassImports() {
     return response.data;
   };
 
-  const confirmImport = async (id: string) => {
-    const response = await api.post(`/class_imports/${id}/confirm`, {});
+  const confirmImport = async (
+    id: string,
+    students?: { student_code: string; full_name: string; email: string | null }[]
+  ) => {
+    const response = await api.post(`/class_imports/${id}/confirm`, { students });
     await paginated.refresh();
     return response.data;
   };

@@ -87,6 +87,13 @@ export default function ClassImportRows() {
       ),
     },
     {
+      header: "Lớp học",
+      accessorKey: "class_code",
+      render: (row: RowItem) => (
+        <span className="text-slate-300 font-semibold text-xs">{row.class_code || "N/A"}</span>
+      ),
+    },
+    {
       header: "Email",
       accessorKey: "email",
       render: (row: RowItem) => (

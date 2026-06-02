@@ -4,7 +4,8 @@ import type { UserItem } from "../../../hooks/useUsers";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { UserForm } from "./UserForm";
-import { Plus, Edit2, Trash2, Shield, User } from "lucide-react";
+import { Plus, Edit2, Trash2, Shield, User, Loader2 } from "lucide-react";
+import { api } from "../../../services/api";
 
 export default function Users() {
   const {
@@ -23,10 +24,23 @@ export default function Users() {
     createItem,
     updateItem,
     deleteItem,
+    refresh,
   } = useUsers();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UserItem | null>(null);
+
+  // Single-delete confirm modal state
+  const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Bulk-delete state
+  const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
+
+  // ── Handlers ──────────────────────────────────────────────
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -42,7 +56,7 @@ export default function Users() {
     setModalOpen(false);
   };
 
-  const handleSubmit = async (payload: { email: string; role: string; password?: string }) => {
+  const handleSubmit = async (payload: { email: string; role: string; password?: string; display_name?: string }) => {
     if (editingItem) {
       await updateItem(editingItem.id, payload);
     } else {
@@ -51,15 +65,37 @@ export default function Users() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn người dùng này?")) {
-      try {
-        await deleteItem(id);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Xóa người dùng thất bại");
-      }
+  const handleDeleteSingle = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteItem(deleteTarget.id);
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteTarget.id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Xóa người dùng thất bại");
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleteLoading(true);
+    setBulkDeleteError(null);
+    try {
+      await api.delete("/users", { data: { ids: selectedIds } });
+      setSelectedIds([]);
+      await refresh();
+      setBulkDeleteOpen(false);
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setBulkDeleteError(e.response?.data?.message || e.message || "Xóa thất bại.");
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  // ── Columns ───────────────────────────────────────────────
 
   const columns = [
     {
@@ -73,10 +109,12 @@ export default function Users() {
       ),
     },
     {
-      header: "Tên hiển thị",
+      header: "Tên người dùng",
       accessorKey: "display_name",
       render: (row: UserItem) => (
-        <span className="text-slate-400 font-normal">{row.display_name || "Chưa cập nhật"}</span>
+        <span className={row.display_name ? "text-slate-200 font-medium" : "text-slate-600 italic"}>
+          {row.display_name || "Chưa cập nhật"}
+        </span>
       ),
     },
     {
@@ -111,13 +149,15 @@ export default function Users() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleOpenEdit(row)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            title="Chỉnh sửa"
           >
             <Edit2 size={14} />
           </button>
           <button
-            onClick={() => handleDelete(row.id)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors"
+            onClick={() => setDeleteTarget(row)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors cursor-pointer"
+            title="Xóa"
           >
             <Trash2 size={14} />
           </button>
@@ -125,6 +165,8 @@ export default function Users() {
       ),
     },
   ];
+
+  // ── Render ────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -144,6 +186,28 @@ export default function Users() {
         </div>
       )}
 
+      {/* Bulk action bar */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center gap-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 px-4 py-3">
+          <span className="text-sm font-semibold text-indigo-300">
+            Đã chọn <span className="font-extrabold text-white">{selectedIds.length}</span> người dùng
+          </span>
+          <button
+            onClick={() => { setBulkDeleteError(null); setBulkDeleteOpen(true); }}
+            className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-300 transition-all cursor-pointer"
+          >
+            <Trash2 size={13} />
+            Xóa {selectedIds.length} người dùng đã chọn
+          </button>
+          <button
+            onClick={() => setSelectedIds([])}
+            className="ml-auto text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+          >
+            Bỏ chọn tất cả
+          </button>
+        </div>
+      )}
+
       {/* Data Table */}
       <DataTable<UserItem>
         columns={columns}
@@ -156,7 +220,10 @@ export default function Users() {
         onLimitChange={setLimit}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Tìm kiếm email..."
+        searchPlaceholder="Tìm kiếm email hoặc tên..."
+        enableSelection={true}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
         filters={
           <select
             value={(filters.role as string) || ""}
@@ -180,11 +247,11 @@ export default function Users() {
         }
       />
 
-      {/* Modal Popup */}
+      {/* Create / Edit Modal */}
       <Modal
         isOpen={modalOpen}
         onClose={handleCloseModal}
-        title={editingItem ? "Chỉnh sửa vai trò tài khoản" : "Tạo tài khoản hệ thống"}
+        title={editingItem ? "Chỉnh sửa thông tin tài khoản" : "Tạo tài khoản hệ thống"}
       >
         <UserForm
           key={editingItem ? editingItem.id : "create"}
@@ -192,6 +259,105 @@ export default function Users() {
           onSubmit={handleSubmit}
           onCancel={handleCloseModal}
         />
+      </Modal>
+
+      {/* Single Delete Confirm Modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => !deleteLoading && setDeleteTarget(null)}
+        title="Xác nhận xóa người dùng"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-4">
+            <p className="text-sm font-semibold text-rose-300">
+              ⚠️ Hành động này <span className="font-black underline">không thể hoàn tác</span>.
+            </p>
+            <p className="mt-1.5 text-xs text-rose-400/80">
+              Người dùng{" "}
+              <span className="font-bold text-rose-300 font-mono">{deleteTarget?.email}</span>{" "}
+              sẽ bị xóa vĩnh viễn khỏi hệ thống.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleteLoading}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-50 transition-all cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              onClick={handleDeleteSingle}
+              disabled={deleteLoading}
+              className="flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 disabled:opacity-60 disabled:pointer-events-none transition-all cursor-pointer"
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} />
+                  Xóa người dùng
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Bulk Delete Confirm Modal */}
+      <Modal
+        isOpen={bulkDeleteOpen}
+        onClose={() => !bulkDeleteLoading && setBulkDeleteOpen(false)}
+        title="Xác nhận xóa nhiều người dùng"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-4">
+            <p className="text-sm font-semibold text-rose-300">
+              ⚠️ Hành động này <span className="font-black underline">không thể hoàn tác</span>.
+            </p>
+            <p className="mt-1.5 text-xs text-rose-400/80">
+              <span className="font-bold text-rose-300">{selectedIds.length} người dùng</span> đã chọn sẽ bị xóa vĩnh viễn khỏi hệ thống.
+            </p>
+          </div>
+
+          {bulkDeleteError && (
+            <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-400">
+              {bulkDeleteError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setBulkDeleteOpen(false)}
+              disabled={bulkDeleteLoading}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-50 transition-all cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteLoading}
+              className="flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 disabled:opacity-60 disabled:pointer-events-none transition-all cursor-pointer"
+            >
+              {bulkDeleteLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                <>
+                  <Trash2 size={14} />
+                  Xóa {selectedIds.length} người dùng
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

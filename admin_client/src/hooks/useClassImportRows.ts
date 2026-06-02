@@ -3,6 +3,7 @@ import { usePaginatedApi } from "./useApi";
 export interface ClassImportRowItem {
   id: string;
   import_id: string;
+  class_code?: string;
   row_number?: number;
   student_code?: string;
   full_name?: string;

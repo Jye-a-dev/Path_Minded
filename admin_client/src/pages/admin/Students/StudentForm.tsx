@@ -30,9 +30,17 @@ interface StudentFormProps {
     program_id: string | null;
   }) => Promise<void>;
   onCancel: () => void;
+  defaultClassId?: string;
+  defaultProgramId?: string;
 }
 
-export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit, onCancel }) => {
+export const StudentForm: React.FC<StudentFormProps> = ({
+  editingItem,
+  onSubmit,
+  onCancel,
+  defaultClassId = "",
+  defaultProgramId = "",
+}) => {
   const [formCode, setFormCode] = useState(() => editingItem?.student_code || "");
   const [formFullName, setFormFullName] = useState(() => editingItem?.full_name || "");
   const [formCohortYear, setFormCohortYear] = useState<number | "">(
@@ -42,8 +50,8 @@ export const StudentForm: React.FC<StudentFormProps> = ({ editingItem, onSubmit,
     () => editingItem?.status || "ACTIVE"
   );
   const [formUserId, setFormUserId] = useState(() => editingItem?.user_id || "");
-  const [formClassId, setFormClassId] = useState(() => editingItem?.class_id || "");
-  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || "");
+  const [formClassId, setFormClassId] = useState(() => editingItem?.class_id || defaultClassId);
+  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || defaultProgramId);
 
   const [studentUsers, setStudentUsers] = useState<DropdownItem[]>([]);
   const [classesList, setClassesList] = useState<DropdownItem[]>([]);

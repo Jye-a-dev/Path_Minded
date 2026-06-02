@@ -88,8 +88,18 @@ export class ClassImportsController {
   @ApiOperation({ summary: 'Confirm class list import' })
   @ApiOkResponse({ description: 'Confirmed successfully' })
   @Post(':id/confirm')
-  confirm(@Param('id') id: string): Promise<{ message: string }> {
-    return this.service.confirm(id);
+  confirm(
+    @Param('id') id: string,
+    @Body()
+    body?: {
+      students?: {
+        student_code: string;
+        full_name: string;
+        email: string | null;
+      }[];
+    },
+  ): Promise<{ message: string }> {
+    return this.service.confirm(id, body);
   }
 
   @ApiOperation({ summary: 'List class import sessions' })

@@ -28,14 +28,19 @@ export class UserService {
     try {
       const result = await this.pool.query<UserResponse>(
         `
-          INSERT INTO users (email, password_hash, role)
-          VALUES ($1, $2, $3::user_role)
+          INSERT INTO users (email, password_hash, role, display_name)
+          VALUES ($1, $2, $3::user_role, $4)
           RETURNING id, email, role,
             ms_id, user_principal_name, display_name, given_name, surname,
             mail, job_title, mobile_phone, business_phones, office_location,
             preferred_language, created_at, updated_at
         `,
-        [payload.email.toLowerCase(), payload.password, payload.role],
+        [
+          payload.email.toLowerCase(),
+          payload.password,
+          payload.role,
+          payload.display_name ?? null,
+        ],
       );
 
       return result.rows[0];
@@ -293,5 +298,19 @@ export class UserService {
     }
 
     return { message: 'deleted' };
+  }
+
+  async removeMany(
+    ids: string[],
+  ): Promise<{ message: string; deleted: number }> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('ids array is required');
+    }
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
+    const result = await this.pool.query(
+      `DELETE FROM users WHERE id IN (${placeholders})`,
+      ids,
+    );
+    return { message: 'deleted', deleted: result.rowCount ?? 0 };
   }
 }

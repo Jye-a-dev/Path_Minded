@@ -231,4 +231,24 @@ export class StudentsController {
   removeAll(): Promise<{ message: string; deleted: number }> {
     return this.studentsService.removeAll();
   }
+
+  @ApiOperation({
+    summary:
+      'Sync students user_id by matching full_name to users.display_name',
+  })
+  @ApiQuery({
+    name: 'class_id',
+    required: false,
+    description: 'Filter sync to a specific class',
+  })
+  @ApiOkResponse({
+    description: 'Sync result',
+    schema: { example: { message: 'sync completed', synced: 42 } },
+  })
+  @Post('sync-users')
+  syncUsers(
+    @Query('class_id') classId?: string,
+  ): Promise<{ message: string; synced: number }> {
+    return this.studentsService.syncUsers(classId);
+  }
 }

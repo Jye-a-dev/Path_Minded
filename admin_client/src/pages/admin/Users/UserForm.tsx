@@ -11,7 +11,7 @@ interface UserItem {
 
 interface UserFormProps {
   editingItem: UserItem | null;
-  onSubmit: (payload: { email: string; role: string; password?: string }) => Promise<void>;
+  onSubmit: (payload: { email: string; role: string; password?: string; display_name?: string }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -19,6 +19,7 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
   const [formEmail, setFormEmail] = useState(() => editingItem?.email || "");
   const [formPassword, setFormPassword] = useState("");
   const [formRole, setFormRole] = useState(() => editingItem?.role || "STUDENT");
+  const [formDisplayName, setFormDisplayName] = useState(() => editingItem?.display_name || "");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -34,9 +35,10 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
     }
 
     try {
-      const payload: { email: string; role: string; password?: string } = {
+      const payload: { email: string; role: string; password?: string; display_name?: string } = {
         email: formEmail,
         role: formRole,
+        display_name: formDisplayName.trim() || undefined,
       };
       if (formPassword.trim()) {
         payload.password = formPassword;
@@ -57,6 +59,25 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
         </div>
       )}
 
+      {/* Display Name */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          Tên người dùng{" "}
+          <span className="text-[10px] lowercase text-slate-500">(dùng để khớp với sinh viên)</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Nguyễn Văn A"
+          value={formDisplayName}
+          onChange={(e) => setFormDisplayName(e.target.value)}
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+        />
+        <p className="text-[10px] text-slate-500">
+          Nếu tên này trùng với họ và tên sinh viên, email sẽ được đồng bộ tự động khi bấm &quot;Đồng bộ email&quot;.
+        </p>
+      </div>
+
+      {/* Email */}
       <div className="space-y-1">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Địa chỉ Email
@@ -71,6 +92,7 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
         />
       </div>
 
+      {/* Password */}
       <div className="space-y-1">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Mật khẩu {editingItem && <span className="text-[10px] lowercase text-slate-500">(để trống để giữ nguyên)</span>}
@@ -85,6 +107,7 @@ export const UserForm: React.FC<UserFormProps> = ({ editingItem, onSubmit, onCan
         />
       </div>
 
+      {/* Role */}
       <div className="space-y-1">
         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
           Vai trò tài khoản

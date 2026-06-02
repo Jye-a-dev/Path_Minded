@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   Users,
   Briefcase,
@@ -22,7 +22,8 @@ import {
   LayoutDashboard,
   User,
   Tags,
-  Layers
+  Layers,
+  ChevronDown
 } from "lucide-react";
 
 interface SidebarProps {
@@ -38,6 +39,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
   user,
   onLogout,
 }) => {
+  const location = useLocation();
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem("sidebar_collapsed_sections");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleSection = (title: string) => {
+    setCollapsedSections((prev) => {
+      const updated = { ...prev, [title]: !prev[title] };
+      try {
+        localStorage.setItem("sidebar_collapsed_sections", JSON.stringify(updated));
+      } catch (e) {
+        console.error("Failed to save sidebar state", e);
+      }
+      return updated;
+    });
+  };
+
   const menuSections = [
     {
       title: "Dữ liệu cơ sở",
@@ -129,36 +152,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </NavLink>
         </div>
 
-        {menuSections.map((section) => (
-          <div key={section.title} className="space-y-2">
-            <h4 className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              {section.title}
-            </h4>
-            <ul className="space-y-1">
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
-                          isActive
-                            ? "bg-indigo-600/90 text-white shadow-lg shadow-indigo-600/20"
-                            : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-100"
-                        }`
-                      }
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <Icon size={18} className="shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </NavLink>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+        {menuSections.map((section) => {
+          const isCollapsed = collapsedSections[section.title] !== undefined
+            ? collapsedSections[section.title]
+            : !section.items.some(item => item.to === location.pathname);
+          return (
+            <div key={section.title} className="space-y-2">
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="flex w-full items-center justify-between px-3 text-left group cursor-pointer focus:outline-none"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-300 transition-colors">
+                  {section.title}
+                </span>
+                <ChevronDown
+                  size={12}
+                  className={`text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                    isCollapsed ? "-rotate-90" : "rotate-0"
+                  }`}
+                />
+              </button>
+              
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                  isCollapsed ? "max-h-0 opacity-0" : "max-h-125 opacity-100"
+                }`}
+              >
+                <ul className="space-y-1 mt-1.5">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                              isActive
+                                ? "bg-indigo-600/90 text-white shadow-lg shadow-indigo-600/20"
+                                : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-100"
+                            }`
+                          }
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <Icon size={18} className="shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </NavLink>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          );
+        })}
       </nav>
 
       {/* Footer/User Info Section */}

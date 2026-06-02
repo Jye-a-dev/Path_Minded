@@ -10,13 +10,21 @@ interface DropdownItem {
 interface ClassImportFormProps {
   onSubmit: (formData: FormData) => Promise<void>;
   onCancel: () => void;
+  defaultMajor?: string;
+  defaultProgramId?: string;
+  allPrograms: { id: string; program_code: string; program_name: string; major_name?: string | null }[];
 }
 
 export const ClassImportForm: React.FC<ClassImportFormProps> = ({
   onSubmit,
   onCancel,
+  defaultMajor = "",
+  defaultProgramId = "",
+  allPrograms = [],
 }) => {
   const [sourceType, setSourceType] = useState<"file" | "text">("text");
+  const [formMajor, setFormMajor] = useState(defaultMajor);
+  const [formProgramId, setFormProgramId] = useState(defaultProgramId);
   const [formClassId, setFormClassId] = useState("");
   const [formRawCSV, setFormRawCSV] = useState("");
   const [formFile, setFormFile] = useState<File | null>(null);
@@ -27,10 +35,11 @@ export const ClassImportForm: React.FC<ClassImportFormProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!formProgramId) return;
     const loadClasses = async () => {
       setLoadingDropdowns(true);
       try {
-        const response = await api.get("/classes?limit=100");
+        const response = await api.get(`/classes?limit=100&program_id=${formProgramId}`);
         setClassesList(
           (response.data || []).map((c: { id: string; class_code: string }) => ({
             id: c.id,
@@ -45,7 +54,22 @@ export const ClassImportForm: React.FC<ClassImportFormProps> = ({
     };
 
     loadClasses();
-  }, []);
+  }, [formProgramId]);
+
+  const handleMajorChange = (major: string) => {
+    setFormMajor(major);
+    setFormProgramId("");
+    setClassesList([]);
+    setFormClassId("");
+  };
+
+  const handleProgramChange = (programId: string) => {
+    setFormProgramId(programId);
+    if (!programId) {
+      setClassesList([]);
+    }
+    setFormClassId("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,10 +109,52 @@ export const ClassImportForm: React.FC<ClassImportFormProps> = ({
         </div>
       )}
 
+      {/* Major Selection */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          Chọn Chuyên ngành
+        </label>
+        <select
+          value={formMajor}
+          onChange={(e) => handleMajorChange(e.target.value)}
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
+        >
+          <option className="bg-slate-900 text-slate-100" value="">-- Chọn chuyên ngành --</option>
+          {Array.from(new Set(allPrograms.map((p) => p.major_name).filter((m): m is string => !!m))).map((major) => (
+            <option className="bg-slate-900 text-slate-100" key={major} value={major}>
+              {major}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Program Selection */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          Chọn Chương trình đào tạo
+        </label>
+        <select
+          value={formProgramId}
+          disabled={!formMajor}
+          onChange={(e) => handleProgramChange(e.target.value)}
+          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-50"
+        >
+          <option className="bg-slate-900 text-slate-100" value="">-- Chọn chương trình --</option>
+          {allPrograms
+            .filter((p) => p.major_name === formMajor)
+            .map((p) => (
+              <option className="bg-slate-900 text-slate-100" key={p.id} value={p.id}>
+                {p.program_name} ({p.program_code})
+              </option>
+            ))}
+        </select>
+      </div>
+
+      {/* Class Selection */}
       {loadingDropdowns ? (
         <div className="flex items-center justify-center gap-2 py-4 text-slate-500 text-xs">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Đang tải danh sách lớp học đang hoạt động...
+          Đang tải danh sách lớp học...
         </div>
       ) : (
         <div className="space-y-1">
@@ -98,10 +164,13 @@ export const ClassImportForm: React.FC<ClassImportFormProps> = ({
           <select
             value={formClassId}
             required
+            disabled={!formProgramId}
             onChange={(e) => setFormClassId(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-50"
           >
-            <option className="bg-slate-900 text-slate-100" value="">-- Chọn lớp học --</option>
+            <option className="bg-slate-900 text-slate-100" value="">
+              {formProgramId ? "-- Chọn lớp học --" : "-- Hãy chọn chương trình trước --"}
+            </option>
             {classesList.map((c) => (
               <option className="bg-slate-900 text-slate-100" key={c.id} value={c.id}>
                 {c.label}

@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useClasses } from "../../../hooks/useClasses";
 import type { ClassItem } from "../../../hooks/useClasses";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ClassForm } from "./ClassForm";
 import { Plus, Edit2, Trash2, Building2 } from "lucide-react";
-import { useColumnLabels } from "../../../hooks/useColumnLabels";
+import { api } from "../../../services/api";
 
 export default function Classes() {
   const {
@@ -15,19 +15,50 @@ export default function Classes() {
     limit,
     loading,
     error,
+    filters,
     search,
     setPage,
     setLimit,
     setSearch,
+    updateFilters,
     createItem,
     updateItem,
     deleteItem,
   } = useClasses();
 
-  const { getLabel } = useColumnLabels("CLASS");
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassItem | null>(null);
+
+  const [programsList, setProgramsList] = useState<{ id: string; program_name: string; program_code: string }[]>([]);
+  const [advisorsList, setAdvisorsList] = useState<{ id: string; full_name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const [programsRes, advisorsRes] = await Promise.all([
+          api.get("/programs?limit=250"),
+          api.get("/advisors?limit=100"),
+        ]);
+        setProgramsList(programsRes.data || []);
+        setAdvisorsList(advisorsRes.data || []);
+      } catch (err) {
+        console.error("Failed to fetch filter metadata:", err);
+      }
+    };
+    void fetchMetadata();
+  }, []);
+
+  const getProgramCode = (programId?: string) => {
+    if (!programId) return "Chưa chỉ định";
+    const found = programsList.find((p) => p.id === programId);
+    return found ? `${found.program_name} (${found.program_code})` : "N/A";
+  };
+
+  const getAdvisorName = (advisorId?: string) => {
+    if (!advisorId) return "Chưa phân công";
+    const found = advisorsList.find((a) => a.id === advisorId);
+    return found ? found.full_name : "N/A";
+  };
 
   const handleOpenCreate = () => {
     setEditingItem(null);
@@ -70,7 +101,7 @@ export default function Classes() {
 
   const columns = [
     {
-      header: getLabel("student_code", "Mã lớp học"),
+      header: "Mã lớp học",
       accessorKey: "class_code",
       render: (row: ClassItem) => (
         <span className="inline-flex items-center gap-1 rounded bg-indigo-950/40 text-indigo-400 font-mono text-xs px-2 py-0.5 border border-indigo-900/40">
@@ -80,7 +111,7 @@ export default function Classes() {
       ),
     },
     {
-      header: getLabel("full_name", "Tên lớp học"),
+      header: "Tên lớp học",
       accessorKey: "class_name",
       render: (row: ClassItem) => (
         <span className="text-slate-200 font-bold">{row.class_name || "N/A"}</span>
@@ -94,20 +125,20 @@ export default function Classes() {
       ),
     },
     {
-      header: "Mã cố vấn",
+      header: "Cố vấn học tập",
       accessorKey: "advisor_id",
       render: (row: ClassItem) => (
-        <span className="text-xs text-slate-400 font-normal">
-          {row.advisor_id || "Chưa phân công"}
+        <span className="text-xs text-slate-300 font-semibold">
+          {getAdvisorName(row.advisor_id)}
         </span>
       ),
     },
     {
-      header: "Mã chương trình",
+      header: "Chương trình đào tạo",
       accessorKey: "program_id",
       render: (row: ClassItem) => (
-        <span className="text-xs text-slate-400 font-normal">
-          {row.program_id || "Chưa phân công"}
+        <span className="text-xs text-slate-300 font-semibold">
+          {getProgramCode(row.program_id)}
         </span>
       ),
     },
@@ -163,6 +194,51 @@ export default function Classes() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Tìm kiếm mã lớp học hoặc tên lớp..."
+        filters={
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Program Filter */}
+            <select
+              value={(filters?.program_id as string) || ""}
+              onChange={(e) => updateFilters({ program_id: e.target.value || undefined })}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-45"
+            >
+              <option className="bg-slate-900 text-slate-400" value="">Tất cả chương trình</option>
+              {programsList.map((p) => (
+                <option className="bg-slate-900 text-slate-200" key={p.id} value={p.id}>
+                  {p.program_name} ({p.program_code})
+                </option>
+              ))}
+            </select>
+
+            {/* Advisor Filter */}
+            <select
+              value={(filters?.advisor_id as string) || ""}
+              onChange={(e) => updateFilters({ advisor_id: e.target.value || undefined })}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-45"
+            >
+              <option className="bg-slate-900 text-slate-400" value="">Tất cả cố vấn</option>
+              {advisorsList.map((a) => (
+                <option className="bg-slate-900 text-slate-200" key={a.id} value={a.id}>
+                  {a.full_name}
+                </option>
+              ))}
+            </select>
+
+            {/* Cohort Year Filter */}
+            <select
+              value={(filters?.cohort_year as string) || ""}
+              onChange={(e) => updateFilters({ cohort_year: e.target.value ? Number(e.target.value) : undefined })}
+              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 min-w-40"
+            >
+              <option className="bg-slate-900 text-slate-400" value="">Tất cả niên khóa</option>
+              {Array.from({ length: 9 }, (_, i) => 2018 + i).map((year) => (
+                <option className="bg-slate-900 text-slate-200" key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+        }
         rightActions={
           <button
             onClick={handleOpenCreate}

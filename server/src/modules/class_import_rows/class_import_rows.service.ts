@@ -67,13 +67,15 @@ export class ClassImportRowsService {
       }
 
       if (key === 'search') {
-        clauses.push(`(student_code ILIKE $${idx} OR full_name ILIKE $${idx})`);
-        values.push(`%${value}%`);
+        clauses.push(
+          `(cir.student_code ILIKE $${idx} OR cir.full_name ILIKE $${idx})`,
+        );
+        values.push(`%${value as string}%`);
         idx++;
         return;
       }
 
-      clauses.push(`${key} = $${idx++}`);
+      clauses.push(`cir.${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });
 
@@ -92,7 +94,12 @@ export class ClassImportRowsService {
     const offset = Number(query.offset ?? 0);
 
     const result = await this.pool.query<ClassImportRowEntity>(
-      `SELECT * FROM class_import_rows ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT cir.*, c.class_code
+       FROM class_import_rows cir
+       LEFT JOIN class_imports ci ON cir.import_id = ci.id
+       LEFT JOIN classes c ON ci.class_id = c.id
+       ${where}
+       ORDER BY cir.id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -108,7 +115,7 @@ export class ClassImportRowsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM class_import_rows ${where}`,
+      `SELECT COUNT(*) AS total FROM class_import_rows cir ${where}`,
       values,
     );
 
@@ -116,7 +123,12 @@ export class ClassImportRowsService {
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
     const result = await this.pool.query<ClassImportRowEntity>(
-      `SELECT * FROM class_import_rows ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT cir.*, c.class_code
+       FROM class_import_rows cir
+       LEFT JOIN class_imports ci ON cir.import_id = ci.id
+       LEFT JOIN classes c ON ci.class_id = c.id
+       ${where}
+       ORDER BY cir.id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -129,7 +141,7 @@ export class ClassImportRowsService {
   async count(query: Record<string, unknown>): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM class_import_rows ${where}`,
+      `SELECT COUNT(*) AS count FROM class_import_rows cir ${where}`,
       values,
     );
 
@@ -138,7 +150,11 @@ export class ClassImportRowsService {
 
   async findOne(id: string): Promise<ClassImportRowResponse> {
     const result = await this.pool.query<ClassImportRowEntity>(
-      `SELECT * FROM class_import_rows WHERE id = $1`,
+      `SELECT cir.*, c.class_code
+       FROM class_import_rows cir
+       LEFT JOIN class_imports ci ON cir.import_id = ci.id
+       LEFT JOIN classes c ON ci.class_id = c.id
+       WHERE cir.id = $1`,
       [id],
     );
 
