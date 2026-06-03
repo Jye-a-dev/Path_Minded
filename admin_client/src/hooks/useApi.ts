@@ -14,7 +14,11 @@ interface PaginatedResponse<T> {
   };
 }
 
-export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<string, unknown> = {}) {
+export function usePaginatedApi<T>(
+  endpoint: string,
+  initialFilters: Record<string, unknown> = {},
+  options?: { skip?: (filters: Record<string, unknown>) => boolean }
+) {
   const [data, setData] = useState<T[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -40,6 +44,12 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
   }, [search]);
 
   const fetchData = useCallback(async (currentPage: number) => {
+    if (options?.skip && options.skip(filters)) {
+      setData([]);
+      setTotal(0);
+      setLoading(false);
+      return;
+    }
     const requestId = ++lastRequestIdRef.current;
     setLoading(true);
     setError(null);
@@ -75,7 +85,7 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
         setLoading(false);
       }
     }
-  }, [endpoint, limit, filters, debouncedSearch]);
+  }, [endpoint, limit, filters, debouncedSearch, options]);
 
   // Single unified effect: reset page when filters/search change, then fetch
   useEffect(() => {
@@ -88,6 +98,13 @@ export function usePaginatedApi<T>(endpoint: string, initialFilters: Record<stri
       setPage(1);
       prevFiltersRef.current = filters;
       prevDebouncedSearchRef.current = debouncedSearch;
+    }
+
+    if (options?.skip && options.skip(filters)) {
+      setData([]);
+      setTotal(0);
+      setLoading(false);
+      return;
     }
 
     void fetchData(targetPage);

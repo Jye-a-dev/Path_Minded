@@ -30,8 +30,11 @@ export interface UploadItem {
   raw_text?: string;
 }
 
-export function useTranscriptUploads() {
-  const paginated = usePaginatedApi<UploadItem>("/transcript_uploads");
+export function useTranscriptUploads(studentId?: string) {
+  const paginated = usePaginatedApi<UploadItem>(
+     "/transcript_uploads",
+     studentId ? { student_id: studentId } : {}
+  );
 
   const createUpload = async (payload: { student_id: string; textContent: string }) => {
     const fullPayload = {

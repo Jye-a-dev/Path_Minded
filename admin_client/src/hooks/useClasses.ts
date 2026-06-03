@@ -9,6 +9,9 @@ export interface ClassItem {
   cohort_year?: number;
 }
 
-export function useClasses() {
-  return usePaginatedApi<ClassItem>("/classes");
+export function useClasses(
+  initialFilters: Record<string, unknown> = {},
+  options?: { skip?: (filters: Record<string, unknown>) => boolean }
+) {
+  return usePaginatedApi<ClassItem>("/classes", initialFilters, options);
 }

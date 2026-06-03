@@ -10,6 +10,7 @@ interface DropdownItem {
 
 interface PrerequisiteFormProps {
   editingItem: PrerequisiteItem | null;
+  defaultProgramId?: string;
   onSubmit: (payload: {
     program_id: string;
     course_code: string;
@@ -21,10 +22,11 @@ interface PrerequisiteFormProps {
 
 export const PrerequisiteForm: React.FC<PrerequisiteFormProps> = ({
   editingItem,
+  defaultProgramId,
   onSubmit,
   onCancel,
 }) => {
-  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || "");
+  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || defaultProgramId || "");
   const [formCourseCode, setFormCourseCode] = useState(() => editingItem?.course_code || "");
   const [formPrereqCode, setFormPrereqCode] = useState(() => editingItem?.prerequisite_course_code || "");
   const [formType, setFormType] = useState(() => editingItem?.prerequisite_type || "REQUIRED");

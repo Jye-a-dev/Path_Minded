@@ -24,6 +24,8 @@ interface ProgramOption {
 
 interface ClassFormProps {
   editingItem: ClassItem | null;
+  defaultProgramId?: string;
+  defaultCohortYear?: number;
   onSubmit: (payload: {
     class_code: string;
     class_name: string | null;
@@ -34,14 +36,20 @@ interface ClassFormProps {
   onCancel: () => void;
 }
 
-export const ClassForm: React.FC<ClassFormProps> = ({ editingItem, onSubmit, onCancel }) => {
+export const ClassForm: React.FC<ClassFormProps> = ({
+  editingItem,
+  defaultProgramId,
+  defaultCohortYear,
+  onSubmit,
+  onCancel,
+}) => {
   const [formCode, setFormCode] = useState(() => editingItem?.class_code || "");
   const [formName, setFormName] = useState(() => editingItem?.class_name || "");
   const [formCohortYear, setFormCohortYear] = useState<number | "">(
-    () => editingItem?.cohort_year ?? ""
+    () => editingItem?.cohort_year ?? defaultCohortYear ?? ""
   );
   const [formAdvisorId, setFormAdvisorId] = useState(() => editingItem?.advisor_id || "");
-  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || "");
+  const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || defaultProgramId || "");
   const [advisors, setAdvisors] = useState<AdvisorOption[]>([]);
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);

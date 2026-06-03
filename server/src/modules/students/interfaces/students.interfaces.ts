@@ -10,6 +10,7 @@ export type StudentEntity = {
   cohort_year: number | null;
   status: StudentStatus;
   email?: string | null;
+  has_grades?: boolean;
   created_at: Date;
   updated_at: Date;
 };
@@ -24,6 +25,7 @@ export type StudentResponse = {
   cohort_year: number | null;
   status: StudentStatus;
   email: string | null;
+  has_grades?: boolean;
   created_at: Date;
   updated_at: Date;
 };

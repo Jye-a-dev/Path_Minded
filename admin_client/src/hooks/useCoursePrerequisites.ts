@@ -10,6 +10,9 @@ export interface PrerequisiteItem {
   prerequisite_course_name?: string;
 }
 
-export function useCoursePrerequisites() {
-  return usePaginatedApi<PrerequisiteItem>("/course_prerequisites");
+export function useCoursePrerequisites(
+  initialFilters: Record<string, unknown> = {},
+  options?: { skip?: (filters: Record<string, unknown>) => boolean }
+) {
+  return usePaginatedApi<PrerequisiteItem>("/course_prerequisites", initialFilters, options);
 }

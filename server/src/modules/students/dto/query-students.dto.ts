@@ -43,4 +43,9 @@ export class QueryStudentsDto extends BaseQueryDto {
   @IsOptional()
   @IsIn(['ACTIVE', 'GRADUATED', 'DROPPED'])
   status?: StudentStatus;
+
+  @ApiPropertyOptional({ example: 'true' })
+  @IsOptional()
+  @IsString()
+  has_grades?: string;
 }

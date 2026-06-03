@@ -19,8 +19,11 @@ export interface StudentCourseResultItem {
   is_latest?: boolean;
 }
 
-export function useStudentCourseResults() {
-  const paginated = usePaginatedApi<StudentCourseResultItem>("/student_course_results");
+export function useStudentCourseResults(studentId?: string) {
+  const paginated = usePaginatedApi<StudentCourseResultItem>(
+    "/student_course_results",
+    studentId ? { student_id: studentId } : {}
+  );
 
   const bulkDelete = async (ids: (string | number)[]) => {
     const response = await api.delete("/student_course_results/bulk", { data: { ids } });

@@ -75,37 +75,46 @@ export class StudentsService {
     let idx = 1;
 
     if (query.student_code) {
-      clauses.push(`student_code ILIKE $${idx++}`);
+      clauses.push(`s.student_code ILIKE $${idx++}`);
       values.push(`%${query.student_code}%`);
     }
     if (query.full_name) {
-      clauses.push(`full_name ILIKE $${idx++}`);
+      clauses.push(`s.full_name ILIKE $${idx++}`);
       values.push(`%${query.full_name}%`);
     }
     if (query.user_id) {
-      clauses.push(`user_id = $${idx++}`);
+      clauses.push(`s.user_id = $${idx++}`);
       values.push(query.user_id);
     }
     if (query.class_id) {
-      clauses.push(`class_id = $${idx++}`);
+      clauses.push(`s.class_id = $${idx++}`);
       values.push(query.class_id);
     }
     if (query.program_id) {
-      clauses.push(`program_id = $${idx++}`);
+      clauses.push(`s.program_id = $${idx++}`);
       values.push(query.program_id);
     }
     if (query.cohort_year !== undefined) {
-      clauses.push(`cohort_year = $${idx++}`);
+      clauses.push(`s.cohort_year = $${idx++}`);
       values.push(Number(query.cohort_year));
     }
     if (query.status) {
-      clauses.push(`status = $${idx++}::student_status`);
+      clauses.push(`s.status = $${idx++}::student_status`);
       values.push(query.status);
     }
     if (query.search) {
-      clauses.push(`(student_code ILIKE $${idx} OR full_name ILIKE $${idx})`);
+      clauses.push(
+        `(s.student_code ILIKE $${idx} OR s.full_name ILIKE $${idx})`,
+      );
       values.push(`%${query.search}%`);
       idx++;
+    }
+    if (query.has_grades !== undefined) {
+      const existsClause =
+        query.has_grades === 'true' ? 'EXISTS' : 'NOT EXISTS';
+      clauses.push(
+        `${existsClause} (SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id)`,
+      );
     }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
@@ -123,7 +132,8 @@ export class StudentsService {
           s.id, s.user_id, s.student_code, s.full_name,
           s.class_id, s.program_id, s.cohort_year, s.status,
           s.created_at, s.updated_at,
-          COALESCE(u.email, cir.email) AS email
+          COALESCE(u.email, cir.email) AS email,
+          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN LATERAL (
@@ -154,7 +164,7 @@ export class StudentsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM students ${where}`,
+      `SELECT COUNT(*) AS total FROM students s ${where}`,
       values,
     );
 
@@ -167,7 +177,8 @@ export class StudentsService {
           s.id, s.user_id, s.student_code, s.full_name,
           s.class_id, s.program_id, s.cohort_year, s.status,
           s.created_at, s.updated_at,
-          COALESCE(u.email, cir.email) AS email
+          COALESCE(u.email, cir.email) AS email,
+          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN LATERAL (
@@ -195,7 +206,7 @@ export class StudentsService {
   async countStudents(query: QueryStudentsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM students ${where}`,
+      `SELECT COUNT(*) AS count FROM students s ${where}`,
       values,
     );
     return { count: Number(result.rows[0]?.count ?? 0) };
@@ -208,7 +219,8 @@ export class StudentsService {
           s.id, s.user_id, s.student_code, s.full_name,
           s.class_id, s.program_id, s.cohort_year, s.status,
           s.created_at, s.updated_at,
-          COALESCE(u.email, cir.email) AS email
+          COALESCE(u.email, cir.email) AS email,
+          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN LATERAL (

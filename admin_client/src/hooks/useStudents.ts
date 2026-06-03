@@ -10,6 +10,7 @@ export interface StudentItem {
   program_id?: string;
   cohort_year?: number;
   status: "ACTIVE" | "GRADUATED" | "DROPPED";
+  has_grades?: boolean;
 }
 
 export function useStudents() {
