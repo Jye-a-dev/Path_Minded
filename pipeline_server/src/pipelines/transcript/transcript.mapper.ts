@@ -45,38 +45,55 @@ export class TranscriptMapper {
 
   /**
    * Map a single parsed line to a course result.
-   * TODO: Adjust column indices to match your transcript format.
    *
-   * Expected columns (example):
-   * [0] = course_code
-   * [1] = course_name
-   * [2] = credits
-   * [3] = score_10
-   * [4] = score_4
-   * [5] = letter_grade
-   * [6] = result_text (e.g. "Đạt", "Không đạt")
+   * Expected columns (ASC/Edusoft portal table format):
+   * [0] = STT (sequence number)
+   * [1] = course_code
+   * [2] = course_name
+   * [3] = credits
+   * [4] = score_10
+   * [5] = score_4
+   * [6] = letter_grade
+   * [7] = result_text (e.g. "Bạn đã qua môn này")
    */
   private mapLine(line: ParsedLine): ParsedCourseResult | null {
     const cols = line.columns;
     if (cols.length < 3) return null;
 
-    const courseCode = this.normalizeCourseCode(cols[0]);
+    // The first column must be STT (a sequence number)
+    if (!/^\d+$/.test(cols[0])) return null;
+
+    const courseCode = this.normalizeCourseCode(cols[1]);
     if (!courseCode) return null;
 
-    const score10 = this.parseScore(cols[3]);
-    const score4 = this.parseScore(cols[4]);
-    const letterGrade = cols[5]?.trim() || null;
-    const resultText = cols[6]?.trim() || null;
+    const score10 = this.parseScore(cols[4]);
+    const score4 = this.parseScore(cols[5]);
+    const letterGrade = cols[6]?.trim() || null;
+    const resultText = cols[7]?.trim() || null;
+
+    const schoolYear = line.semester?.schoolYear || null;
+    const semesterNumber = line.semester?.semesterNumber || null;
+    let semesterCode = null;
+
+    if (line.semester) {
+      if (line.semester.schoolYear === 'Bảo lưu') {
+        semesterCode = 'BAOLUU';
+      } else {
+        const cleanSemNum = String(line.semester.semesterNumber).padStart(
+          2,
+          '0',
+        );
+        semesterCode = `${line.semester.schoolYear}_HK${cleanSemNum}`;
+      }
+    }
 
     return {
       courseCode,
-      courseName: cols[1]?.trim() || null,
-      credits: this.parseInteger(cols[2]),
-      schoolYear: line.semester?.schoolYear || null,
-      semesterCode: line.semester
-        ? `${line.semester.schoolYear}_HK${line.semester.semesterNumber}`
-        : null,
-      semesterNumber: line.semester?.semesterNumber || null,
+      courseName: cols[2]?.trim() || null,
+      credits: this.parseInteger(cols[3]),
+      schoolYear,
+      semesterCode,
+      semesterNumber,
       score10,
       score4,
       letterGrade,
@@ -96,7 +113,6 @@ export class TranscriptMapper {
 
   /**
    * Detect course status based on scores and result text.
-   * TODO: Adjust rules to match your grading system.
    */
   private detectStatus(
     score10: number | null,
@@ -116,7 +132,9 @@ export class TranscriptMapper {
     // Check letter grade
     if (letterGrade) {
       const upper = letterGrade.toUpperCase();
-      if (['A', 'A+', 'B', 'B+', 'C', 'C+', 'D', 'D+'].includes(upper))
+      if (
+        ['A', 'A+', 'B', 'B+', 'C', 'C+', 'D', 'D+', 'MT', 'M'].includes(upper)
+      )
         return 'PASSED';
       if (upper === 'F') return 'FAILED';
     }

@@ -50,7 +50,7 @@ export class StudentsService {
           payload.status ?? 'ACTIVE',
         ],
       );
-      return result.rows[0];
+      return { ...result.rows[0], email: null };
     } catch (error: unknown) {
       const code = (error as { code?: string })?.code;
       if (code === '23505') {
@@ -119,9 +119,21 @@ export class StudentsService {
 
     const result = await this.pool.query<StudentResponse>(
       `
-        SELECT s.id, s.user_id, s.student_code, s.full_name, s.class_id, s.program_id, s.cohort_year, s.status, s.created_at, s.updated_at, u.email
+        SELECT
+          s.id, s.user_id, s.student_code, s.full_name,
+          s.class_id, s.program_id, s.cohort_year, s.status,
+          s.created_at, s.updated_at,
+          COALESCE(u.email, cir.email) AS email
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT cir2.email
+          FROM class_import_rows cir2
+          WHERE cir2.student_code = s.student_code
+            AND cir2.email IS NOT NULL
+          ORDER BY cir2.created_at DESC
+          LIMIT 1
+        ) cir ON true
         ${where}
         ORDER BY s.created_at DESC
         LIMIT $${idx}
@@ -151,9 +163,21 @@ export class StudentsService {
 
     const result = await this.pool.query<StudentResponse>(
       `
-        SELECT s.id, s.user_id, s.student_code, s.full_name, s.class_id, s.program_id, s.cohort_year, s.status, s.created_at, s.updated_at, u.email
+        SELECT
+          s.id, s.user_id, s.student_code, s.full_name,
+          s.class_id, s.program_id, s.cohort_year, s.status,
+          s.created_at, s.updated_at,
+          COALESCE(u.email, cir.email) AS email
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT cir2.email
+          FROM class_import_rows cir2
+          WHERE cir2.student_code = s.student_code
+            AND cir2.email IS NOT NULL
+          ORDER BY cir2.created_at DESC
+          LIMIT 1
+        ) cir ON true
         ${where}
         ORDER BY s.created_at DESC
         LIMIT $${idx}
@@ -180,9 +204,21 @@ export class StudentsService {
   async findOne(id: string): Promise<StudentResponse> {
     const result = await this.pool.query<StudentResponse>(
       `
-        SELECT s.id, s.user_id, s.student_code, s.full_name, s.class_id, s.program_id, s.cohort_year, s.status, s.created_at, s.updated_at, u.email
+        SELECT
+          s.id, s.user_id, s.student_code, s.full_name,
+          s.class_id, s.program_id, s.cohort_year, s.status,
+          s.created_at, s.updated_at,
+          COALESCE(u.email, cir.email) AS email
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
+        LEFT JOIN LATERAL (
+          SELECT cir2.email
+          FROM class_import_rows cir2
+          WHERE cir2.student_code = s.student_code
+            AND cir2.email IS NOT NULL
+          ORDER BY cir2.created_at DESC
+          LIMIT 1
+        ) cir ON true
         WHERE s.id = $1
       `,
       [id],

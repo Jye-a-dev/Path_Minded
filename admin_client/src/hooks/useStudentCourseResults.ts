@@ -1,4 +1,5 @@
 import { usePaginatedApi } from "./useApi";
+import { api } from "../services/api";
 
 export interface StudentCourseResultItem {
   id: string;
@@ -19,5 +20,16 @@ export interface StudentCourseResultItem {
 }
 
 export function useStudentCourseResults() {
-  return usePaginatedApi<StudentCourseResultItem>("/student_course_results");
+  const paginated = usePaginatedApi<StudentCourseResultItem>("/student_course_results");
+
+  const bulkDelete = async (ids: (string | number)[]) => {
+    const response = await api.delete("/student_course_results/bulk", { data: { ids } });
+    await paginated.refresh();
+    return response.data;
+  };
+
+  return {
+    ...paginated,
+    bulkDelete,
+  };
 }

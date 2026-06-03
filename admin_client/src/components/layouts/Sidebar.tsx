@@ -13,7 +13,6 @@ import {
   UploadCloud,
   FileUp,
   FolderInput,
-  ListOrdered,
   DownloadCloud,
   History,
   AlertTriangle,
@@ -87,7 +86,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: "Nhập chương trình", to: "/admin/curriculum_imports", icon: UploadCloud },
         { label: "Nhập lớp học", to: "/admin/class_imports", icon: FolderInput },
         { label: "Tải bảng điểm lên", to: "/admin/transcript_uploads", icon: FileUp },
-        { label: "Chi tiết nhập lớp", to: "/admin/class_import_rows", icon: ListOrdered },
       ],
     },
     {

@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
@@ -16,15 +17,39 @@ import { handleDatabaseError } from '../../common/utils/database-error.util';
 import { QueryTranscriptUploadsDto } from './dto/query-transcript-uploads.dto';
 
 @Injectable()
-export class TranscriptUploadsService {
+export class TranscriptUploadsService implements OnModuleInit {
   constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
+
+  async onModuleInit() {
+    await this.pool.query(
+      `ALTER TABLE transcript_uploads ADD COLUMN IF NOT EXISTS parsed_json JSONB;`,
+    );
+  }
 
   async create(
     payload: Record<string, unknown>,
     file?: Express.Multer.File,
   ): Promise<any> {
-    const studentId = payload.studentId as string;
+    let studentId = (payload.studentId || payload.student_id) as string;
     const sourceType = payload.sourceType as string;
+    const studentCode = payload.studentCode as string;
+
+    if (!studentId && studentCode) {
+      const studentRes = await this.pool.query(
+        `SELECT id FROM students WHERE student_code = $1`,
+        [studentCode],
+      );
+      if (studentRes.rows.length > 0) {
+        studentId = studentRes.rows[0].id as string;
+      }
+    }
+
+    if (!studentId) {
+      throw new BadRequestException(
+        'Không tìm thấy sinh viên tương ứng. Vui lòng cung cấp studentId hoặc student_code hợp lệ.',
+      );
+    }
+
     const rawText = payload.textContent
       ? (payload.textContent as string)
       : file
@@ -111,8 +136,8 @@ export class TranscriptUploadsService {
         }
 
         await client.query(
-          `UPDATE transcript_uploads SET parse_status = 'SUCCESS', parsed_at = CURRENT_TIMESTAMP WHERE id = $1`,
-          [uploadRecord.id],
+          `UPDATE transcript_uploads SET parse_status = 'SUCCESS', parsed_at = CURRENT_TIMESTAMP, parsed_json = $1 WHERE id = $2`,
+          [JSON.stringify(parsedData), uploadRecord.id],
         );
 
         await client.query('COMMIT');
@@ -149,15 +174,17 @@ export class TranscriptUploadsService {
     let idx = 1;
 
     if (query.parse_status) {
-      clauses.push(`parse_status = $${idx++}`);
+      clauses.push(`tu.parse_status = $${idx++}`);
       values.push(query.parse_status);
     }
     if (query.student_id) {
-      clauses.push(`student_id = $${idx++}`);
+      clauses.push(`tu.student_id = $${idx++}`);
       values.push(query.student_id);
     }
     if (query.search) {
-      clauses.push(`raw_text ILIKE $${idx}`);
+      clauses.push(
+        `(tu.raw_text ILIKE $${idx} OR s.student_code ILIKE $${idx} OR s.full_name ILIKE $${idx})`,
+      );
       values.push(`%${query.search}%`);
       idx++;
     }
@@ -175,7 +202,12 @@ export class TranscriptUploadsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<TranscriptUploadEntity>(
-      `SELECT * FROM transcript_uploads ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT tu.*, s.student_code, s.full_name 
+       FROM transcript_uploads tu
+       LEFT JOIN students s ON tu.student_id = s.id
+       ${where} 
+       ORDER BY tu.uploaded_at DESC 
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -191,7 +223,10 @@ export class TranscriptUploadsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM transcript_uploads ${where}`,
+      `SELECT COUNT(*) AS total 
+       FROM transcript_uploads tu
+       LEFT JOIN students s ON tu.student_id = s.id
+       ${where}`,
       values,
     );
 
@@ -200,7 +235,12 @@ export class TranscriptUploadsService {
     values.push(limit, offset);
 
     const result = await this.pool.query<TranscriptUploadEntity>(
-      `SELECT * FROM transcript_uploads ${where} ORDER BY uploaded_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT tu.*, s.student_code, s.full_name 
+       FROM transcript_uploads tu
+       LEFT JOIN students s ON tu.student_id = s.id
+       ${where} 
+       ORDER BY tu.uploaded_at DESC 
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       values,
     );
 
@@ -213,7 +253,10 @@ export class TranscriptUploadsService {
   async count(query: QueryTranscriptUploadsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM transcript_uploads ${where}`,
+      `SELECT COUNT(*) AS count 
+       FROM transcript_uploads tu
+       LEFT JOIN students s ON tu.student_id = s.id
+       ${where}`,
       values,
     );
 
@@ -222,7 +265,10 @@ export class TranscriptUploadsService {
 
   async findOne(id: string): Promise<TranscriptUploadResponse> {
     const result = await this.pool.query<TranscriptUploadEntity>(
-      `SELECT * FROM transcript_uploads WHERE id = $1`,
+      `SELECT tu.*, s.student_code, s.full_name 
+       FROM transcript_uploads tu
+       LEFT JOIN students s ON tu.student_id = s.id
+       WHERE tu.id = $1`,
       [id],
     );
 
@@ -262,15 +308,38 @@ export class TranscriptUploadsService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.pool.query(
-      `DELETE FROM transcript_uploads WHERE id = $1`,
-      [id],
-    );
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (result.rowCount === 0) {
-      throw new NotFoundException('transcript_uploads not found');
+      // Delete matching student course results
+      await client.query(
+        `DELETE FROM student_course_results WHERE upload_id = $1`,
+        [id],
+      );
+
+      // Delete associated parse warnings
+      await client.query(
+        `DELETE FROM parse_warnings WHERE source_id = $1 AND source_type = 'TRANSCRIPT'`,
+        [id],
+      );
+
+      const result = await client.query(
+        `DELETE FROM transcript_uploads WHERE id = $1`,
+        [id],
+      );
+
+      if (result.rowCount === 0) {
+        throw new NotFoundException('transcript_uploads not found');
+      }
+
+      await client.query('COMMIT');
+      return { message: 'deleted' };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
-
-    return { message: 'deleted' };
   }
 }

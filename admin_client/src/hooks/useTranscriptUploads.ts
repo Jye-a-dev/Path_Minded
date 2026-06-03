@@ -1,6 +1,21 @@
 import { usePaginatedApi } from "./useApi";
 import { api } from "../services/api";
 
+export interface ParsedJson {
+  results?: Array<{
+    courseCode: string;
+    courseName?: string;
+    credits?: number;
+    schoolYear?: string;
+    semesterNumber?: number;
+    score10?: number;
+    score4?: number;
+    letterGrade?: string;
+    status: "PASSED" | "FAILED" | "STUDYING";
+  }>;
+  [key: string]: unknown;
+}
+
 export interface UploadItem {
   id: string;
   student_id: string;
@@ -11,6 +26,8 @@ export interface UploadItem {
   parse_error?: string;
   uploaded_at: string;
   parsed_at?: string;
+  parsed_json?: ParsedJson;
+  raw_text?: string;
 }
 
 export function useTranscriptUploads() {

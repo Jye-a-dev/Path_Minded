@@ -148,6 +148,18 @@ export class StudentCourseResultsController {
     return this.service.update(id, payload);
   }
 
+  @ApiOperation({ summary: 'Delete bulk' })
+  @ApiOkResponse({
+    description: 'Bulk delete result',
+    schema: { example: { message: 'deleted', count: 5 } },
+  })
+  @Delete('bulk')
+  removeBulk(
+    @Body('ids') ids: string[],
+  ): Promise<{ message: string; count: number }> {
+    return this.service.removeBulk(ids);
+  }
+
   @ApiOperation({ summary: 'Delete by id' })
   @ApiParam({ name: 'id', example: '11111111-1111-1111-1111-111111111111' })
   @ApiOkResponse({

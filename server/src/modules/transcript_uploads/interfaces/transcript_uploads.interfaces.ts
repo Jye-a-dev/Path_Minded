@@ -5,6 +5,7 @@ export type TranscriptUploadEntity = {
   source_type: 'PASTE' | 'FILE';
   parse_status: 'PENDING' | 'SUCCESS' | 'FAILED';
   parse_error: string | null;
+  parsed_json: any | null;
   uploaded_at: Date;
   parsed_at: Date | null;
 };

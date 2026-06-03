@@ -20,7 +20,7 @@ import StudentCourseResults from "../pages/admin/StudentCourseResults/StudentCou
 import CurriculumImports from "../pages/admin/CurriculumImports/CurriculumImports";
 import TranscriptUploads from "../pages/admin/TranscriptUploads/TranscriptUploads";
 import ClassImports from "../pages/admin/ClassImports/ClassImports";
-import ClassImportRows from "../pages/admin/ClassImportRows/ClassImportRows";
+
 import Exports from "../pages/admin/Exports/Exports";
 import ExportLogs from "../pages/admin/ExportLogs/ExportLogs";
 import ParseWarnings from "../pages/admin/ParseWarnings/ParseWarnings";
@@ -62,7 +62,7 @@ const routes = [
           { path: "curriculum_imports", element: <CurriculumImports /> },
           { path: "transcript_uploads", element: <TranscriptUploads /> },
           { path: "class_imports", element: <ClassImports /> },
-          { path: "class_import_rows", element: <ClassImportRows /> },
+
           { path: "exports", element: <Exports /> },
           { path: "export_logs", element: <ExportLogs /> },
           { path: "parse_warnings", element: <ParseWarnings /> },

@@ -67,6 +67,7 @@ export class StudentCourseResultsService {
       }
 
       if (key === 'search') {
+        if (typeof value !== 'string') return;
         clauses.push(
           `(course_code ILIKE $${idx} OR course_name ILIKE $${idx})`,
         );
@@ -197,5 +198,16 @@ export class StudentCourseResultsService {
     }
 
     return { message: 'deleted' };
+  }
+
+  async removeBulk(ids: string[]): Promise<{ message: string; count: number }> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('ids array is required');
+    }
+    const result = await this.pool.query(
+      `DELETE FROM student_course_results WHERE id = ANY($1::uuid[])`,
+      [ids],
+    );
+    return { message: 'deleted', count: result.rowCount ?? 0 };
   }
 }

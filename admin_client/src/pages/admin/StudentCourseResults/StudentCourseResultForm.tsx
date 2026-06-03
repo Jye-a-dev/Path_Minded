@@ -43,14 +43,18 @@ interface StudentCourseResultFormProps {
     is_latest: boolean;
   }) => Promise<void>;
   onCancel: () => void;
+  studentId?: string;
+  studentLabel?: string;
 }
 
 export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = ({
   editingItem,
   onSubmit,
   onCancel,
+  studentId,
+  studentLabel,
 }) => {
-  const [formStudentId, setFormStudentId] = useState(() => editingItem?.student_id || "");
+  const [formStudentId, setFormStudentId] = useState(() => studentId || editingItem?.student_id || "");
   const [formCourseCode, setFormCourseCode] = useState(() => editingItem?.course_code || "");
   const [formCourseName, setFormCourseName] = useState(() => editingItem?.course_name || "");
   const [formCredits, setFormCredits] = useState<number | "">(() => editingItem?.credits ?? "");
@@ -72,6 +76,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (studentId || editingItem) return;
     const loadDropdownsData = async () => {
       setLoadingDropdowns(true);
       try {
@@ -90,7 +95,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
     };
 
     loadDropdownsData();
-  }, []);
+  }, [studentId, editingItem]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +135,16 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
         </div>
       )}
 
-      {loadingDropdowns ? (
+      {studentId || editingItem ? (
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Sinh viên
+          </label>
+          <div className="w-full rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2 text-sm text-slate-350 font-medium select-none">
+            {studentLabel || (editingItem && (editingItem as any).student_label) || formStudentId}
+          </div>
+        </div>
+      ) : loadingDropdowns ? (
         <div className="flex items-center justify-center gap-2 py-4 text-slate-500 text-xs">
           <Loader2 className="h-4 w-4 animate-spin" />
           Đang tải danh sách sinh viên...
