@@ -16,6 +16,55 @@ import {
 import { handleDatabaseError } from '../../common/utils/database-error.util';
 import { QueryExportsDto } from './dto/query-exports.dto';
 
+export interface MatrixPreviewData {
+  classInfo: {
+    class_code: string;
+    class_name: string | null;
+    cohort_year: number | null;
+    program_id: string;
+  };
+  programInfo: {
+    program_code: string;
+    program_name: string;
+    major_name: string | null;
+    total_credits: number | null;
+  };
+  students: Array<{
+    id: string;
+    student_code: string;
+    full_name: string;
+    advisor_feedback: string | null;
+  }>;
+  courses: Array<{
+    course_code: string;
+    course_name: string;
+    credits: number | null;
+    theory_hours: number | null;
+    practice_hours: number | null;
+    project_hours: number | null;
+    internship_hours: number | null;
+    expected_semester: number | null;
+    course_type: string;
+    is_required: boolean;
+    prerequisite: string | null;
+    corequisite: string | null;
+    organizing_semester: string | null;
+    knowledge_block: string | null;
+    course_group: string | null;
+  }>;
+  results: Array<{
+    id?: string;
+    student_id: string;
+    course_code: string;
+    status: string;
+    semester_number: number | null;
+    score_10: number | null;
+    letter_grade: string | null;
+    school_year: string | null;
+    semester_code: string | null;
+  }>;
+}
+
 @Injectable()
 export class ExportsService {
   constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
@@ -116,6 +165,68 @@ export class ExportsService {
     );
 
     return buffer;
+  }
+
+  async getMatrixPreview(classId: string): Promise<MatrixPreviewData> {
+    const classResult = await this.pool.query(
+      `SELECT c.*, p.program_code, p.program_name, p.major_name, p.total_credits
+       FROM classes c
+       LEFT JOIN programs p ON p.id = c.program_id
+       WHERE c.id = $1`,
+      [classId],
+    );
+
+    if (classResult.rowCount === 0) {
+      throw new NotFoundException('Class not found');
+    }
+
+    const row = classResult.rows[0];
+    const programId = row.program_id;
+
+    if (!programId) {
+      throw new BadRequestException('Class has no program assigned');
+    }
+
+    const [studentsResult, coursesResult, resultsResult] = await Promise.all([
+      this.pool.query(
+        `SELECT id, student_code, full_name, advisor_feedback FROM students WHERE class_id = $1 ORDER BY student_code`,
+        [classId],
+      ),
+      this.pool.query(
+        `SELECT course_code, course_name, credits, theory_hours, practice_hours, project_hours,
+                internship_hours, expected_semester, course_type, is_required, prerequisite,
+                corequisite, organizing_semester, knowledge_block, course_group
+         FROM curriculum_courses
+         WHERE program_id = $1
+         ORDER BY expected_semester NULLS LAST, knowledge_block, course_code`,
+        [programId],
+      ),
+      this.pool.query(
+        `SELECT scr.id, scr.student_id, scr.course_code, scr.status, scr.semester_number, scr.score_10, scr.letter_grade, scr.school_year, scr.semester_code
+         FROM student_course_results scr
+         INNER JOIN students s ON s.id = scr.student_id
+         WHERE s.class_id = $1 AND scr.is_latest = true`,
+        [classId],
+      ),
+    ]);
+
+    return {
+      classInfo: {
+        class_code: row.class_code as string,
+        class_name: row.class_name as string | null,
+        cohort_year: row.cohort_year as number | null,
+        program_id: programId as string,
+      },
+      programInfo: {
+        program_code: row.program_code as string,
+        program_name: row.program_name as string,
+        major_name: row.major_name as string | null,
+        total_credits: row.total_credits as number | null,
+      },
+      students: studentsResult.rows as MatrixPreviewData['students'],
+      courses: coursesResult.rows as MatrixPreviewData['courses'],
+      results: resultsResult.rows as MatrixPreviewData['results'],
+    };
   }
 
   async create(payload: Record<string, unknown>): Promise<ExportResponse> {

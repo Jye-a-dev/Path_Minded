@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import Navbar from "./@base/Navbar/Navbar";
 import Footer from "./@base/Footer/Footer";
+import PageLoader from "../../router/PageLoader";
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
@@ -66,7 +67,9 @@ export default function AdminLayout() {
         {/* Content Outlet wrapper */}
         <main className="flex-1 overflow-y-auto bg-slate-900 p-6 md:p-8 flex flex-col justify-between">
           <div className="flex-1 max-w-5xl w-full mx-auto pb-8">
-            <Outlet />
+            <Suspense fallback={<PageLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
           
           {/* Custom Sleek Glassmorphic Portal Footer */}

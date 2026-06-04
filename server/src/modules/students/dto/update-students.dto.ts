@@ -51,4 +51,9 @@ export class UpdateStudentsDto {
   @IsOptional()
   @IsIn(['ACTIVE', 'GRADUATED', 'DROPPED'])
   status?: StudentStatus;
+
+  @ApiPropertyOptional({ example: 'Đủ điều kiện tốt nghiệp' })
+  @IsOptional()
+  @IsString()
+  advisor_feedback?: string | null;
 }

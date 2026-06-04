@@ -25,7 +25,7 @@ export function useCurriculumImports() {
     return response.data;
   };
 
-  const confirmImport = async (sessionId: string, courses: any[]) => {
+  const confirmImport = async (sessionId: string, courses: unknown[]) => {
     const response = await api.post(`/curriculum_imports/${sessionId}/confirm`, {
       courses,
     });

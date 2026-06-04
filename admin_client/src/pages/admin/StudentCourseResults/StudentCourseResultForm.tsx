@@ -18,6 +18,7 @@ interface ResultItem {
   status: "PASSED" | "FAILED" | "STUDYING";
   attempt_no?: number;
   is_latest?: boolean;
+  student_label?: string;
 }
 
 interface DropdownItem {
@@ -141,7 +142,7 @@ export const StudentCourseResultForm: React.FC<StudentCourseResultFormProps> = (
             Sinh viên
           </label>
           <div className="w-full rounded-lg border border-slate-800 bg-slate-800/40 px-3 py-2 text-sm text-slate-350 font-medium select-none">
-            {studentLabel || (editingItem && (editingItem as any).student_label) || formStudentId}
+            {studentLabel || (editingItem && editingItem.student_label) || formStudentId}
           </div>
         </div>
       ) : loadingDropdowns ? (

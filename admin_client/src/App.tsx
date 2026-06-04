@@ -1,11 +1,13 @@
-import { useRoutes } from "react-router-dom";
-import routes from "./router/Router";
+import AppRouter from "./router/Router";
 import Providers from "./providers/Providers";
 
 function App() {
-  const element = useRoutes(routes);
-
-  return <Providers>{element}</Providers>;
+  return (
+    <Providers>
+      <AppRouter />
+    </Providers>
+  );
 }
 
 export default App;
+

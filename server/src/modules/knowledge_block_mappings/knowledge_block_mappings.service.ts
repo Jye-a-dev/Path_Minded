@@ -71,7 +71,18 @@ export class KnowledgeBlockMappingsService implements OnModuleInit {
         console.error('Failed to create knowledge_block_mappings table:', err);
       }
 
-      // 5. Seed default values
+      // 5. Skip seeding if already populated
+      const existingCount = await client.query<{ count: string }>(
+        `SELECT COUNT(*) AS count FROM knowledge_block_mappings`,
+      );
+      if (Number(existingCount.rows[0]?.count ?? 0) > 0) {
+        console.log(
+          'KnowledgeBlockMappings database migrations completed successfully.',
+        );
+        return;
+      }
+
+      // 6. Seed default values
       try {
         await client.query(`
           INSERT INTO knowledge_block_mappings (knowledge_block, label, phrases) VALUES

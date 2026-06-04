@@ -21,6 +21,7 @@ export class CurriculumColumnMappingsService implements OnModuleInit {
   async onModuleInit() {
     const client = await this.pool.connect();
     try {
+      // Ensure table exists first
       await client.query(`
         CREATE TABLE IF NOT EXISTS curriculum_column_mappings (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -38,6 +39,15 @@ export class CurriculumColumnMappingsService implements OnModuleInit {
         ALTER TABLE curriculum_column_mappings 
         ADD COLUMN IF NOT EXISTS mapping_type VARCHAR(50) DEFAULT 'CURRICULUM'
       `);
+
+      // Skip seeding if already populated
+      const existingCount = await client.query<{ count: string }>(
+        `SELECT COUNT(*) AS count FROM curriculum_column_mappings`,
+      );
+      if (Number(existingCount.rows[0]?.count ?? 0) > 0) {
+        console.log('CurriculumColumnMappings seed completed.');
+        return;
+      }
 
       await client.query(`
         INSERT INTO curriculum_column_mappings (field_key, display_label, phrases, mapping_type) VALUES

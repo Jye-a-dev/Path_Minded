@@ -38,7 +38,7 @@ export class StudentsService {
             status
           )
           VALUES ($1, $2, $3, $4, $5, $6, $7::student_status)
-          RETURNING id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, created_at, updated_at
+          RETURNING id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, advisor_feedback, created_at, updated_at
         `,
         [
           payload.user_id ?? null,
@@ -50,7 +50,11 @@ export class StudentsService {
           payload.status ?? 'ACTIVE',
         ],
       );
-      return { ...result.rows[0], email: null };
+      return {
+        ...result.rows[0],
+        email: null,
+        advisor_feedback: result.rows[0].advisor_feedback ?? null,
+      };
     } catch (error: unknown) {
       const code = (error as { code?: string })?.code;
       if (code === '23505') {
@@ -130,7 +134,7 @@ export class StudentsService {
       `
         SELECT
           s.id, s.user_id, s.student_code, s.full_name,
-          s.class_id, s.program_id, s.cohort_year, s.status,
+          s.class_id, s.program_id, s.cohort_year, s.status, s.advisor_feedback,
           s.created_at, s.updated_at,
           COALESCE(u.email, cir.email) AS email,
           EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
@@ -175,7 +179,7 @@ export class StudentsService {
       `
         SELECT
           s.id, s.user_id, s.student_code, s.full_name,
-          s.class_id, s.program_id, s.cohort_year, s.status,
+          s.class_id, s.program_id, s.cohort_year, s.status, s.advisor_feedback,
           s.created_at, s.updated_at,
           COALESCE(u.email, cir.email) AS email,
           EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
@@ -217,7 +221,7 @@ export class StudentsService {
       `
         SELECT
           s.id, s.user_id, s.student_code, s.full_name,
-          s.class_id, s.program_id, s.cohort_year, s.status,
+          s.class_id, s.program_id, s.cohort_year, s.status, s.advisor_feedback,
           s.created_at, s.updated_at,
           COALESCE(u.email, cir.email) AS email,
           EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
@@ -254,7 +258,8 @@ export class StudentsService {
       payload.class_id === undefined &&
       payload.program_id === undefined &&
       payload.cohort_year === undefined &&
-      payload.status === undefined
+      payload.status === undefined &&
+      payload.advisor_feedback === undefined
     ) {
       throw new BadRequestException('at least one field is required');
     }
@@ -291,6 +296,10 @@ export class StudentsService {
       fields.push(`status = $${idx++}::student_status`);
       values.push(payload.status);
     }
+    if (payload.advisor_feedback !== undefined) {
+      fields.push(`advisor_feedback = $${idx++}`);
+      values.push(payload.advisor_feedback ?? null);
+    }
 
     values.push(id);
 
@@ -300,7 +309,7 @@ export class StudentsService {
           UPDATE students
           SET ${fields.join(', ')}
           WHERE id = $${idx}
-          RETURNING id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, created_at, updated_at
+          RETURNING id, user_id, student_code, full_name, class_id, program_id, cohort_year, status, advisor_feedback, created_at, updated_at
         `,
         values,
       );

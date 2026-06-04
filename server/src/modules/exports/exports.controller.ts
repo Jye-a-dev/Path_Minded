@@ -21,7 +21,7 @@ import {
   ExportsPaginationResponse,
   ExportResponse,
 } from './interfaces/exports.interfaces';
-import { ExportsService } from './exports.service';
+import { ExportsService, MatrixPreviewData } from './exports.service';
 
 @ApiTags('Exports')
 @Controller('exports')
@@ -80,6 +80,15 @@ export class ExportsController {
       'attachment; filename=Matrix_Export.xlsx',
     );
     res.send(buffer);
+  }
+
+  @ApiOperation({ summary: 'Get matrix preview data as JSON for a class' })
+  @ApiOkResponse({ description: 'Matrix preview JSON data' })
+  @Get('matrix/preview')
+  async getMatrixPreview(
+    @Query('class_id') classId: string,
+  ): Promise<MatrixPreviewData> {
+    return this.service.getMatrixPreview(classId);
   }
 
   @ApiOperation({ summary: 'Find all' })

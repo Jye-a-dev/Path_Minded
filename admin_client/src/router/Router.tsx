@@ -1,33 +1,38 @@
+import { lazy, Suspense } from "react";
+import type { ReactNode } from "react";
+import { useRoutes } from "react-router-dom";
 import PublicLayout from "../components/layouts/(public)/PublicLayout";
 import AdminLayout from "../components/layouts/AdminLayout";
 import { PrivateRoute } from "../components/guards/PrivateRoute";
+import PageLoader from "./PageLoader";
 
 // Public pages
-import Home from "../pages/public/Home/Home";
-import Login from "../pages/public/Login/Login";
+const Home = lazy(() => import("../pages/public/Home/Home"));
+const Login = lazy(() => import("../pages/public/Login/Login"));
 
 // Admin pages
-import Dashboard from "../pages/admin/Dashboard/Dashboard";
-import Users from "../pages/admin/Users/Users";
-import Advisors from "../pages/admin/Advisors/Advisors";
-import Programs from "../pages/admin/Programs/Programs";
-import Classes from "../pages/admin/Classes/Classes";
-import Students from "../pages/admin/Students/Students";
-import CurriculumCourses from "../pages/admin/CurriculumCourses/CurriculumCourses";
-import CoursePrerequisites from "../pages/admin/CoursePrerequisites/CoursePrerequisites";
-import CourseEquivalencies from "../pages/admin/CourseEquivalencies/CourseEquivalencies";
-import StudentCourseResults from "../pages/admin/StudentCourseResults/StudentCourseResults";
-import CurriculumImports from "../pages/admin/CurriculumImports/CurriculumImports";
-import TranscriptUploads from "../pages/admin/TranscriptUploads/TranscriptUploads";
-import ClassImports from "../pages/admin/ClassImports/ClassImports";
+const Dashboard = lazy(() => import("../pages/admin/Dashboard/Dashboard"));
+const Users = lazy(() => import("../pages/admin/Users/Users"));
+const Advisors = lazy(() => import("../pages/admin/Advisors/Advisors"));
+const Programs = lazy(() => import("../pages/admin/Programs/Programs"));
+const Classes = lazy(() => import("../pages/admin/Classes/Classes"));
+const Students = lazy(() => import("../pages/admin/Students/Students"));
+const CurriculumCourses = lazy(() => import("../pages/admin/CurriculumCourses/CurriculumCourses"));
+const CoursePrerequisites = lazy(() => import("../pages/admin/CoursePrerequisites/CoursePrerequisites"));
+const CourseEquivalencies = lazy(() => import("../pages/admin/CourseEquivalencies/CourseEquivalencies"));
+const StudentCourseResults = lazy(() => import("../pages/admin/StudentCourseResults/StudentCourseResults"));
+const CurriculumImports = lazy(() => import("../pages/admin/CurriculumImports/CurriculumImports"));
+const TranscriptUploads = lazy(() => import("../pages/admin/TranscriptUploads/TranscriptUploads"));
+const ClassImports = lazy(() => import("../pages/admin/ClassImports/ClassImports"));
+const Exports = lazy(() => import("../pages/admin/Exports/Exports"));
+const ExportLogs = lazy(() => import("../pages/admin/ExportLogs/ExportLogs"));
+const ParseWarnings = lazy(() => import("../pages/admin/ParseWarnings/ParseWarnings"));
+const ColumnMappings = lazy(() => import("../pages/admin/ColumnMappings/ColumnMappings"));
+const CourseTypeMappings = lazy(() => import("../pages/admin/CourseTypeMappings/CourseTypeMappings"));
+const KnowledgeBlockMappings = lazy(() => import("../pages/admin/KnowledgeBlockMappings/KnowledgeBlockMappings"));
+const Profile = lazy(() => import("../pages/admin/Profile/Profile"));
 
-import Exports from "../pages/admin/Exports/Exports";
-import ExportLogs from "../pages/admin/ExportLogs/ExportLogs";
-import ParseWarnings from "../pages/admin/ParseWarnings/ParseWarnings";
-import ColumnMappings from "../pages/admin/ColumnMappings/ColumnMappings";
-import CourseTypeMappings from "../pages/admin/CourseTypeMappings/CourseTypeMappings";
-import KnowledgeBlockMappings from "../pages/admin/KnowledgeBlockMappings/KnowledgeBlockMappings";
-import Profile from "../pages/admin/Profile/Profile";
+const w = (el: ReactNode) => <Suspense fallback={<PageLoader />}>{el}</Suspense>;
 
 const routes = [
   // Public Routes
@@ -35,11 +40,11 @@ const routes = [
     path: "/",
     element: <PublicLayout />,
     children: [
-      { index: true, element: <Home /> },
-      { path: "login", element: <Login /> },
+      { index: true, element: w(<Home />) },
+      { path: "login", element: w(<Login />) },
     ],
   },
-  
+
   // Protected Admin Routes
   {
     path: "/admin",
@@ -48,31 +53,32 @@ const routes = [
       {
         element: <AdminLayout />,
         children: [
-          { index: true, element: <Dashboard /> },
-          { path: "me", element: <Profile /> },
-          { path: "users", element: <Users /> },
-          { path: "advisors", element: <Advisors /> },
-          { path: "programs", element: <Programs /> },
-          { path: "classes", element: <Classes /> },
-          { path: "students", element: <Students /> },
-          { path: "curriculum_courses", element: <CurriculumCourses /> },
-          { path: "course_prerequisites", element: <CoursePrerequisites /> },
-          { path: "course_equivalencies", element: <CourseEquivalencies /> },
-          { path: "student_course_results", element: <StudentCourseResults /> },
-          { path: "curriculum_imports", element: <CurriculumImports /> },
-          { path: "transcript_uploads", element: <TranscriptUploads /> },
-          { path: "class_imports", element: <ClassImports /> },
-
-          { path: "exports", element: <Exports /> },
-          { path: "export_logs", element: <ExportLogs /> },
-          { path: "parse_warnings", element: <ParseWarnings /> },
-          { path: "column_mappings", element: <ColumnMappings /> },
-          { path: "course_type_mappings", element: <CourseTypeMappings /> },
-          { path: "knowledge_block_mappings", element: <KnowledgeBlockMappings /> },
+          { index: true, element: w(<Dashboard />) },
+          { path: "me", element: w(<Profile />) },
+          { path: "users", element: w(<Users />) },
+          { path: "advisors", element: w(<Advisors />) },
+          { path: "programs", element: w(<Programs />) },
+          { path: "classes", element: w(<Classes />) },
+          { path: "students", element: w(<Students />) },
+          { path: "curriculum_courses", element: w(<CurriculumCourses />) },
+          { path: "course_prerequisites", element: w(<CoursePrerequisites />) },
+          { path: "course_equivalencies", element: w(<CourseEquivalencies />) },
+          { path: "student_course_results", element: w(<StudentCourseResults />) },
+          { path: "curriculum_imports", element: w(<CurriculumImports />) },
+          { path: "transcript_uploads", element: w(<TranscriptUploads />) },
+          { path: "class_imports", element: w(<ClassImports />) },
+          { path: "exports", element: w(<Exports />) },
+          { path: "export_logs", element: w(<ExportLogs />) },
+          { path: "parse_warnings", element: w(<ParseWarnings />) },
+          { path: "column_mappings", element: w(<ColumnMappings />) },
+          { path: "course_type_mappings", element: w(<CourseTypeMappings />) },
+          { path: "knowledge_block_mappings", element: w(<KnowledgeBlockMappings />) },
         ],
       },
     ],
   },
 ];
 
-export default routes;
+export default function AppRouter() {
+  return useRoutes(routes);
+}

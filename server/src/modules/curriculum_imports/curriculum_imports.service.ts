@@ -33,12 +33,20 @@ export class CurriculumImportsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    console.log(
-      'Running automated one-off prerequisite parsing and migration...',
-    );
     const client = await this.pool.connect();
     try {
-      // Fetch all courses that have prerequisites from database
+      // Skip migration if course_prerequisites already has data (one-off migration)
+      const existingCount = await client.query<{ count: string }>(
+        `SELECT COUNT(*) AS count FROM course_prerequisites`,
+      );
+      if (Number(existingCount.rows[0]?.count ?? 0) > 0) {
+        return;
+      }
+
+      console.log(
+        'Running automated one-off prerequisite parsing and migration...',
+      );
+
       const coursesResult = await client.query<{
         program_id: string;
         course_code: string;
@@ -50,26 +58,38 @@ export class CurriculumImportsService implements OnModuleInit {
       );
 
       const courses = coursesResult.rows;
-      if (courses.length > 0) {
-        console.log(
-          `Found ${courses.length} courses with prerequisites. Populating course_prerequisites table...`,
-        );
-        for (const course of courses) {
-          const prereqs = parsePrerequisites(course.prerequisite);
-          for (const prereqCode of prereqs) {
-            if (prereqCode === course.course_code) continue;
+      if (courses.length === 0) return;
 
-            await client.query(
-              `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
-               VALUES ($1, $2, $3, 'REQUIRED')
-               ON CONFLICT (program_id, course_code, prerequisite_course_code) 
-               DO NOTHING`,
-              [course.program_id, course.course_code, prereqCode],
-            );
-          }
+      console.log(
+        `Found ${courses.length} courses with prerequisites. Populating course_prerequisites table...`,
+      );
+
+      // Build all rows to insert
+      const programIds: string[] = [];
+      const courseCodes: string[] = [];
+      const prereqCodes: string[] = [];
+
+      for (const course of courses) {
+        const prereqs = parsePrerequisites(course.prerequisite);
+        for (const prereqCode of prereqs) {
+          if (prereqCode === course.course_code) continue;
+          programIds.push(course.program_id);
+          courseCodes.push(course.course_code);
+          prereqCodes.push(prereqCode);
         }
-        console.log('Automated prerequisite migration completed.');
       }
+
+      if (programIds.length > 0) {
+        // Single batch INSERT using unnest — avoids N round-trips
+        await client.query(
+          `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
+           SELECT UNNEST($1::uuid[]), UNNEST($2::text[]), UNNEST($3::text[]), 'REQUIRED'
+           ON CONFLICT (program_id, course_code, prerequisite_course_code) DO NOTHING`,
+          [programIds, courseCodes, prereqCodes],
+        );
+      }
+
+      console.log('Automated prerequisite migration completed.');
     } catch (err) {
       console.error('Failed to run prerequisite migration:', err);
     } finally {

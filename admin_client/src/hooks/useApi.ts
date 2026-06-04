@@ -101,9 +101,11 @@ export function usePaginatedApi<T>(
     }
 
     if (options?.skip && options.skip(filters)) {
-      setData([]);
-      setTotal(0);
-      setLoading(false);
+      Promise.resolve().then(() => {
+        setData([]);
+        setTotal(0);
+        setLoading(false);
+      });
       return;
     }
 
