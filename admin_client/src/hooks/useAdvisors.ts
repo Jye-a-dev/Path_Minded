@@ -8,6 +8,9 @@ export interface AdvisorItem {
   email?: string;
 }
 
-export function useAdvisors() {
-  return usePaginatedApi<AdvisorItem>("/advisors");
+export function useAdvisors(
+  initialFilters: Record<string, unknown> = {},
+  options?: { skip?: (filters: Record<string, unknown>) => boolean }
+) {
+  return usePaginatedApi<AdvisorItem>("/advisors", initialFilters, options);
 }

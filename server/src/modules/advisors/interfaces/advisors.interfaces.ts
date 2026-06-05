@@ -12,6 +12,7 @@ export type AdvisorResponse = {
   user_id: string;
   full_name: string;
   department: string | null;
+  email?: string;
   created_at: Date;
   updated_at: Date;
 };

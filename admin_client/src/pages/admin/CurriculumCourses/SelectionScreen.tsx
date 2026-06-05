@@ -68,7 +68,7 @@ export const SelectionScreen: React.FC<SelectionScreenProps> = ({ onSelect }) =>
           <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-650 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <BookOpen className="h-6 w-6 text-white" />
           </div>
-          <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">Học phần khung</h2>
+          <h2 className="mt-6 text-xl font-extrabold text-white! tracking-tight">Học phần khung</h2>
           <p className="mt-2 text-xs text-slate-400">
             Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý đề cương & tín chỉ học tập.
           </p>

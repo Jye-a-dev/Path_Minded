@@ -88,14 +88,14 @@ export class ExportsService {
 
     // Load students
     const studentsResult = await this.pool.query(
-      `SELECT id, student_code, full_name FROM students WHERE class_id = $1 ORDER BY student_code`,
+      `SELECT id, student_code, full_name, advisor_feedback FROM students WHERE class_id = $1 ORDER BY student_code`,
       [classId],
     );
     const students = studentsResult.rows;
 
     // Load curriculum courses
     const coursesResult = await this.pool.query(
-      `SELECT course_code, course_name, expected_semester, credits 
+      `SELECT course_code, course_name, expected_semester, credits, course_group, course_type, knowledge_block, is_required, theory_hours, practice_hours, project_hours, internship_hours, prerequisite, corequisite, organizing_semester
        FROM curriculum_courses 
        WHERE program_id = $1 
        ORDER BY expected_semester, course_code`,
@@ -105,13 +105,32 @@ export class ExportsService {
 
     // Load student course results
     const resultsResult = await this.pool.query(
-      `SELECT scr.student_id, scr.course_code, scr.status, scr.semester_number 
+      `SELECT scr.student_id, scr.course_code, scr.status, scr.semester_number, scr.score_10, scr.semester_code
        FROM student_course_results scr
        INNER JOIN students s ON s.id = scr.student_id
        WHERE s.class_id = $1 AND scr.is_latest = true`,
       [classId],
     );
     const results = resultsResult.rows;
+
+    // Load class and program info
+    const classInfo = {
+      class_code: classData.class_code,
+      class_name: classData.class_name,
+      cohort_year: classData.cohort_year,
+    };
+
+    const programResult = await this.pool.query(
+      `SELECT id, program_code, program_name, major_name, total_credits FROM programs WHERE id = $1`,
+      [programId],
+    );
+    const programData = programResult.rows[0] || {};
+    const programInfo = {
+      program_code: programData.program_code,
+      program_name: programData.program_name,
+      major_name: programData.major_name,
+      total_credits: programData.total_credits,
+    };
 
     // Generate Excel using pipeline server
     const pipelineUrl =
@@ -123,14 +142,39 @@ export class ExportsService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        students,
-        courses,
+        students: students.map((s) => ({
+          id: s.id,
+          studentCode: s.student_code,
+          fullName: s.full_name,
+          advisorFeedback: s.advisor_feedback,
+        })),
+        courses: courses.map((c) => ({
+          courseCode: c.course_code,
+          courseName: c.course_name,
+          credits: c.credits,
+          expectedSemester: c.expected_semester,
+          courseGroup: c.course_group,
+          courseType: c.course_type,
+          knowledgeBlock: c.knowledge_block,
+          isRequired: c.is_required,
+          theoryHours: c.theory_hours,
+          practiceHours: c.practice_hours,
+          projectHours: c.project_hours,
+          internshipHours: c.internship_hours,
+          prerequisite: c.prerequisite,
+          corequisite: c.corequisite,
+          organizingSemester: c.organizing_semester,
+        })),
         results: results.map((r) => ({
           studentId: r.student_id,
           courseCode: r.course_code,
           status: r.status,
           semesterNumber: r.semester_number,
+          score10: r.score_10,
+          semesterCode: r.semester_code,
         })),
+        classInfo,
+        programInfo,
       }),
     });
 

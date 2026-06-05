@@ -264,19 +264,25 @@ export async function saveParseWarnings(
   }
 
   if (warnings && warnings.length > 0) {
+    const sourceIds: string[] = [];
+    const rowNumbers: Array<number | null> = [];
+    const warningCodes: string[] = [];
+    const warningMessages: string[] = [];
+    const rawValues: string[] = [];
+
     for (const warning of warnings) {
-      await queryExecutor.query(
-        `INSERT INTO parse_warnings (source_type, source_id, row_number, warning_code, warning_message, raw_value)
-         VALUES ('CURRICULUM', $1, $2, $3, $4, $5)`,
-        [
-          sourceId,
-          warning.rowNumber || null,
-          warning.code || 'UNKNOWN',
-          warning.message || '',
-          warning.rawValue || '',
-        ],
-      );
+      sourceIds.push(sourceId);
+      rowNumbers.push(warning.rowNumber ?? null);
+      warningCodes.push(warning.code || 'UNKNOWN');
+      warningMessages.push(warning.message || '');
+      rawValues.push(warning.rawValue || '');
     }
+
+    await queryExecutor.query(
+      `INSERT INTO parse_warnings (source_type, source_id, row_number, warning_code, warning_message, raw_value)
+       SELECT 'CURRICULUM', UNNEST($1::uuid[]), UNNEST($2::int[]), UNNEST($3::text[]), UNNEST($4::text[]), UNNEST($5::text[])`,
+      [sourceIds, rowNumbers, warningCodes, warningMessages, rawValues],
+    );
   }
 }
 
@@ -320,6 +326,31 @@ export async function insertCurriculumCourses(
   );
   const kbMappings = kbMappingsResult.rows;
 
+  if (courses.length === 0) return;
+
+  const programIds: Array<string | null> = [];
+  const importIds: string[] = [];
+  const courseCodes: string[] = [];
+  const courseNames: string[] = [];
+  const creditsList: Array<number | null> = [];
+  const expectedSemesters: Array<number | null> = [];
+  const courseGroups: Array<string | null> = [];
+  const courseTypes: string[] = [];
+  const kbResolvedList: string[] = [];
+  const isRequiredList: boolean[] = [];
+  const theoryHoursList: Array<number | null> = [];
+  const practiceHoursList: Array<number | null> = [];
+  const projectHoursList: Array<number | null> = [];
+  const internshipHoursList: Array<number | null> = [];
+  const prerequisitesList: Array<string | null> = [];
+  const corequisitesList: Array<string | null> = [];
+  const organizingSemestersList: Array<string | null> = [];
+
+  // For batching prerequisites
+  const prereqProgramIds: string[] = [];
+  const prereqCourseCodes: string[] = [];
+  const prereqCodes: string[] = [];
+
   for (const course of courses) {
     const kbResolved =
       course.knowledgeBlock ||
@@ -331,13 +362,73 @@ export async function insertCurriculumCourses(
       );
 
     const courseCode = course.courseCode || course.course_code;
+    if (!courseCode) continue;
 
+    programIds.push(programId);
+    importIds.push(importId);
+    courseCodes.push(courseCode);
+    courseNames.push((course.courseName || course.course_name || '').trim());
+    creditsList.push(course.credits ?? null);
+    expectedSemesters.push(course.expectedSemester || course.expected_semester || null);
+    courseGroups.push(course.courseGroup || course.course_group || null);
+    courseTypes.push(course.courseType || course.course_type || 'REQUIRED');
+    kbResolvedList.push(kbResolved);
+    isRequiredList.push(course.isRequired !== false);
+
+    theoryHoursList.push(
+      course.theoryHours != null
+        ? Number(course.theoryHours)
+        : course.theory_hours != null
+          ? Number(course.theory_hours)
+          : null,
+    );
+    practiceHoursList.push(
+      course.practiceHours != null
+        ? Number(course.practiceHours)
+        : course.practice_hours != null
+          ? Number(course.practice_hours)
+          : null,
+    );
+    projectHoursList.push(
+      course.projectHours != null
+        ? Number(course.projectHours)
+        : course.project_hours != null
+          ? Number(course.project_hours)
+          : null,
+    );
+    internshipHoursList.push(
+      course.internshipHours != null
+        ? Number(course.internshipHours)
+        : course.internship_hours != null
+          ? Number(course.internship_hours)
+          : null,
+    );
+    prerequisitesList.push(course.prerequisite || null);
+    corequisitesList.push(course.corequisite || null);
+    organizingSemestersList.push(course.organizingSemester || course.organizing_semester || null);
+
+    const prereqStr = course.prerequisite || null;
+    if (programId && prereqStr) {
+      const prereqs = parsePrerequisites(prereqStr);
+      for (const prereqCode of prereqs) {
+        if (prereqCode === courseCode) continue;
+        prereqProgramIds.push(programId);
+        prereqCourseCodes.push(courseCode);
+        prereqCodes.push(prereqCode);
+      }
+    }
+  }
+
+  if (courseCodes.length > 0) {
     await client.query(
       `INSERT INTO curriculum_courses (
          program_id, import_id, course_code, course_name, credits, expected_semester, course_group, course_type, knowledge_block, is_required,
          theory_hours, practice_hours, project_hours, internship_hours, prerequisite, corequisite, organizing_semester
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+       SELECT 
+         UNNEST($1::uuid[]), UNNEST($2::uuid[]), UNNEST($3::text[]), UNNEST($4::text[]), UNNEST($5::int[]), UNNEST($6::int[]), 
+         UNNEST($7::text[]), UNNEST($8::text[])::course_type, UNNEST($9::text[]), UNNEST($10::boolean[]), UNNEST($11::int[]), UNNEST($12::int[]), 
+         UNNEST($13::int[]), UNNEST($14::int[]), UNNEST($15::text[]), UNNEST($16::text[]), UNNEST($17::text[])
        ON CONFLICT (program_id, course_code, course_type) 
        DO UPDATE SET 
          course_name = EXCLUDED.course_name,
@@ -355,56 +446,34 @@ export async function insertCurriculumCourses(
          organizing_semester = EXCLUDED.organizing_semester,
          updated_at = CURRENT_TIMESTAMP`,
       [
-        programId,
-        importId,
-        courseCode,
-        course.courseName || course.course_name,
-        course.credits ?? null,
-        course.expectedSemester || course.expected_semester || null,
-        course.courseGroup || course.course_group || null,
-        course.courseType || course.course_type || 'REQUIRED',
-        kbResolved,
-        course.isRequired !== undefined ? course.isRequired : true,
-        course.theoryHours != null
-          ? Number(course.theoryHours)
-          : course.theory_hours != null
-            ? Number(course.theory_hours)
-            : null,
-        course.practiceHours != null
-          ? Number(course.practiceHours)
-          : course.practice_hours != null
-            ? Number(course.practice_hours)
-            : null,
-        course.projectHours != null
-          ? Number(course.projectHours)
-          : course.project_hours != null
-            ? Number(course.project_hours)
-            : null,
-        course.internshipHours != null
-          ? Number(course.internshipHours)
-          : course.internship_hours != null
-            ? Number(course.internship_hours)
-            : null,
-        course.prerequisite || null,
-        course.corequisite || null,
-        course.organizingSemester || course.organizing_semester || null,
+        programIds,
+        importIds,
+        courseCodes,
+        courseNames,
+        creditsList,
+        expectedSemesters,
+        courseGroups,
+        courseTypes,
+        kbResolvedList,
+        isRequiredList,
+        theoryHoursList,
+        practiceHoursList,
+        projectHoursList,
+        internshipHoursList,
+        prerequisitesList,
+        corequisitesList,
+        organizingSemestersList,
       ],
     );
+  }
 
-    const prereqStr = course.prerequisite || null;
-    if (programId && courseCode && prereqStr) {
-      const prereqs = parsePrerequisites(prereqStr);
-      for (const prereqCode of prereqs) {
-        if (prereqCode === courseCode) continue;
-
-        await client.query(
-          `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
-           VALUES ($1, $2, $3, 'REQUIRED')
-           ON CONFLICT (program_id, course_code, prerequisite_course_code) 
-           DO NOTHING`,
-          [programId, courseCode, prereqCode],
-        );
-      }
-    }
+  if (prereqProgramIds.length > 0) {
+    await client.query(
+      `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
+       SELECT UNNEST($1::uuid[]), UNNEST($2::text[]), UNNEST($3::text[]), 'REQUIRED'
+       ON CONFLICT (program_id, course_code, prerequisite_course_code) 
+       DO NOTHING`,
+      [prereqProgramIds, prereqCourseCodes, prereqCodes],
+    );
   }
 }

@@ -57,19 +57,19 @@ export class AdvisorsService {
     let idx = 1;
 
     if (query.full_name) {
-      clauses.push(`full_name ILIKE $${idx++}`);
+      clauses.push(`a.full_name ILIKE $${idx++}`);
       values.push(`%${query.full_name}%`);
     }
     if (query.department) {
-      clauses.push(`department ILIKE $${idx++}`);
+      clauses.push(`a.department ILIKE $${idx++}`);
       values.push(`%${query.department}%`);
     }
     if (query.user_id) {
-      clauses.push(`user_id = $${idx++}`);
+      clauses.push(`a.user_id = $${idx++}`);
       values.push(query.user_id);
     }
     if (query.search) {
-      clauses.push(`(full_name ILIKE $${idx} OR department ILIKE $${idx})`);
+      clauses.push(`(a.full_name ILIKE $${idx} OR a.department ILIKE $${idx} OR u.email ILIKE $${idx})`);
       values.push(`%${query.search}%`);
       idx++;
     }
@@ -86,10 +86,11 @@ export class AdvisorsService {
 
     const result = await this.pool.query<AdvisorResponse>(
       `
-        SELECT id, user_id, full_name, department, created_at, updated_at
-        FROM advisors
+        SELECT a.id, a.user_id, a.full_name, a.department, a.created_at, a.updated_at, u.email
+        FROM advisors a
+        LEFT JOIN users u ON a.user_id = u.id
         ${where}
-        ORDER BY created_at DESC
+        ORDER BY a.created_at DESC
         LIMIT $${idx}
         OFFSET $${idx + 1}
       `,
@@ -108,7 +109,7 @@ export class AdvisorsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM advisors ${where}`,
+      `SELECT COUNT(*) AS total FROM advisors a LEFT JOIN users u ON a.user_id = u.id ${where}`,
       values,
     );
 
@@ -118,10 +119,11 @@ export class AdvisorsService {
 
     const result = await this.pool.query<AdvisorResponse>(
       `
-        SELECT id, user_id, full_name, department, created_at, updated_at
-        FROM advisors
+        SELECT a.id, a.user_id, a.full_name, a.department, a.created_at, a.updated_at, u.email
+        FROM advisors a
+        LEFT JOIN users u ON a.user_id = u.id
         ${where}
-        ORDER BY created_at DESC
+        ORDER BY a.created_at DESC
         LIMIT $${idx}
         OFFSET $${idx + 1}
       `,
@@ -137,7 +139,7 @@ export class AdvisorsService {
   async countAdvisors(query: QueryAdvisorsDto): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM advisors ${where}`,
+      `SELECT COUNT(*) AS count FROM advisors a LEFT JOIN users u ON a.user_id = u.id ${where}`,
       values,
     );
     return { count: Number(result.rows[0]?.count ?? 0) };
@@ -146,9 +148,10 @@ export class AdvisorsService {
   async findOne(id: string): Promise<AdvisorResponse> {
     const result = await this.pool.query<AdvisorResponse>(
       `
-        SELECT id, user_id, full_name, department, created_at, updated_at
-        FROM advisors
-        WHERE id = $1
+        SELECT a.id, a.user_id, a.full_name, a.department, a.created_at, a.updated_at, u.email
+        FROM advisors a
+        LEFT JOIN users u ON a.user_id = u.id
+        WHERE a.id = $1
       `,
       [id],
     );

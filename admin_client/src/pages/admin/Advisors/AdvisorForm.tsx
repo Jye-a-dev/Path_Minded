@@ -17,6 +17,7 @@ interface UserDropdownItem {
 
 interface AdvisorFormProps {
   editingItem: AdvisorItem | null;
+  defaultDepartment?: string;
   onSubmit: (payload: {
     full_name: string;
     department: string | null;
@@ -25,9 +26,14 @@ interface AdvisorFormProps {
   onCancel: () => void;
 }
 
-export const AdvisorForm: React.FC<AdvisorFormProps> = ({ editingItem, onSubmit, onCancel }) => {
+export const AdvisorForm: React.FC<AdvisorFormProps> = ({
+  editingItem,
+  defaultDepartment = "",
+  onSubmit,
+  onCancel,
+}) => {
   const [formFullName, setFormFullName] = useState(() => editingItem?.full_name || "");
-  const [formDepartment, setFormDepartment] = useState(() => editingItem?.department || "");
+  const [formDepartment, setFormDepartment] = useState(() => editingItem?.department || defaultDepartment || "");
   const [formUserId, setFormUserId] = useState(() => editingItem?.user_id || "");
   const [advisorUsers, setAdvisorUsers] = useState<UserDropdownItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);

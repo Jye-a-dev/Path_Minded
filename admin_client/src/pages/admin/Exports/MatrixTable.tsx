@@ -173,16 +173,18 @@ export const MatrixTable: React.FC<MatrixTableProps> = ({
     const map = new Map<string, { onTrack: boolean }>();
     if (!matrixData) return map;
     for (const student of matrixData.students) {
-      const studentResults = matrixData.results.filter((r) => r.student_id === student.id);
+      const studentResults = resultMap.get(student.id);
       const failedCourses = new Set<string>();
       const passedCourses = new Set<string>();
-      for (const r of studentResults) {
-        if (r.status === "PASSED") {
-          passedCourses.add(r.course_code);
-          failedCourses.delete(r.course_code);
-        } else if (r.status === "FAILED") {
-          if (!passedCourses.has(r.course_code)) {
-            failedCourses.add(r.course_code);
+      if (studentResults) {
+        for (const r of studentResults.values()) {
+          if (r.status === "PASSED") {
+            passedCourses.add(r.course_code);
+            failedCourses.delete(r.course_code);
+          } else if (r.status === "FAILED") {
+            if (!passedCourses.has(r.course_code)) {
+              failedCourses.add(r.course_code);
+            }
           }
         }
       }
@@ -190,7 +192,7 @@ export const MatrixTable: React.FC<MatrixTableProps> = ({
       map.set(student.id, { onTrack });
     }
     return map;
-  }, [matrixData]);
+  }, [matrixData, resultMap]);
 
   // ── Group courses by knowledge_block ─────────────────────────────────────────
   const groupedCourses = React.useMemo(() => {

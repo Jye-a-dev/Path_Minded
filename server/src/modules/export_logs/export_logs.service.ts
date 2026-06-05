@@ -57,17 +57,36 @@ export class ExportLogsService {
     Object.entries(query).forEach(([key, value]) => {
       if (
         value === undefined ||
+        value === '' ||
         key === 'page' ||
         key === 'limit' ||
         key === 'offset' ||
-        key === 'search'
+        key === 'search' ||
+        key === 'class_id' ||
+        key === 'program_id'
       ) {
         return;
       }
 
-      clauses.push(`${key} = $${idx++}`);
+      clauses.push(`el.${key} = $${idx++}`);
       values.push(value as string | number | boolean);
     });
+
+    if (query.class_id) {
+      clauses.push(`e.class_id = $${idx++}`);
+      values.push(query.class_id as string);
+    }
+
+    if (query.program_id) {
+      clauses.push(`e.program_id = $${idx++}`);
+      values.push(query.program_id as string);
+    }
+
+    if (query.search) {
+      clauses.push(`(e.file_name ILIKE $${idx} OR c.class_code ILIKE $${idx} OR p.program_name ILIKE $${idx})`);
+      values.push(`%${query.search}%`);
+      idx++;
+    }
 
     return {
       where: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '',
@@ -82,7 +101,14 @@ export class ExportLogsService {
     const offset = Number(query.offset ?? 0);
 
     const result = await this.pool.query<ExportLogEntity>(
-      `SELECT * FROM export_logs ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT el.*, e.file_name, e.class_id, e.program_id, c.class_code, p.program_name, p.program_code 
+       FROM export_logs el
+       INNER JOIN exports e ON el.export_id = e.id
+       LEFT JOIN classes c ON e.class_id = c.id
+       LEFT JOIN programs p ON e.program_id = p.id
+       ${where} 
+       ORDER BY el.id DESC 
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -98,7 +124,12 @@ export class ExportLogsService {
     const offset = (page - 1) * limit;
 
     const countResult = await this.pool.query<{ total: string }>(
-      `SELECT COUNT(*) AS total FROM export_logs ${where}`,
+      `SELECT COUNT(*) AS total 
+       FROM export_logs el
+       INNER JOIN exports e ON el.export_id = e.id
+       LEFT JOIN classes c ON e.class_id = c.id
+       LEFT JOIN programs p ON e.program_id = p.id
+       ${where}`,
       values,
     );
 
@@ -106,7 +137,14 @@ export class ExportLogsService {
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
     const result = await this.pool.query<ExportLogEntity>(
-      `SELECT * FROM export_logs ${where} ORDER BY id DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      `SELECT el.*, e.file_name, e.class_id, e.program_id, c.class_code, p.program_name, p.program_code
+       FROM export_logs el
+       INNER JOIN exports e ON el.export_id = e.id
+       LEFT JOIN classes c ON e.class_id = c.id
+       LEFT JOIN programs p ON e.program_id = p.id
+       ${where} 
+       ORDER BY el.id DESC 
+       LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset],
     );
 
@@ -119,7 +157,12 @@ export class ExportLogsService {
   async count(query: Record<string, unknown>): Promise<{ count: number }> {
     const { where, values } = this.buildFilter(query);
     const result = await this.pool.query<{ count: string }>(
-      `SELECT COUNT(*) AS count FROM export_logs ${where}`,
+      `SELECT COUNT(*) AS count 
+       FROM export_logs el
+       INNER JOIN exports e ON el.export_id = e.id
+       LEFT JOIN classes c ON e.class_id = c.id
+       LEFT JOIN programs p ON e.program_id = p.id
+       ${where}`,
       values,
     );
 

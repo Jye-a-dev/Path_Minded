@@ -8,8 +8,15 @@ export interface ExportLogItem {
   success_count?: number;
   warning_count?: number;
   created_at: string;
+  file_name?: string;
+  class_code?: string;
+  program_name?: string;
+  program_code?: string;
 }
 
-export function useExportLogs() {
-  return usePaginatedApi<ExportLogItem>("/export_logs");
+export function useExportLogs(
+  initialFilters: Record<string, unknown> = {},
+  options?: { skip?: (filters: Record<string, unknown>) => boolean }
+) {
+  return usePaginatedApi<ExportLogItem>("/export_logs", initialFilters, options);
 }

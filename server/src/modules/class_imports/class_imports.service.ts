@@ -78,35 +78,47 @@ export class ClassImportsService {
 
       // Save parsed rows
       if (parsedData.students && parsedData.students.length > 0) {
+        const importIds: string[] = [];
+        const rowNumbers: number[] = [];
+        const studentCodes: string[] = [];
+        const fullNames: string[] = [];
+        const emails: Array<string | null> = [];
+
         for (const [idx, student] of parsedData.students.entries()) {
-          await this.pool.query(
-            `INSERT INTO class_import_rows (import_id, row_number, student_code, full_name, email, row_status, row_error)
-             VALUES ($1, $2, $3, $4, $5, 'PENDING', null)`,
-            [
-              importRecord.id,
-              idx + 1,
-              student.studentCode,
-              student.fullName,
-              student.email || null,
-            ],
-          );
+          importIds.push(importRecord.id);
+          rowNumbers.push(idx + 1);
+          studentCodes.push(student.studentCode);
+          fullNames.push(student.fullName);
+          emails.push(student.email || null);
         }
+
+        await this.pool.query(
+          `INSERT INTO class_import_rows (import_id, row_number, student_code, full_name, email, row_status, row_error)
+           SELECT UNNEST($1::uuid[]), UNNEST($2::int[]), UNNEST($3::text[]), UNNEST($4::text[]), UNNEST($5::text[]), 'PENDING', null`,
+          [importIds, rowNumbers, studentCodes, fullNames, emails],
+        );
       }
 
       if (parsedData.warnings && parsedData.warnings.length > 0) {
+        const importIds: string[] = [];
+        const rowNumbers: Array<number | null> = [];
+        const warningCodes: string[] = [];
+        const warningMessages: string[] = [];
+        const rawValues: string[] = [];
+
         for (const warning of parsedData.warnings) {
-          await this.pool.query(
-            `INSERT INTO parse_warnings (source_type, source_id, row_number, warning_code, warning_message, raw_value)
-             VALUES ('CLASS', $1, $2, $3, $4, $5)`,
-            [
-              importRecord.id,
-              warning.rowNumber || null,
-              warning.code || 'UNKNOWN',
-              warning.message || '',
-              warning.rawValue || '',
-            ],
-          );
+          importIds.push(importRecord.id);
+          rowNumbers.push(warning.rowNumber ?? null);
+          warningCodes.push(warning.code || 'UNKNOWN');
+          warningMessages.push(warning.message || '');
+          rawValues.push(warning.rawValue || '');
         }
+
+        await this.pool.query(
+          `INSERT INTO parse_warnings (source_type, source_id, row_number, warning_code, warning_message, raw_value)
+           SELECT 'CLASS', UNNEST($1::uuid[]), UNNEST($2::int[]), UNNEST($3::text[]), UNNEST($4::text[]), UNNEST($5::text[])`,
+          [importIds, rowNumbers, warningCodes, warningMessages, rawValues],
+        );
       }
 
       return {
@@ -174,11 +186,24 @@ export class ClassImportsService {
         }
       }
 
-      for (const student of studentsToImport) {
-        // Upsert student only — do NOT create user accounts during class import
+      if (studentsToImport.length > 0) {
+        const studentCodes: string[] = [];
+        const fullNames: string[] = [];
+        const classIds: Array<string | null> = [];
+        const programIds: Array<string | null> = [];
+        const cohortYears: Array<number | null> = [];
+
+        for (const student of studentsToImport) {
+          studentCodes.push(student.student_code);
+          fullNames.push(student.full_name);
+          classIds.push(importRecord.class_id || null);
+          programIds.push(programId);
+          cohortYears.push(cohortYear);
+        }
+
         await client.query(
           `INSERT INTO students (student_code, full_name, class_id, program_id, cohort_year)
-           VALUES ($1, $2, $3, $4, $5)
+           SELECT UNNEST($1::text[]), UNNEST($2::text[]), UNNEST($3::uuid[]), UNNEST($4::uuid[]), UNNEST($5::int[])
            ON CONFLICT (student_code) 
            DO UPDATE SET 
              full_name = EXCLUDED.full_name,
@@ -186,13 +211,7 @@ export class ClassImportsService {
              program_id = COALESCE(EXCLUDED.program_id, students.program_id),
              cohort_year = COALESCE(EXCLUDED.cohort_year, students.cohort_year),
              updated_at = CURRENT_TIMESTAMP`,
-          [
-            student.student_code,
-            student.full_name,
-            importRecord.class_id || null,
-            programId,
-            cohortYear,
-          ],
+          [studentCodes, fullNames, classIds, programIds, cohortYears],
         );
       }
 
@@ -209,18 +228,36 @@ export class ClassImportsService {
         studentsToImport.map((s) => s.student_code),
       );
 
-      for (const row of dbRowsResult.rows) {
-        if (importedCodesSet.has(row.student_code)) {
-          await client.query(
-            `UPDATE class_import_rows SET row_status = 'SUCCESS' WHERE id = $1`,
-            [row.id],
-          );
-        } else {
-          await client.query(
-            `UPDATE class_import_rows SET row_status = 'FAILED', row_error = 'Bỏ qua bởi người dùng' WHERE id = $1`,
-            [row.id],
-          );
+      if (dbRowsResult.rows.length > 0) {
+        const rowIds: string[] = [];
+        const rowStatuses: string[] = [];
+        const rowErrors: Array<string | null> = [];
+
+        for (const row of dbRowsResult.rows) {
+          rowIds.push(row.id);
+          if (importedCodesSet.has(row.student_code)) {
+            rowStatuses.push('SUCCESS');
+            rowErrors.push(null);
+          } else {
+            rowStatuses.push('FAILED');
+            rowErrors.push('Bỏ qua bởi người dùng');
+          }
         }
+
+        await client.query(
+          `UPDATE class_import_rows AS cir
+           SET 
+             row_status = updates.status::import_status,
+             row_error = updates.error
+           FROM (
+             SELECT 
+               UNNEST($1::uuid[]) AS id,
+               UNNEST($2::text[]) AS status,
+               UNNEST($3::text[]) AS error
+           ) AS updates
+           WHERE cir.id = updates.id`,
+          [rowIds, rowStatuses, rowErrors],
+        );
       }
 
       await client.query(

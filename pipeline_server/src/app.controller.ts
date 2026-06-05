@@ -26,6 +26,17 @@ interface ExportMatrixBody {
   students: ExportStudent[];
   courses: ExportCourse[];
   results: ExportCourseResult[];
+  classInfo?: {
+    class_code: string;
+    class_name: string | null;
+    cohort_year: number | null;
+  };
+  programInfo?: {
+    program_code: string;
+    program_name: string;
+    major_name: string | null;
+    total_credits: number | null;
+  };
 }
 
 @Controller()
@@ -127,12 +138,14 @@ export class AppController {
 
   @Post('exports/matrix')
   async exportMatrix(@Body() body: ExportMatrixBody) {
-    const { students, courses, results } = body;
+    const { students, courses, results, classInfo, programInfo } = body;
     const matrixData = this.matrixPipeline.buildMatrix(
       students,
       courses,
       results,
     );
+    matrixData.classInfo = classInfo;
+    matrixData.programInfo = programInfo;
     const buffer = await this.excelBuilder.buildMatrixExcel(matrixData);
     return {
       buffer: buffer.toString('base64'),
