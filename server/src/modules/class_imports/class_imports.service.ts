@@ -49,7 +49,7 @@ export class ClassImportsService {
     });
 
     const pipelineUrl =
-      process.env.PIPELINE_SERVER_URL || 'http://localhost:5101';
+      process.env.PIPELINE_SERVER_URL || 'http://localhost:3100';
     const formData = new FormData();
     formData.append('columnMappings', JSON.stringify(mappingConfig));
     if (file) {

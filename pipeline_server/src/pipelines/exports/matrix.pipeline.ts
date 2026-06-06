@@ -52,6 +52,7 @@ export class MatrixPipeline {
     return {
       students,
       courses,
+      results,
       pivotMap,
       stats: { successCount, warningCount },
     };

@@ -1,109 +1,68 @@
-# React Client Template
+# Next Client Template
 
 ## Clone repo này
 ```bash
-git clone https://github.com/Jye-a-dev/template_react_client.git
+git clone  https://github.com/Jye-a-dev/template_next_client.git
 ```
+Template khởi tạo cho frontend dùng **Next.js App Router** theo hướng dễ mở rộng, rõ layout, rõ route group, và đủ gọn để làm base cho project mới.
 
-Template khởi tạo cho React client app theo hướng dễ mở rộng, dùng:
+## Stack hiện tại
 
+- Next.js 16
 - React 19
-- Vite 8
 - TypeScript
 - Tailwind CSS 4
-- React Router DOM 7
 - ESLint
 
-Template này phù hợp khi bạn muốn bắt đầu nhanh với React theo kiểu SPA client-side, nhưng vẫn giữ cấu trúc thư mục đủ rõ để scale tiếp.
+Template này phù hợp khi bạn muốn bắt đầu với một client app bằng Next.js nhưng vẫn giữ cấu trúc folder rõ từ đầu để mở rộng tiếp cho `public`, `auth`, `dashboard`, `services`, `store`, `types`, `utils`.
 
 ## 1. Project này đang setup theo kiểu nào?
 
 Repo hiện tại là kiểu:
 
-`React + Vite + TypeScript + Tailwind + React Router`
+`Next.js + React + TypeScript + Tailwind CSS + App Router`
 
 Đây là setup phù hợp cho:
 
-- Dashboard
-- Admin panel
-- Landing page có nhiều route
-- Client app gọi API backend riêng
-- Dự án cần chia folder rõ từ sớm
+- Website có nhiều khu vực giao diện
+- Dashboard hoặc admin panel
+- Client app cần chia layout theo nhóm route
+- Dự án muốn chuẩn bị sẵn khung `public`, `auth`, `dashboard`
+- Team muốn đi theo file-based routing của Next.js
 
-Nếu bạn chỉ cần một app React rất nhỏ, có thể không cần tách nhiều folder như repo này.
+Template này hiện đang là một base giao diện tối giản:
 
-## 2. Khi nào nên dùng từng kiểu setup React?
+- đã có route group `app/(public)`
+- đã có khung layout `@base` và `(public)`
+- đã có folder placeholder cho `auth` và `dashboard`
+- đã có các folder nền cho `services`, `store`, `types`, `utils`, `hooks`, `libs`, `constants`
 
-### React + Vite + JavaScript
+## 2. Khi nào nên dùng template này?
 
-Dùng khi:
+Nên dùng template này khi bạn cần:
 
-- muốn làm nhanh
-- app nhỏ
-- chưa cần TypeScript
+- file-based routing của Next.js
+- layout theo khu vực như `public`, `auth`, `dashboard`
+- khả năng mở rộng dần từ template nhỏ lên project lớn
+- React + TypeScript nhưng không muốn tự dựng cấu trúc từ đầu
 
-Tạo project:
+Không nên dùng template này nếu bạn cần một project cực nhỏ chỉ có 1 đến 2 component demo. Khi đó `create-next-app` mặc định là đủ.
 
-```bash
-npm create vite@latest my-app -- --template react
-```
+## 3. Khi nào nên chọn Next.js thay vì React + Vite?
 
-### React + Vite + TypeScript
+Nên chọn **Next.js** khi bạn muốn:
 
-Dùng khi:
+- routing theo file/folder
+- layout lồng nhau
+- metadata theo route
+- khả năng mở rộng sang SSR, SSG hoặc full-stack sau này
+- tổ chức app theo App Router ngay từ đầu
 
-- muốn code an toàn hơn
-- project có nhiều component/props
-- team làm việc lâu dài
+Nên chọn **React + Vite** nếu bạn chỉ cần một SPA client-side rất gọn, không cần cơ chế route/layout kiểu Next.js, và muốn setup tối thiểu hơn.
 
-Tạo project:
+Project này đang đi theo hướng **Next.js App Router**, không phải `React + Vite + React Router`.
 
-```bash
-npm create vite@latest my-app -- --template react-ts
-```
-
-### React + Vite + TypeScript + Tailwind
-
-Dùng khi:
-
-- muốn dựng UI nhanh
-- cần utility-first CSS
-- muốn scale design system sau này
-
-Cài thêm vào project:
-
-```bash
-npm install tailwindcss @tailwindcss/vite
-```
-
-Sau đó:
-
-- gắn `tailwindcss()` vào `vite.config.ts`
-- thêm `@import "tailwindcss";` vào file CSS gốc
-
-### React + Vite + TypeScript + Tailwind + Router
-
-Dùng khi:
-
-- app có nhiều route
-- cần layout theo khu vực như `public`, `auth`, `user`
-- muốn chia cấu trúc page rõ ràng
-
-Đây chính là kiểu setup của repo này.
-
-### Next.js
-
-Nên dùng thay vì template này nếu bạn cần:
-
-- SSR
-- SSG
-- SEO mạnh
-- full-stack React
-- routing kiểu file-based
-
-Template repo này không nhắm tới SSR. Nó là client app template.
-
-## 3. Cài và chạy project
+## 4. Cài và chạy project
 
 ### Yêu cầu
 
@@ -128,10 +87,10 @@ npm run dev
 npm run build
 ```
 
-### Preview build
+### Chạy production server
 
 ```bash
-npm run preview
+npm run start
 ```
 
 ### Lint
@@ -140,373 +99,231 @@ npm run preview
 npm run lint
 ```
 
-## 4. Cấu trúc thư mục hiện tại
+## 5. Cấu trúc thư mục hiện tại
 
 ```text
-src/
-├─ app/
+app/
+├─ (auth)/
+│  └─ Auth.md
+├─ (dashboard)/
+│  └─ Dashbaord.md
+├─ (public)/
+│  ├─ layout.tsx
+│  └─ page.tsx
+└─ globals.css
+
+components/
+├─ layouts/
+│  ├─ (dashboard)/
+│  │  └─ dashboeard.md
 │  ├─ (public)/
-│  ├─ (user)/
-│  ├─ Auth/
-│  ├─ NotFound/
-│  └─ App.tsx
-├─ assets/
-├─ components/
-│  ├─ layouts/
-│  └─ pages/
-├─ hooks/
-├─ providers/
-├─ router/
-├─ services/
-├─ utils/
-├─ Main.tsx
-└─ index.css
+│  │  ├─ Footer/
+│  │  │  └─ PublicFooter.tsx
+│  │  ├─ Navbar/
+│  │  │  └─ PublicNavbar.tsx
+│  │  └─ PublicSetup.tsx
+│  └─ @base/
+│     ├─ Footer/
+│     │  └─ BaseFooter.tsx
+│     └─ Navbar/
+│        └─ BaseNavbar.tsx
+└─ pages/
+   └─ MainPage/
+      └─ Index.tsx
+
+constants/
+hooks/
+libs/
+middlewares/
+public/
+├─ img/
+│  └─ img.md
+services/
+store/
+types/
+utils/
 ```
 
-Ý nghĩa chính:
+## 6. Ý nghĩa chính của từng phần
 
-- `app/`: page-level module, screen theo route
-- `components/`: UI dùng lại
-- `components/layouts/`: layout shell như navbar, footer, public layout
-- `components/pages/`: UI tách riêng cho từng page
-- `router/`: cấu hình route
-- `providers/`: context/provider cấp app
-- `services/`: API call, auth service, request wrapper
-- `hooks/`: custom hooks
-- `utils/`: helper function
-- `assets/`: ảnh, icon, static asset import từ source
+- `app/`: nơi chứa route theo chuẩn App Router của Next.js
+- `app/(public)`: khu vực public hiện đang được render thật
+- `app/(auth)`: nơi chuẩn bị cho các route xác thực
+- `app/(dashboard)`: nơi chuẩn bị cho các route sau đăng nhập
+- `components/layouts/@base`: các khung layout gốc, chỉ lo phần shell
+- `components/layouts/(public)`: các layout component dành riêng cho public area
+- `components/pages`: UI page-level đã tách khỏi route file
+- `constants`: nơi để hằng số cố định
+- `hooks`: nơi để custom hooks
+- `libs`: nơi để setup thư viện dùng chung
+- `middlewares`: nơi để helper cho middleware hoặc logic guard
+- `services`: nơi để logic gọi API hoặc orchestration dữ liệu
+- `store`: nơi để state dùng chung nếu project cần
+- `types`: nơi để type/interface dùng chung
+- `utils`: nơi để helper function thuần
+- `public/img`: nơi để static image phục vụ trực tiếp qua URL
 
-## 5. Luồng chạy hiện tại của app
+## 7. Luồng render hiện tại của app
 
-Luồng cơ bản:
-
-1. `index.html` load `src/Main.tsx`
-2. `Main.tsx` bọc app bằng `BrowserRouter`
-3. `app/App.tsx` dùng `useRoutes`
-4. `router/Router.tsx` khai báo route
-5. Route render layout phù hợp
-6. Layout render page tương ứng qua `Outlet`
-
-Tóm tắt:
+Luồng cơ bản hiện tại:
 
 ```text
-index.html
--> Main.tsx
--> App.tsx
--> Router.tsx
--> Layout
--> Page
+Request "/"
+-> app/(public)/layout.tsx
+-> components/layouts/(public)/PublicSetup.tsx
+-> PublicNavbar
+-> BaseNavbar
+-> app/(public)/page.tsx
+-> components/pages/MainPage/Index.tsx
+-> PublicFooter
+-> BaseFooter
 ```
 
-## 6. Cách setup một app React mới theo style của repo này
+Ý nghĩa:
 
-### Bước 1: tạo project React + TS
+- `layout.tsx` lo khung ngoài cùng của route group
+- `PublicSetup.tsx` compose navbar, nội dung và footer
+- `PublicNavbar.tsx` và `PublicFooter.tsx` truyền nội dung vào base layout
+- `BaseNavbar.tsx` và `BaseFooter.tsx` chỉ là khung nhận `props`
+- `page.tsx` chỉ render page component chính
 
-```bash
-npm create vite@latest my-app -- --template react-ts
-cd my-app
-npm install
-```
+## 8. Quy ước layout hiện tại
 
-### Bước 2: cài router
+Project đang đi theo hướng:
 
-```bash
-npm install react-router-dom
-```
+- `@base` chỉ là khung
+- layout cụ thể sẽ truyền nội dung vào base qua `props`
+- phần setup theo khu vực như `public` sẽ là nơi gọi navbar, footer và bọc `children`
 
-### Bước 3: cài Tailwind CSS 4
+Ví dụ:
 
-```bash
-npm install tailwindcss @tailwindcss/vite
-```
+- `BaseNavbar.tsx`: nhận `brand`, `action`
+- `BaseFooter.tsx`: nhận `left`, `right`
+- `PublicNavbar.tsx`: truyền brand/action cụ thể cho public area
+- `PublicFooter.tsx`: truyền nội dung footer cụ thể cho public area
+- `PublicSetup.tsx`: compose `PublicNavbar`, `children`, `PublicFooter`
 
-Thêm vào `vite.config.ts`:
+Cách chia này giúp:
 
-```ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+- base component sạch hơn
+- layout dễ tái sử dụng
+- nội dung theo từng khu vực không bị cứng trong base
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-});
-```
+## 9. Tailwind trong project này
 
-Thêm vào `src/index.css`:
+Project hiện dùng **Tailwind CSS 4** qua CSS import:
 
 ```css
 @import "tailwindcss";
 ```
 
-### Bước 4: tạo entry chuẩn
+Hiện tại project chưa dùng `@tailwindcss/vite` vì đây là repo Next.js, không phải Vite app.
 
-Ví dụ `src/Main.tsx`:
+Nên dùng Tailwind trong repo này cho:
 
-```tsx
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import App from "./app/App";
-import "./index.css";
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
-```
-
-### Bước 5: tạo app shell
-
-Ví dụ `src/app/App.tsx`:
-
-```tsx
-import { useRoutes } from "react-router-dom";
-import routes from "../router/Router";
-import Providers from "../providers/Providers";
-
-function App() {
-  const element = useRoutes(routes);
-
-  return <Providers>{element}</Providers>;
-}
-
-export default App;
-```
-
-### Bước 6: tạo router
-
-Ví dụ `src/router/Router.tsx`:
-
-```tsx
-import PublicLayout from "../components/layouts/(public)/PublicLayout";
-import Home from "../app/(public)/Home/Home";
-
-const routes = [
-  {
-    path: "/",
-    element: <PublicLayout />,
-    children: [{ index: true, element: <Home /> }],
-  },
-];
-
-export default routes;
-```
-
-### Bước 7: chia layout
-
-Nên tách ít nhất:
-
-- `@base`: layout part gốc, có thể dùng lại
-- `(public)`: layout cho route public
-- `(user)`: layout cho route sau đăng nhập nếu cần
-
-Ví dụ:
-
-- `BaseNavbar.tsx`
-- `BaseFooter.tsx`
-- `PublicNavbar.tsx`
-- `PublicFooter.tsx`
-- `PublicLayout.tsx`
-
-### Bước 8: chia page và component
-
-Nên theo quy tắc:
-
-- route page nằm ở `src/app`
-- UI tái sử dụng nằm ở `src/components`
-- logic gọi API nằm ở `src/services`
-- helper nằm ở `src/utils`
-- hook nằm ở `src/hooks`
-
-## 7. Naming convention đề xuất
-
-### File component
-
-Dùng PascalCase:
-
-- `App.tsx`
-- `Main.tsx`
-- `Router.tsx`
-- `PublicLayout.tsx`
-- `BaseNavbar.tsx`
-
-### File helper hoặc config
-
-Có thể dùng PascalCase để thống nhất toàn repo, hoặc camel/lowercase nếu team đã có convention rõ.
-
-Hiện repo này đang được chỉnh theo hướng PascalCase cho file chính.
-
-### Folder
-
-Giữ tên theo domain hoặc vai trò:
-
-- `components`
-- `services`
-- `router`
-- `providers`
-- `MainPage`
-
-## 8. Cách scale project khi app lớn hơn
-
-Khi app tăng độ phức tạp, có thể mở rộng thêm:
-
-- `features/`
-- `store/`
-- `types/`
-- `constants/`
-- `schemas/`
-- `lib/`
-
-Ví dụ:
-
-```text
-src/
-├─ app/
-├─ features/
-│  ├─ auth/
-│  ├─ dashboard/
-│  └─ profile/
-├─ components/
-├─ services/
-├─ hooks/
-├─ store/
-├─ types/
-└─ utils/
-```
-
-Nếu team đi theo feature-based architecture, có thể gom:
-
-- component
-- hook
-- service
-- type
-- validation
-
-vào cùng một feature.
-
-## 9. Khi nào nên tách theo feature?
-
-Nên tách theo feature khi:
-
-- app có nhiều module nghiệp vụ
-- mỗi module có page, hook, API, component riêng
-- team có nhiều người cùng làm
-
-Ví dụ:
-
-```text
-src/features/auth/
-src/features/dashboard/
-src/features/orders/
-src/features/profile/
-```
-
-Không cần tách quá sớm nếu project vẫn nhỏ.
-
-## 10. Tailwind trong repo này
-
-Repo hiện đang dùng Tailwind CSS 4 qua Vite plugin.
-
-Điểm chính:
-
-- package: `tailwindcss`, `@tailwindcss/vite`
-- import CSS gốc bằng `@import "tailwindcss";`
-- dùng utility class trực tiếp trong JSX
-
-Nên dùng Tailwind cho:
-
-- spacing
 - layout
+- spacing
 - typography
 - border
 - responsive
 
-Nếu UI lớn dần, nên chuẩn hóa thêm:
+Khi project lớn hơn, có thể chuẩn hóa tiếp:
 
-- token màu
-- token spacing
-- component variant
-- reusable wrapper component
+- color tokens
+- spacing tokens
+- reusable wrappers
+- component variants
 
-## 11. React Router trong repo này
+## 10. TypeScript trong project này
 
-Repo đang dùng `useRoutes` thay vì khai báo `<Routes><Route /></Routes>` trực tiếp trong `Main.tsx`.
+Project đang bật TypeScript với cấu hình đủ dùng cho Next.js:
 
-Cách này phù hợp khi:
+- `strict: true`
+- alias `@/*`
+- `moduleResolution: "bundler"`
+- plugin Next.js trong `tsconfig.json`
 
-- muốn route config tập trung
-- muốn tách layout rõ
-- muốn scale route tree dễ hơn
+Nên giữ nguyên hướng:
 
-Khi app lớn hơn, có thể mở rộng:
+- type dùng chung đặt trong `types/`
+- prop type đặt gần component nếu chỉ dùng cục bộ
+- tránh để type rải rác không có tổ chức
 
-- nested routes
-- auth guard
-- lazy route
-- route metadata
+## 11. Quy tắc tổ chức code nên giữ
 
-## 12. Quy tắc tổ chức code nên giữ
+- `page.tsx` chỉ nên lo ghép màn hình ở mức route
+- `components/pages` nên chứa UI theo page nhưng tách khỏi route file
+- `components/layouts` chỉ nên lo shell và structure
+- `@base` không nên chứa nội dung cứng theo từng khu vực
+- `services` không render UI
+- `hooks` không chứa JSX
+- `utils` nên là pure function càng nhiều càng tốt
+- `types` nên là nơi tập trung contract dùng chung
 
-- Page là nơi ghép màn hình, không nên nhồi quá nhiều UI nhỏ
-- Component dùng chung không nên phụ thuộc chặt vào route cụ thể
-- Service không nên render UI
-- Hook không nên chứa JSX
-- Utils nên là pure function càng nhiều càng tốt
-- Layout chỉ nên lo page shell và route structure
+## 12. Hướng mở rộng hợp lý cho repo này
 
-## 13. Checklist khi tạo project React mới
+Từ base hiện tại, bạn có thể mở rộng thêm:
 
-- chọn Vite hay Next.js đúng nhu cầu
-- quyết định có dùng TypeScript hay không
-- cài router nếu app có nhiều route
-- cài Tailwind nếu cần dựng UI nhanh
-- tách `Main`, `App`, `Router`, `Providers`
-- tạo folder structure đủ dùng, không over-engineer
-- thống nhất naming convention từ đầu
-- có lint sớm
-
-## 14. Gợi ý hướng phát triển tiếp cho template này
-
-Nếu muốn biến template này thành base mạnh hơn, có thể thêm:
-
-- Axios hoặc fetch wrapper
-- env config
 - auth flow
-- protected route
-- error boundary
-- loading boundary
+- protected dashboard routes
+- middleware guard
+- API client wrapper
+- env config
+- global store
+- form library như React Hook Form
+- schema validation bằng Zod
+- loading state và error boundary
 - toast system
 - theme switch
-- API layer chuẩn hóa
-- form library như React Hook Form
-- validation bằng Zod
+
+Nếu app lớn dần, có thể bổ sung thêm:
+
+- `features/`
+- `schemas/`
+- `providers/`
+- `api/`
+
+## 13. Khi nào nên tách theo feature?
+
+Nên tách theo feature khi:
+
+- app có nhiều module nghiệp vụ rõ ràng
+- mỗi module có page, service, type, hook riêng
+- team có nhiều người cùng làm song song
+
+Ví dụ sau này:
+
+```text
+features/
+├─ auth/
+├─ dashboard/
+├─ profile/
+└─ orders/
+```
+
+Nếu project vẫn nhỏ, giữ cấu trúc hiện tại là đủ và dễ đọc hơn.
+
+## 14. Checklist khi dùng template này để bắt đầu project mới
+
+- đổi tên metadata và brand theo dự án thật
+- thêm route thật vào `app/(public)`, `app/(auth)`, `app/(dashboard)`
+- bổ sung middleware nếu có protected route
+- thêm service layer để gọi backend
+- chuẩn hóa type dùng chung
+- thêm state management nếu app cần
+- thống nhất naming convention từ đầu
+- giữ `base` là khung, không nhét nội dung nghiệp vụ vào đó
 
 ## 15. Tóm tắt
 
-Nếu bạn muốn một setup React cân bằng giữa:
+Nếu bạn muốn một base Next.js có:
 
-- dễ bắt đầu
-- dễ đọc
-- dễ scale
-- không quá nặng framework
+- App Router
+- cấu trúc layout rõ
+- route group rõ
+- component base/public tách vai trò rõ
+- sẵn chỗ để scale tiếp
 
-thì `React + Vite + TypeScript + Tailwind + React Router` là lựa chọn rất thực dụng.
+thì repo này đang đi đúng hướng.
 
-Template này đang đi đúng hướng đó:
-
-- entry rõ
-- route rõ
-- layout rõ
-- folder rõ
-- dễ nâng cấp tiếp
-
----
-
-Nếu muốn, có thể viết tiếp phiên bản `README.md` khác theo một trong 3 hướng:
-
-1. ngắn gọn cho team dùng nội bộ
-2. chuẩn open-source/public template
-3. cực chi tiết kiểu onboarding cho người mới học React
+Nó không còn là template `React + Vite + React Router`, mà là một **Next.js client-oriented template** với cấu trúc đủ sạch để phát triển tiếp thành website, dashboard hoặc frontend app có nhiều khu vực giao diện.

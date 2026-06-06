@@ -35,6 +35,7 @@ export type ExportCourseResult = {
 export type MatrixData = {
   students: ExportStudent[];
   courses: ExportCourse[];
+  results?: ExportCourseResult[];
   pivotMap: Record<string, Record<string, string | number>>;
   stats: {
     successCount: number;
