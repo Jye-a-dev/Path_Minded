@@ -3,11 +3,13 @@ import { useStudents } from "../../../hooks/useStudents";
 import type { StudentItem } from "../../../hooks/useStudents";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { StudentForm } from "./StudentForm";
 import { Plus, Edit2, Trash2, GraduationCap, Loader2, ChevronLeft, FolderInput } from "lucide-react";
 import { api } from "../../../services/api";
 import { useColumnLabels } from "../../../hooks/useColumnLabels";
 import { useClassLookup } from "../../../hooks/useClassLookup";
+import { useSearchParams } from "react-router-dom";
 
 export default function Students() {
   const {
@@ -29,9 +31,29 @@ export default function Students() {
     refresh,
   } = useStudents();
 
-  const [selectedMajor, setSelectedMajor] = useState<string>("");
-  const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [isConfigured, setIsConfigured] = useState<boolean>(false);
+  const [searchParams] = useSearchParams();
+  const queryClassId = searchParams.get("class_id") || "";
+  const queryMajor = searchParams.get("major") || "";
+  const initialConfigured = !!(queryClassId && queryMajor);
+
+  const [selectedMajor, setSelectedMajor] = useState<string>(queryMajor);
+  const [selectedClassId, setSelectedClassId] = useState<string>(queryClassId);
+  const [isConfigured, setIsConfigured] = useState<boolean>(initialConfigured);
+
+  useEffect(() => {
+    const classId = searchParams.get("class_id");
+    const major = searchParams.get("major");
+    const searchVal = searchParams.get("search");
+
+    if (classId && major) {
+      setSelectedMajor(major);
+      setSelectedClassId(classId);
+      setIsConfigured(true);
+      if (searchVal) {
+        setSearch(searchVal);
+      }
+    }
+  }, [searchParams, setSearch]);
   
   const [allPrograms, setAllPrograms] = useState<{ id: string; program_code: string; program_name: string; major_name?: string | null }[]>([]);
   const [loadingPrograms, setLoadingPrograms] = useState(true);
@@ -43,6 +65,10 @@ export default function Students() {
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
   const [deleteAllError, setDeleteAllError] = useState<string | null>(null);
+
+  // Single delete state
+  const [deleteTarget, setDeleteTarget] = useState<StudentItem | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const { getLabel } = useColumnLabels("CLASS");
   const { getClassName } = useClassLookup();
@@ -129,13 +155,16 @@ export default function Students() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ Sinh viên này?")) {
-      try {
-        await deleteItem(id);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Xóa sinh viên thất bại");
-      }
+  const handleDeleteSingle = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteItem(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Xóa sinh viên thất bại");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -237,8 +266,9 @@ export default function Students() {
             <Edit2 size={14} />
           </button>
           <button
-            onClick={() => handleDelete(row.id)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors"
+            onClick={() => setDeleteTarget(row)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-rose-400 transition-colors cursor-pointer"
+            title="Xóa hồ sơ sinh viên"
           >
             <Trash2 size={14} />
           </button>
@@ -504,6 +534,17 @@ export default function Students() {
           </div>
         </div>
       </Modal>
+
+      {/* Single Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => !deleteLoading && setDeleteTarget(null)}
+        title="Xác nhận xóa hồ sơ sinh viên"
+        message={`Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ sinh viên "${deleteTarget?.full_name}" (MSSV: ${deleteTarget?.student_code}) khỏi hệ thống?\n\nHành động này không thể hoàn tác.`}
+        confirmText={deleteLoading ? "Đang xóa..." : "Xóa sinh viên"}
+        isDanger={true}
+        onConfirm={handleDeleteSingle}
+      />
     </div>
   );
 }

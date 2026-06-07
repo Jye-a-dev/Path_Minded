@@ -24,8 +24,10 @@ import {
   StudentResponse,
 } from './interfaces/students.interfaces';
 import { StudentsService } from './students.service';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Students')
+@Roles('STUDENT', 'ADVISOR', 'ADMIN')
 @Controller('students')
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
@@ -42,6 +44,7 @@ export class StudentsController {
       },
     },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Post()
   create(@Body() payload: CreateStudentsDto): Promise<StudentResponse> {
     return this.studentsService.create(payload);
@@ -203,6 +206,7 @@ export class StudentsController {
       },
     },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -217,6 +221,7 @@ export class StudentsController {
     description: 'Delete result',
     schema: { example: { message: 'Deleted successfully' } },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.studentsService.remove(id);
@@ -227,6 +232,7 @@ export class StudentsController {
     description: 'All students deleted',
     schema: { example: { message: 'all students deleted', deleted: 120 } },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Delete()
   removeAll(): Promise<{ message: string; deleted: number }> {
     return this.studentsService.removeAll();
@@ -245,6 +251,7 @@ export class StudentsController {
     description: 'Sync result',
     schema: { example: { message: 'sync completed', synced: 42 } },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Post('sync-users')
   syncUsers(
     @Query('class_id') classId?: string,

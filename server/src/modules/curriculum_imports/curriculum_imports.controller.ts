@@ -24,8 +24,10 @@ import {
   CurriculumImportResponse,
 } from './interfaces/curriculum_imports.interfaces';
 import { CurriculumImportsService } from './curriculum_imports.service';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Import - Curriculum (Excel)')
+@Roles('ADVISOR', 'ADMIN')
 @Controller('curriculum_imports')
 export class CurriculumImportsController {
   constructor(private readonly service: CurriculumImportsService) {}

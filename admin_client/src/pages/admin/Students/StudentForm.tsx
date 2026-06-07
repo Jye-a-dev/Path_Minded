@@ -11,6 +11,7 @@ interface StudentItem {
   user_id?: string;
   class_id?: string;
   program_id?: string;
+  email?: string;
 }
 
 interface DropdownItem {
@@ -49,7 +50,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
   const [formStatus, setFormStatus] = useState<"ACTIVE" | "GRADUATED" | "DROPPED">(
     () => editingItem?.status || "ACTIVE"
   );
-  const [formUserId, setFormUserId] = useState(() => editingItem?.user_id || "");
+  const [formEmail, setFormEmail] = useState(() => editingItem?.email || "");
   const [formClassId, setFormClassId] = useState(() => editingItem?.class_id || defaultClassId);
   const [formProgramId, setFormProgramId] = useState(() => editingItem?.program_id || defaultProgramId);
 
@@ -103,17 +104,38 @@ export const StudentForm: React.FC<StudentFormProps> = ({
     setSubmitting(true);
     setFormError(null);
 
-    const payload = {
-      student_code: formCode,
-      full_name: formFullName,
-      cohort_year: formCohortYear !== "" ? Number(formCohortYear) : null,
-      status: formStatus,
-      user_id: formUserId || null,
-      class_id: formClassId || null,
-      program_id: formProgramId || null,
-    };
-
     try {
+      let resolvedUserId: string | null = null;
+      if (formEmail.trim()) {
+        const match = studentUsers.find(
+          (u) => u.label.toLowerCase() === formEmail.toLowerCase().trim()
+        );
+        if (match) {
+          resolvedUserId = match.id;
+        } else {
+          // Look up user by email from backend
+          const res = await api.get(`/users?email=${encodeURIComponent(formEmail.trim())}`);
+          const matchedUser = (res.data || []).find(
+            (u: any) => u.email.toLowerCase() === formEmail.toLowerCase().trim()
+          );
+          if (matchedUser) {
+            resolvedUserId = matchedUser.id;
+          } else {
+            throw new Error(`Không tìm thấy tài khoản người dùng có email: ${formEmail}`);
+          }
+        }
+      }
+
+      const payload = {
+        student_code: formCode,
+        full_name: formFullName,
+        cohort_year: formCohortYear !== "" ? Number(formCohortYear) : null,
+        status: formStatus,
+        user_id: resolvedUserId,
+        class_id: formClassId || null,
+        program_id: formProgramId || null,
+      };
+
       await onSubmit(payload);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Thao tác thất bại");
@@ -199,20 +221,21 @@ export const StudentForm: React.FC<StudentFormProps> = ({
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-1">
             <label className="block min-h-8 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Liên kết tài khoản đăng nhập
+              Liên kết tài khoản đăng nhập (Email)
             </label>
-            <select
-              value={formUserId}
-              onChange={(e) => setFormUserId(e.target.value)}
-              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
-            >
-              <option className="bg-slate-900 text-slate-100" value="">-- Chưa liên kết tài khoản --</option>
+            <input
+              type="email"
+              list="student-emails"
+              placeholder="Nhập email tài khoản..."
+              value={formEmail}
+              onChange={(e) => setFormEmail(e.target.value)}
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:outline-none transition-all"
+            />
+            <datalist id="student-emails">
               {studentUsers.map((u) => (
-                <option className="bg-slate-900 text-slate-100" key={u.id} value={u.id}>
-                  {u.label}
-                </option>
+                <option key={u.id} value={u.label} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div className="space-y-1">

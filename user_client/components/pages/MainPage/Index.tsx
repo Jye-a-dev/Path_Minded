@@ -31,7 +31,7 @@ export default function MainPage() {
     {
       icon: <Search className="h-6 w-6 text-violet-600 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6" />,
       title: "Chuẩn hóa & Nhận diện tự động",
-      description: "Tự động nhận diện cấu trúc bảng điểm, bóc tách mã/tên môn học song ngữ, số tín chỉ và chuyển đổi dữ liệu lỗi phông chữ OCR thành Tiếng Việt chuẩn.",
+      description: "Tự động nhận diện cấu trúc bảng điểm, bóc tách mã/tên môn học song ngữ, số tín chỉ và chuẩn hóa bảng mã Unicode từ các nguồn dữ liệu trực tuyến.",
     },
     {
       icon: <GraduationCap className="h-6 w-6 text-violet-600 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6" />,
@@ -51,8 +51,8 @@ export default function MainPage() {
       answer: "Hệ thống hỗ trợ tải lên trực tiếp các tệp Excel chứa bảng điểm học tập, danh sách lớp hoặc sao chép và dán trực tiếp đoạn văn bản thô từ trang thông tin đào tạo của trường học.",
     },
     {
-      question: "Làm thế nào hệ thống nhận diện và sửa lỗi phông chữ OCR?",
-      answer: "Khi nhập dữ liệu thô bị lỗi font do quá trình quét ảnh hoặc hệ thống cũ xuất ra, thuật toán tự động nhận dạng cấu trúc từ và đối chiếu từ điển tiếng Việt để chuẩn hóa lại chính xác 100%.",
+      question: "Hệ thống xử lý lỗi phông chữ và định dạng bảng điểm sao chép trực tiếp như thế nào?",
+      answer: "Hệ thống tự động chuẩn hóa bảng mã Unicode (NFC), loại bỏ khoảng trắng thừa và sử dụng thuật toán phân tách cột thông minh dựa trên định dạng bảng đào tạo để nhận diện chính xác thông tin môn học và điểm số.",
     },
     {
       question: "Lộ trình học tập khuyến nghị và điều kiện môn học hoạt động ra sao?",
@@ -138,7 +138,7 @@ export default function MainPage() {
                 <span className="text-[10px] text-neutral-400 font-medium">100% Thành công</span>
               </div>
               <h3 className="font-bold text-neutral-900 line-clamp-2 text-sm">Khung chương trình đào tạo & Bảng điểm sinh viên</h3>
-              <p className="text-xs text-neutral-500 mt-3 font-medium">✨ Đã lọc lỗi phông chữ OCR</p>
+              <p className="text-xs text-neutral-500 mt-3 font-medium">✨ Đã chuẩn hóa phông chữ & Unicode</p>
               <p className="text-xs text-neutral-500 font-medium">📋 Tự động bóc tách Mã môn & Tín chỉ</p>
               <div className="mt-4 bg-neutral-150 rounded-full h-1.5 w-full overflow-hidden">
                 <div className="bg-linear-to-r from-violet-500 to-indigo-500 h-full rounded-full w-full" />

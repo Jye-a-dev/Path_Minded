@@ -24,8 +24,10 @@ import {
   AdvisorResponse,
 } from './interfaces/advisors.interfaces';
 import { AdvisorsService } from './advisors.service';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Advisors')
+@Roles('ADVISOR', 'ADMIN')
 @Controller('advisors')
 export class AdvisorsController {
   constructor(private readonly advisorsService: AdvisorsService) {}

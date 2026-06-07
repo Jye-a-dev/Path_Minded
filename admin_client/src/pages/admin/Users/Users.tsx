@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUsers } from "../../../hooks/useUsers";
 import type { UserItem } from "../../../hooks/useUsers";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { UserForm } from "./UserForm";
-import { Plus, Edit2, Trash2, Shield, User, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Shield, User, Loader2, GraduationCap } from "lucide-react";
 import { api } from "../../../services/api";
+import { Link } from "react-router-dom";
 
 export default function Users() {
   const {
@@ -29,6 +30,32 @@ export default function Users() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UserItem | null>(null);
+
+  const [students, setStudents] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [studentsRes, programsRes] = await Promise.all([
+          api.get("/students?limit=1000"),
+          api.get("/programs?limit=250")
+        ]);
+        setStudents(studentsRes.data || []);
+        setPrograms(programsRes.data || []);
+      } catch (err) {
+        console.error("Failed to load students/programs for matching:", err);
+      }
+    };
+    void loadData();
+  }, []);
+
+  const studentMap = new Map<string, any>();
+  students.forEach((s) => {
+    if (s.email) {
+      studentMap.set(s.email.toLowerCase().trim(), s);
+    }
+  });
 
   // Single-delete confirm modal state
   const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
@@ -111,11 +138,31 @@ export default function Users() {
     {
       header: "Tên người dùng",
       accessorKey: "display_name",
-      render: (row: UserItem) => (
-        <span className={row.display_name ? "text-slate-200 font-medium" : "text-slate-600 italic"}>
-          {row.display_name || "Chưa cập nhật"}
-        </span>
-      ),
+      render: (row: UserItem) => {
+        const student = studentMap.get(row.email.toLowerCase().trim());
+        if (student) {
+          const program = programs.find((p) => p.id === student.program_id);
+          const majorName = program?.major_name || "";
+          return (
+            <Link
+              to={`/admin/students?class_id=${student.class_id}&major=${encodeURIComponent(majorName)}&search=${encodeURIComponent(student.student_code)}`}
+              className="inline-flex items-center gap-1.5 text-indigo-450 hover:text-indigo-400 font-bold hover:underline transition-all group"
+            >
+              <GraduationCap size={14} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>{student.full_name}</span>
+              <span className="text-[10px] text-indigo-300/80 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 font-mono font-normal">
+                {student.student_code}
+              </span>
+            </Link>
+          );
+        }
+
+        return (
+          <span className={row.display_name ? "text-slate-200 font-medium" : "text-slate-600 italic"}>
+            {row.display_name || "Chưa cập nhật"}
+          </span>
+        );
+      },
     },
     {
       header: "Vai trò",

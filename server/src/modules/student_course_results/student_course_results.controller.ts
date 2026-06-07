@@ -20,8 +20,10 @@ import {
   StudentCourseResultResponse,
 } from './interfaces/student_course_results.interfaces';
 import { StudentCourseResultsService } from './student_course_results.service';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Student Course Results')
+@Roles('STUDENT', 'ADVISOR', 'ADMIN')
 @Controller('student_course_results')
 export class StudentCourseResultsController {
   constructor(private readonly service: StudentCourseResultsService) {}
@@ -43,6 +45,7 @@ export class StudentCourseResultsController {
       },
     },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Post()
   create(
     @Body() payload: Record<string, unknown>,
@@ -140,6 +143,7 @@ export class StudentCourseResultsController {
       },
     },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -153,6 +157,7 @@ export class StudentCourseResultsController {
     description: 'Bulk delete result',
     schema: { example: { message: 'deleted', count: 5 } },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Delete('bulk')
   removeBulk(
     @Body('ids') ids: string[],
@@ -166,6 +171,7 @@ export class StudentCourseResultsController {
     description: 'Delete result',
     schema: { example: { message: 'Deleted successfully' } },
   })
+  @Roles('ADVISOR', 'ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.service.remove(id);

@@ -38,7 +38,15 @@ export default function Login() {
           response.data.user,
           remember
         );
-        router.push("/me");
+        
+        const userRole = response.data.user.role;
+        if (userRole === "STUDENT") {
+          router.push("/student");
+        } else if (userRole === "ADVISOR" || userRole === "ADMIN") {
+          router.push("/advisor");
+        } else {
+          router.push("/me");
+        }
       } else {
         setError("Phản hồi không hợp lệ từ máy chủ.");
       }
