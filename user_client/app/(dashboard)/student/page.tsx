@@ -31,10 +31,17 @@ interface StudentProfile {
   has_grades?: boolean;
 }
 
+interface ProgramInfo {
+  id: string;
+  total_credits?: number;
+}
+
 export default function StudentOverviewPage() {
   const { user } = useAuth();
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
   const [loadingStudent, setLoadingStudent] = useState(true);
+  const [programInfo, setProgramInfo] = useState<ProgramInfo | null>(null);
+  const [accumulatedCredits, setAccumulatedCredits] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -42,7 +49,37 @@ export default function StudentOverviewPage() {
       setLoadingStudent(true);
       try {
         const res = await api.get(`/students?user_id=${user.id}`);
-        if (res.data?.length > 0) setStudentProfile(res.data[0]);
+        if (res.data?.length > 0) {
+          const profile: StudentProfile = res.data[0];
+          setStudentProfile(profile);
+
+          // Fetch program info for total_credits
+          if (profile.program_id) {
+            try {
+              const progRes = await api.get(`/programs/${profile.program_id}`);
+              setProgramInfo(progRes.data);
+            } catch {
+              // program not found, ignore
+            }
+          }
+
+          // Fetch accumulated credits from passed courses
+          if (profile.id) {
+            try {
+              const credRes = await api.get(
+                `/student_course_results?student_id=${profile.id}&status=PASSED&limit=500`
+              );
+              const rows: { credits?: number }[] = credRes.data ?? [];
+              const total = rows.reduce(
+                (sum, r) => sum + (Number(r.credits) || 0),
+                0
+              );
+              setAccumulatedCredits(total);
+            } catch {
+              // ignore
+            }
+          }
+        }
       } catch (err) {
         console.error("Failed to load student profile:", err);
       } finally {
@@ -52,12 +89,30 @@ export default function StudentOverviewPage() {
     void fetch();
   }, [user]);
 
+  const totalCredits = programInfo?.total_credits ?? null;
+  const creditDisplay = studentProfile?.has_grades
+    ? accumulatedCredits !== null
+      ? totalCredits !== null
+        ? `${accumulatedCredits} / ${totalCredits}`
+        : `${accumulatedCredits}`
+      : "—"
+    : "—";
+  const creditPercent =
+    accumulatedCredits !== null && totalCredits !== null && totalCredits > 0
+      ? Math.round((accumulatedCredits / totalCredits) * 100)
+      : null;
+  const creditDesc = studentProfile?.has_grades
+    ? creditPercent !== null
+      ? `Đã hoàn thành ${creditPercent}%`
+      : "Đang tính toán..."
+    : "Chưa cập nhật bảng điểm";
+
   const stats = [
     {
       label: "Số tín chỉ tích lũy",
-      value: studentProfile?.has_grades ? "90 / 120" : "—",
+      value: creditDisplay,
       icon: <BookOpen className="h-5 w-5 text-violet-600" />,
-      desc: studentProfile?.has_grades ? "Đã hoàn thành 75%" : "Chưa cập nhật bảng điểm",
+      desc: creditDesc,
       color: "bg-violet-50 border-violet-100",
     },
     {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
 import {
@@ -22,6 +22,24 @@ interface StudentProfile {
   has_grades?: boolean;
 }
 
+interface ParsedResult {
+  schoolYear?: string;
+  semesterNumber?: number;
+  courseCode?: string;
+  courseName?: string;
+  credits?: number;
+  score10?: number | null;
+  score4?: number | null;
+  letterGrade?: string | null;
+  status?: string;
+}
+
+interface ParsedWarning {
+  rowNumber?: number;
+  message?: string;
+  rawValue?: string;
+}
+
 interface UploadSession {
   id: string;
   student_id: string;
@@ -32,8 +50,8 @@ interface UploadSession {
   uploaded_at: string;
   parsed_at?: string | null;
   parsed_json?: {
-    results?: any[];
-    warnings?: any[];
+    results?: ParsedResult[];
+    warnings?: ParsedWarning[];
   } | null;
 }
 
@@ -57,41 +75,39 @@ export default function StudentTranscriptsPage() {
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // ── Fetch student profile ────────────────────────────────────
-  useEffect(() => {
-    if (!user) return;
-    const fetch = async () => {
-      setLoadingStudent(true);
-      try {
-        const res = await api.get(`/students?user_id=${user.id}`);
-        if (res.data?.length > 0) setStudentProfile(res.data[0]);
-      } catch (err) {
-        console.error("Failed to load student profile:", err);
-      } finally {
-        setLoadingStudent(false);
-      }
-    };
-    void fetch();
-  }, [user]);
-
-  // ── Fetch upload history ─────────────────────────────────────
-  const fetchUploads = async (profile?: StudentProfile | null) => {
-    const p = profile ?? studentProfile;
-    if (!p) return;
+  // ── Fetch upload history (reused by submit / delete handlers) ─
+  const fetchUploads = useCallback(async (profile: StudentProfile) => {
     setLoadingUploads(true);
     try {
-      const res = await api.get(`/transcript_uploads?student_id=${p.id}&limit=100`);
+      const res = await api.get(`/transcript_uploads?student_id=${profile.id}&limit=100`);
       setUploads(res.data || []);
     } catch (err) {
       console.error("Failed to fetch uploads:", err);
     } finally {
       setLoadingUploads(false);
     }
-  };
+  }, []);
 
+  // ── Fetch student profile + uploads in one effect ────────────
   useEffect(() => {
-    if (studentProfile) void fetchUploads(studentProfile);
-  }, [studentProfile]);
+    if (!user) return;
+    const load = async () => {
+      setLoadingStudent(true);
+      try {
+        const res = await api.get(`/students?user_id=${user.id}`);
+        if (res.data?.length > 0) {
+          const profile: StudentProfile = res.data[0];
+          setStudentProfile(profile);
+          await fetchUploads(profile);
+        }
+      } catch (err) {
+        console.error("Failed to load student profile:", err);
+      } finally {
+        setLoadingStudent(false);
+      }
+    };
+    void load();
+  }, [user, fetchUploads]);
 
   // ── Submit upload ────────────────────────────────────────────
   const handleUploadSubmit = async (e: React.FormEvent) => {
@@ -122,13 +138,14 @@ export default function StudentTranscriptsPage() {
       setUploadFile(null);
       setUploadText("");
       setUploadFormOpen(false);
-      await fetchUploads();
+      await fetchUploads(studentProfile);
       const studentRes = await api.get(`/students/${studentProfile.id}`);
       if (studentRes.data) setStudentProfile(studentRes.data);
-    } catch (err: any) {
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
       setUploadError(
-        err.response?.data?.message ||
-          err.message ||
+        e.response?.data?.message ||
+          e.message ||
           "Xử lý bảng điểm thất bại."
       );
     } finally {
@@ -143,7 +160,7 @@ export default function StudentTranscriptsPage() {
     try {
       await api.delete(`/transcript_uploads/${deleteSessionId}`);
       setDeleteSessionId(null);
-      await fetchUploads();
+      await fetchUploads(studentProfile);
       const studentRes = await api.get(`/students/${studentProfile.id}`);
       if (studentRes.data) setStudentProfile(studentRes.data);
     } catch (err) {
@@ -531,7 +548,7 @@ export default function StudentTranscriptsPage() {
                         </thead>
                         <tbody className="divide-y divide-zinc-100">
                           {selectedUpload.parsed_json.results.map(
-                            (res: any, idx: number) => (
+                            (res: ParsedResult, idx: number) => (
                               <tr
                                 key={idx}
                                 className="hover:bg-zinc-50/60 text-neutral-700"
@@ -598,7 +615,7 @@ export default function StudentTranscriptsPage() {
                 <div className="space-y-2">
                   {selectedUpload.parsed_json?.warnings?.length ? (
                     selectedUpload.parsed_json.warnings.map(
-                      (warn: any, idx: number) => (
+                      (warn: ParsedWarning, idx: number) => (
                         <div
                           key={idx}
                           className="p-3.5 rounded-xl border border-amber-100 bg-amber-50/40 text-xs flex gap-2.5"
