@@ -41,7 +41,7 @@ export function ConfigurationCard({
   return (
     <div className="space-y-8 max-w-2xl mx-auto py-12">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white! flex items-center justify-center gap-3">
+        <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-3">
           <GraduationCap className="text-indigo-400! h-8 w-8" />
           Kết quả học tập &amp; Bảng điểm
         </h1>

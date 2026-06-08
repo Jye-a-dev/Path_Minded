@@ -37,7 +37,7 @@ export function StudentDetailHeader({
         </button>
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h2 className="text-xl font-bold text-white! m-0">
+            <h2 className="text-xl font-bold text-white m-0">
               {selectedStudent?.full_name || "N/A"}
             </h2>
             <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-350 border border-slate-700">

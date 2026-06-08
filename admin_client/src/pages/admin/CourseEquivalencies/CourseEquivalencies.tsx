@@ -122,7 +122,7 @@ export default function CourseEquivalencies() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Môn học tương đương</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Môn học tương đương</h1>
           <p className="mt-1 text-xs text-slate-400">
             Định nghĩa các môn học thay thế có thể đáp ứng cùng một khối điều kiện.
           </p>

@@ -67,7 +67,7 @@ export default function KnowledgeBlockMappings() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0 flex items-center gap-2.5">
+          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0 flex items-center gap-2.5">
             <Layers className="text-indigo-500" />
             Phân Loại Khối Kiến Thức
           </h1>

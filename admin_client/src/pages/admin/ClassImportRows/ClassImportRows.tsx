@@ -233,7 +233,7 @@ export default function ClassImportRows() {
       <div className="space-y-8 max-w-2xl mx-auto py-12">
         {/* Title */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white! flex items-center justify-center gap-3">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-3">
             <ListOrdered className="text-indigo-400! h-8 w-8" />
             Chi tiết hàng nhập lớp
           </h1>
@@ -352,7 +352,7 @@ export default function ClassImportRows() {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Chi tiết hàng nhập lớp</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Chi tiết hàng nhập lớp</h1>
               <span className="inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-bold text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">
                 {selectedMajor}
               </span>

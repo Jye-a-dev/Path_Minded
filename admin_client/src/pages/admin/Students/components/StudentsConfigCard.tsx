@@ -39,7 +39,7 @@ export function StudentsConfigCard({
     <div className="space-y-8 max-w-2xl mx-auto py-12">
       {/* Title Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white! flex items-center justify-center gap-3">
+        <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-3">
           <FolderInput className="text-indigo-400! h-8 w-8" />
           Quản lý Sinh viên
         </h1>

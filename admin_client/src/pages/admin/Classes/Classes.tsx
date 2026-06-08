@@ -220,7 +220,7 @@ export default function Classes() {
       {/* Title Header */}
       {!filters.program_id && (
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Lớp học Sinh viên</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lớp học Sinh viên</h1>
           <p className="text-xs text-slate-400">
             Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo.
           </p>
@@ -245,7 +245,7 @@ export default function Classes() {
               <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-650 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
-              <h2 className="mt-6 text-xl font-extrabold text-white! tracking-tight">Lớp học Sinh viên</h2>
+              <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">Lớp học Sinh viên</h2>
               <p className="mt-2 text-xs text-slate-400">
                 Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý danh sách lớp học.
               </p>
@@ -318,7 +318,7 @@ export default function Classes() {
         /* Data Table Screen */
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Lớp học Sinh viên</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lớp học Sinh viên</h1>
             <p className="text-xs text-slate-400">
               Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo.
             </p>

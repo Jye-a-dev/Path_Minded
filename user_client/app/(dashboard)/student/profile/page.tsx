@@ -26,10 +26,24 @@ interface StudentProfile {
   has_grades?: boolean;
 }
 
+interface ClassDetail {
+  id: string;
+  class_code: string;
+  class_name: string;
+}
+
+interface ProgramDetail {
+  id: string;
+  program_code: string;
+  program_name: string;
+}
+
 export default function StudentProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [classDetail, setClassDetail] = useState<ClassDetail | null>(null);
+  const [programDetail, setProgramDetail] = useState<ProgramDetail | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -37,7 +51,35 @@ export default function StudentProfilePage() {
       setLoading(true);
       try {
         const res = await api.get(`/students?user_id=${user.id}`);
-        if (res.data?.length > 0) setProfile(res.data[0]);
+        if (res.data?.length > 0) {
+          const studentProfile = res.data[0];
+          setProfile(studentProfile);
+
+          // Fetch class and program details
+          const fetchClass = async () => {
+            if (studentProfile.class_id) {
+              try {
+                const classRes = await api.get<ClassDetail>(`/classes/${studentProfile.class_id}`);
+                setClassDetail(classRes.data);
+              } catch (err) {
+                console.error("Failed to fetch class info:", err);
+              }
+            }
+          };
+
+          const fetchProgram = async () => {
+            if (studentProfile.program_id) {
+              try {
+                const programRes = await api.get<ProgramDetail>(`/programs/${studentProfile.program_id}`);
+                setProgramDetail(programRes.data);
+              } catch (err) {
+                console.error("Failed to fetch program info:", err);
+              }
+            }
+          };
+
+          await Promise.all([fetchClass(), fetchProgram()]);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -103,14 +145,26 @@ export default function StudentProfilePage() {
       icon: <Mail size={16} className="text-violet-500" />,
     },
     {
-      label: "Mã lớp",
-      value: profile.class_id ?? "Chưa xác định",
+      label: "Tên lớp học",
+      value: classDetail?.class_name ?? (profile.class_id ? "Đang tải..." : "Chưa xác định"),
       icon: <Building2 size={16} className="text-violet-500" />,
     },
     {
-      label: "Mã chương trình đào tạo",
-      value: profile.program_id ?? "Chưa xác định",
+      label: "Mã lớp",
+      value: classDetail?.class_code ?? (profile.class_id ? "Đang tải..." : "Chưa xác định"),
+      icon: <Building2 size={16} className="text-violet-500" />,
+      mono: true,
+    },
+    {
+      label: "Tên chương trình đào tạo",
+      value: programDetail?.program_name ?? (profile.program_id ? "Đang tải..." : "Chưa xác định"),
       icon: <GraduationCap size={16} className="text-violet-500" />,
+    },
+    {
+      label: "Mã chương trình đào tạo",
+      value: programDetail?.program_code ?? (profile.program_id ? "Đang tải..." : "Chưa xác định"),
+      icon: <GraduationCap size={16} className="text-violet-500" />,
+      mono: true,
     },
     {
       label: "Niên khóa",

@@ -53,7 +53,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       {/* Title Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-white! m-0">Tổng quan Bảng điều khiển</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white m-0">Tổng quan Bảng điều khiển</h1>
         <p className="mt-2 text-sm text-slate-400">
           Số liệu thời gian thực và trạng thái của hệ thống cơ sở dữ liệu ma trận cố vấn học tập.
         </p>
@@ -94,7 +94,7 @@ export default function Dashboard() {
           <div className="grid gap-6 md:grid-cols-2">
             {/* Imports Manager shortcuts */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur-md">
-              <h2 className="text-lg font-bold text-white! tracking-tight flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-indigo-400" />
                 Đường ống Thu thập Dữ liệu
               </h2>
@@ -134,7 +134,7 @@ export default function Dashboard() {
 
             {/* Matrix Export shortcuts */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur-md">
-              <h2 className="text-lg font-bold text-white! tracking-tight flex items-center gap-2">
+              <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                 <DownloadCloud className="h-5 w-5 text-emerald-400" />
                 Trung tâm Báo cáo & Xuất dữ liệu
               </h2>

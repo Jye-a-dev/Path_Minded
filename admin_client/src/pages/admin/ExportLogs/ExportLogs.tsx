@@ -262,7 +262,7 @@ export default function ExportLogs() {
               <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-650 flex items-center justify-center shadow-lg shadow-indigo-500/20">
                 <History className="h-6 w-6 text-white" />
               </div>
-              <h2 className="mt-6 text-xl font-extrabold text-white! tracking-tight">Lịch sử xuất dữ liệu</h2>
+              <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">Lịch sử xuất dữ liệu</h2>
               <p className="mt-2 text-xs text-slate-400">
                 Vui lòng chọn Ngành và Chương trình đào tạo để xem nhật ký xuất dữ liệu.
               </p>
@@ -335,7 +335,7 @@ export default function ExportLogs() {
         /* Data Table Screen */
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Lịch sử xuất dữ liệu</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lịch sử xuất dữ liệu</h1>
             <p className="text-xs text-slate-400">
               Kiểm tra các dòng cơ sở dữ liệu xuất bản ghi theo dõi sinh viên được xử lý, số lượng đề cương và cờ cảnh báo ma trận.
             </p>

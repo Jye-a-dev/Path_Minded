@@ -208,7 +208,7 @@ export default function CoursePrerequisites() {
       {/* Title Header */}
       {!filters.program_id && (
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Điều kiện môn học</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Điều kiện môn học</h1>
           <p className="text-xs text-slate-400">
             Định nghĩa các yêu cầu trong đó việc hoàn thành các môn học tiên quyết cụ thể là điều kiện bắt buộc.
           </p>
@@ -306,7 +306,7 @@ export default function CoursePrerequisites() {
         /* Data Table Screen */
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Điều kiện môn học</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Điều kiện môn học</h1>
             <p className="text-xs text-slate-400">
               Định nghĩa các yêu cầu trong đó việc hoàn thành các môn học tiên quyết cụ thể là điều kiện bắt buộc.
             </p>

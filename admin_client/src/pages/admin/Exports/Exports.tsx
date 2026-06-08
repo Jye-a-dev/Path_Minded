@@ -256,7 +256,7 @@ export default function Exports() {
         {/* Title Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Xuất dữ liệu</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Xuất dữ liệu</h1>
             <p className="mt-1 text-xs text-slate-400">
               Tra cứu và xuất bảng tính ma trận kiểm định học tập của sinh viên theo lớp học và cố vấn học tập.
             </p>

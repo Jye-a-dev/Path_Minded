@@ -181,7 +181,7 @@ export function StudentListTable({
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Quản lý điểm số</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Quản lý điểm số</h1>
               <span className="inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-bold text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">
                 {selectedMajor}
               </span>

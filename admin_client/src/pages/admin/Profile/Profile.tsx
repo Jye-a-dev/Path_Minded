@@ -103,7 +103,7 @@ export default function Profile() {
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white!">Tài khoản của tôi</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Tài khoản của tôi</h1>
         <p className="text-sm text-slate-400">
           Xem thông tin cá nhân và thiết lập mật khẩu mới cho tài khoản của bạn.
         </p>
@@ -120,7 +120,7 @@ export default function Profile() {
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-lg font-bold text-white!">{displayName || email}</h2>
+            <h2 className="text-lg font-bold text-white">{displayName || email}</h2>
             <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
               <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-400 border border-indigo-500/20">
                 <Shield size={12} />

@@ -11,6 +11,7 @@ import {
   GraduationCap,
   BookOpen,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
 
 const studentSections = [
@@ -31,6 +32,11 @@ const studentSections = [
         label: "Môn học đã hoàn thành",
         to: "/student/courses",
         icon: BookOpen,
+      },
+      {
+        label: "Giả lập tốt nghiệp (What-If)",
+        to: "/student/simulator",
+        icon: Sparkles,
       },
     ],
   },

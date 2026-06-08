@@ -215,7 +215,7 @@ export default function Programs() {
         {/* Title Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0 flex items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0 flex items-center gap-2.5">
               <GraduationCap className="text-indigo-400 h-7 w-7" />
               Chương trình đào tạo
             </h1>
@@ -351,7 +351,7 @@ export default function Programs() {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold tracking-tight text-white! m-0">Chương trình đào tạo</h1>
+              <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Chương trình đào tạo</h1>
               <span className="inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-0.5 text-xs font-bold text-indigo-400 border border-indigo-500/20 uppercase tracking-wide">
                 {selectedMajor === "TẤT CẢ" ? "Tất cả chuyên ngành" : selectedMajor}
               </span>
