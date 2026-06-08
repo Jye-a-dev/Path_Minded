@@ -337,7 +337,6 @@ export function StudentResultsTab({
     },
   ];
 
-  // Course filter block inside detail tab 1
   const resultsFiltersBlock = (
     <div className="flex flex-wrap items-center gap-3">
       {/* Status Filter */}
@@ -347,12 +346,12 @@ export function StudentResultsTab({
           setSelectedStatus(e.target.value);
           courseResultsHook.updateFilters({ status: e.target.value || undefined });
         }}
-        className="rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-800"
+        className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-600"
       >
-        <option value="">-- Tất cả trạng thái --</option>
-        <option value="PASSED">ĐẠT (PASSED)</option>
-        <option value="FAILED">TRƯỢT (FAILED)</option>
-        <option value="STUDYING">ĐANG HỌC (STUDYING)</option>
+        <option className="bg-slate-900 text-slate-400" value="">-- Tất cả trạng thái --</option>
+        <option className="bg-slate-900 text-white font-medium" value="PASSED">ĐẠT (PASSED)</option>
+        <option className="bg-slate-900 text-white font-medium" value="FAILED">TRƯỢT (FAILED)</option>
+        <option className="bg-slate-900 text-white font-medium" value="STUDYING">ĐANG HỌC (STUDYING)</option>
       </select>
 
       {/* School Year Filter */}
@@ -362,11 +361,11 @@ export function StudentResultsTab({
           setSelectedSchoolYear(e.target.value);
           courseResultsHook.updateFilters({ school_year: e.target.value || undefined });
         }}
-        className="rounded-lg border border-slate-850 bg-slate-955 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-800"
+        className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-600"
       >
-        <option value="">-- Tất cả năm học --</option>
+        <option className="bg-slate-900 text-slate-400" value="">-- Tất cả năm học --</option>
         {uniqueSchoolYears.map((year) => (
-          <option key={year} value={year}>Năm học {year}</option>
+          <option className="bg-slate-900 text-white font-medium" key={year} value={year}>Năm học {year}</option>
         ))}
       </select>
 
@@ -377,11 +376,11 @@ export function StudentResultsTab({
           setSelectedSemester(e.target.value);
           courseResultsHook.updateFilters({ semester_code: e.target.value || undefined });
         }}
-        className="rounded-lg border border-slate-855 bg-slate-955 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-800"
+        className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-600"
       >
-        <option value="">-- Tất cả học kỳ --</option>
+        <option className="bg-slate-900 text-slate-400" value="">-- Tất cả học kỳ --</option>
         {uniqueSemesters.map((sem) => (
-          <option key={sem} value={sem}>Học kỳ {sem}</option>
+          <option className="bg-slate-900 text-white font-medium" key={sem} value={sem}>Học kỳ {sem}</option>
         ))}
       </select>
     </div>

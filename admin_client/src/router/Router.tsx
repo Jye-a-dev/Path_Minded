@@ -5,6 +5,7 @@ import PublicLayout from "../components/layouts/(public)/PublicLayout";
 import AdminLayout from "../components/layouts/AdminLayout";
 import { PrivateRoute } from "../components/guards/PrivateRoute";
 import PageLoader from "./PageLoader";
+import SettingsPage from "../pages/admin/Settings/Settings";
 
 // Public pages
 const Home = lazy(() => import("../pages/public/Home/Home"));
@@ -73,6 +74,7 @@ const routes = [
           { path: "column_mappings", element: w(<ColumnMappings />) },
           { path: "course_type_mappings", element: w(<CourseTypeMappings />) },
           { path: "knowledge_block_mappings", element: w(<KnowledgeBlockMappings />) },
+          { path: "settings", element: <SettingsPage /> },
         ],
       },
     ],

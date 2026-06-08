@@ -173,18 +173,18 @@ export const TranscriptUploadForm: React.FC<TranscriptUploadFormProps> = ({
               Chọn ngành
             </label>
             {loadingPrograms ? (
-              <div className="flex items-center gap-2 py-2 text-slate-555 text-xs">
+              <div className="flex items-center gap-2 py-2 text-slate-400 text-xs">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải ngành học...
               </div>
             ) : (
               <select
                 value={selectedMajor}
                 onChange={handleMajorChange}
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-600"
               >
-                <option className="bg-slate-900 text-slate-100" value="">-- Chọn ngành học --</option>
+                <option className="bg-slate-900 text-slate-400" value="">-- Chọn ngành học --</option>
                 {uniqueMajors.map((major) => (
-                  <option className="bg-slate-900 text-slate-100" key={major} value={major}>
+                  <option className="bg-slate-900 text-white font-medium" key={major} value={major}>
                     {major}
                   </option>
                 ))}
@@ -198,7 +198,7 @@ export const TranscriptUploadForm: React.FC<TranscriptUploadFormProps> = ({
               Chọn lớp học
             </label>
             {loadingClasses ? (
-              <div className="flex items-center gap-2 py-2 text-slate-555 text-xs">
+              <div className="flex items-center gap-2 py-2 text-slate-400 text-xs">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải danh sách lớp...
               </div>
             ) : (
@@ -206,11 +206,11 @@ export const TranscriptUploadForm: React.FC<TranscriptUploadFormProps> = ({
                 value={selectedClassId}
                 disabled={!selectedMajor}
                 onChange={handleClassChange}
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer hover:border-slate-600"
               >
-                <option className="bg-slate-900 text-slate-100" value="">-- Chọn lớp học --</option>
+                <option className="bg-slate-900 text-slate-400" value="">-- Chọn lớp học --</option>
                 {classesList.map((c) => (
-                  <option className="bg-slate-900 text-slate-100" key={c.id} value={c.id}>
+                  <option className="bg-slate-900 text-white font-medium" key={c.id} value={c.id}>
                     {c.class_code}
                   </option>
                 ))}
@@ -224,7 +224,7 @@ export const TranscriptUploadForm: React.FC<TranscriptUploadFormProps> = ({
               Chọn sinh viên mục tiêu
             </label>
             {loadingStudents ? (
-              <div className="flex items-center gap-2 py-2 text-slate-555 text-xs">
+              <div className="flex items-center gap-2 py-2 text-slate-400 text-xs">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Đang tải danh sách sinh viên...
               </div>
             ) : (
@@ -233,11 +233,11 @@ export const TranscriptUploadForm: React.FC<TranscriptUploadFormProps> = ({
                 disabled={!selectedClassId}
                 required
                 onChange={(e) => setFormStudentId(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer hover:border-slate-600"
               >
-                <option className="bg-slate-900 text-slate-100" value="">-- Chọn sinh viên --</option>
+                <option className="bg-slate-900 text-slate-400" value="">-- Chọn sinh viên --</option>
                 {studentsList.map((s) => (
-                  <option className="bg-slate-900 text-slate-100" key={s.id} value={s.id}>
+                  <option className="bg-slate-900 text-white font-medium" key={s.id} value={s.id}>
                     {s.label}
                   </option>
                 ))}

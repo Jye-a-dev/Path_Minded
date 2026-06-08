@@ -22,7 +22,8 @@ import {
   User,
   Tags,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Settings
 } from "lucide-react";
 
 interface SidebarProps {
@@ -102,6 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: "Cấu hình khớp cột", to: "/admin/column_mappings", icon: FileSpreadsheet },
         { label: "Phân loại môn học", to: "/admin/course_type_mappings", icon: Tags },
         { label: "Khối kiến thức", to: "/admin/knowledge_block_mappings", icon: Layers },
+        { label: "Cài đặt", to: "/admin/settings", icon: Settings },
       ],
     },
   ];

@@ -132,3 +132,28 @@ code {
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.7);
 }
+
+/* Custom compact-tables adjustments */
+.compact-tables table td,
+.compact-tables table th {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+.compact-tables select,
+.compact-tables input {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Glassmorphism theme override helpers */
+.glass-ui .bg-slate-900\/60,
+.glass-ui .bg-slate-900\/40,
+.glass-ui .bg-slate-900\/90 {
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+}

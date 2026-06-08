@@ -5,11 +5,13 @@ import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { StudentForm } from "./StudentForm";
-import { Plus, Edit2, Trash2, GraduationCap, Loader2, ChevronLeft, FolderInput } from "lucide-react";
+import { Plus, Edit2, Trash2, GraduationCap, ChevronLeft } from "lucide-react";
 import { api } from "../../../services/api";
 import { useColumnLabels } from "../../../hooks/useColumnLabels";
 import { useClassLookup } from "../../../hooks/useClassLookup";
 import { useSearchParams } from "react-router-dom";
+import { StudentsConfigCard } from "./components/StudentsConfigCard";
+import { DeleteAllModal } from "./components/DeleteAllModal";
 
 export default function Students() {
   const {
@@ -46,12 +48,14 @@ export default function Students() {
     const searchVal = searchParams.get("search");
 
     if (classId && major) {
-      setSelectedMajor(major);
-      setSelectedClassId(classId);
-      setIsConfigured(true);
-      if (searchVal) {
-        setSearch(searchVal);
-      }
+      Promise.resolve().then(() => {
+        setSelectedMajor(major);
+        setSelectedClassId(classId);
+        setIsConfigured(true);
+        if (searchVal) {
+          setSearch(searchVal);
+        }
+      });
     }
   }, [searchParams, setSearch]);
   
@@ -278,107 +282,19 @@ export default function Students() {
   ];
 
   if (!isConfigured) {
-    const uniqueMajors = Array.from(
-      new Set(allPrograms.map((p) => p.major_name).filter((m): m is string => !!m))
-    );
-
     return (
-      <div className="space-y-8 max-w-2xl mx-auto py-12">
-        {/* Title Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white! flex items-center justify-center gap-3">
-            <FolderInput className="text-indigo-400! h-8 w-8" />
-            Quản lý Sinh viên
-          </h1>
-          <p className="text-sm text-slate-400 max-w-md mx-auto">
-            Vui lòng cấu hình phiên làm việc bằng cách chọn chuyên ngành và lớp học mục tiêu.
-          </p>
-        </div>
-
-        {loadingPrograms ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500 text-xs bg-slate-900/40 border border-slate-800/80 rounded-2xl">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-            Đang tải dữ liệu cấu hình hệ thống...
-          </div>
-        ) : (
-          <div className="relative rounded-2xl border border-slate-800/80 bg-slate-900/60 p-8 shadow-xl shadow-slate-950/50 backdrop-blur-md space-y-6">
-            <div className="absolute top-0 right-0 left-0 h-1.5 bg-linear-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-t-2xl"></div>
-
-            <div className="space-y-4">
-              {/* Major Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Chuyên ngành
-                </label>
-                <select
-                  value={selectedMajor}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSelectedMajor(val);
-                    setSelectedClassId("");
-                    if (!val) {
-                      setClassesForMajor([]);
-                    }
-                  }}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
-                >
-                  <option className="bg-slate-900 text-slate-500" value="">-- Chọn chuyên ngành --</option>
-                  {uniqueMajors.map((major) => (
-                    <option className="bg-slate-900 text-slate-100" key={major} value={major}>
-                      {major}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Class Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Lớp học
-                </label>
-                {loadingClasses ? (
-                  <div className="flex items-center justify-center gap-2 py-3 bg-slate-950/60 rounded-xl border border-slate-800 text-slate-500 text-xs">
-                    <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-                    Đang tải danh sách lớp...
-                  </div>
-                ) : (
-                  <select
-                    value={selectedClassId}
-                    disabled={!selectedMajor || classesForMajor.length === 0}
-                    onChange={(e) => setSelectedClassId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    <option className="bg-slate-900 text-slate-500" value="">
-                      {!selectedMajor
-                        ? "-- Vui lòng chọn chuyên ngành trước --"
-                        : classesForMajor.length === 0
-                        ? "-- Không tìm thấy lớp học nào --"
-                        : "-- Chọn lớp học --"}
-                    </option>
-                    {classesForMajor.map((c) => (
-                      <option className="bg-slate-900 text-slate-100" key={c.id} value={c.id}>
-                        {c.class_code}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                if (selectedClassId) {
-                  setIsConfigured(true);
-                }
-              }}
-              disabled={!selectedClassId}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer hover:-translate-y-0.5"
-            >
-              Vào trang quản lý
-            </button>
-          </div>
-        )}
-      </div>
+      <StudentsConfigCard
+        loadingPrograms={loadingPrograms}
+        allPrograms={allPrograms}
+        selectedMajor={selectedMajor}
+        setSelectedMajor={setSelectedMajor}
+        selectedClassId={selectedClassId}
+        setSelectedClassId={setSelectedClassId}
+        loadingClasses={loadingClasses}
+        classesForMajor={classesForMajor}
+        setClassesForMajor={setClassesForMajor}
+        setIsConfigured={setIsConfigured}
+      />
     );
   }
 
@@ -450,7 +366,7 @@ export default function Students() {
             <button
               onClick={() => { setDeleteAllError(null); setDeleteAllOpen(true); }}
               disabled={total === 0 || loading}
-              className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-300 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-50/20 hover:border-rose-505 hover:text-rose-300 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer"
             >
               <Trash2 size={15} />
               Xóa tất cả
@@ -484,56 +400,14 @@ export default function Students() {
       </Modal>
 
       {/* Delete All Confirmation Modal */}
-      <Modal
+      <DeleteAllModal
         isOpen={deleteAllOpen}
         onClose={() => !deleteAllLoading && setDeleteAllOpen(false)}
-        title="Xác nhận xóa tất cả sinh viên"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-4">
-            <p className="text-sm font-semibold text-rose-300">
-              ⚠️ Hành động này <span className="font-black underline">không thể hoàn tác</span>.
-            </p>
-            <p className="mt-1.5 text-xs text-rose-400/80">
-              Toàn bộ <span className="font-bold text-rose-300">{total.toLocaleString()} sinh viên</span> trong cơ sở dữ liệu sẽ bị xóa vĩnh viễn, bao gồm tất cả dữ liệu liên kết.
-            </p>
-          </div>
-
-          {deleteAllError && (
-            <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-400">
-              {deleteAllError}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              onClick={() => setDeleteAllOpen(false)}
-              disabled={deleteAllLoading}
-              className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-50 transition-all cursor-pointer"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              onClick={handleDeleteAll}
-              disabled={deleteAllLoading}
-              className="flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-rose-600/30 hover:bg-rose-500 disabled:opacity-60 disabled:pointer-events-none transition-all cursor-pointer"
-            >
-              {deleteAllLoading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Đang xóa...
-                </>
-              ) : (
-                <>
-                  <Trash2 size={14} />
-                  Xóa tất cả {total.toLocaleString()} sinh viên
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        total={total}
+        deleteAllLoading={deleteAllLoading}
+        deleteAllError={deleteAllError}
+        onConfirm={handleDeleteAll}
+      />
 
       {/* Single Delete Confirmation Modal */}
       <ConfirmModal

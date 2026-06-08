@@ -246,7 +246,7 @@ export function TranscriptUploadsTab({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs">
               <div>
                 <span className="text-slate-400 block font-medium">Sinh viên:</span>
-                <span className="text-slate-205 font-bold block">{selectedUploadItem.full_name || "N/A"}</span>
+                <span className="text-slate-205! font-bold block">{selectedUploadItem.full_name || "N/A"}</span>
                 <span className="text-[10px] text-slate-400 font-mono block">{selectedUploadItem.student_code || "N/A"}</span>
               </div>
               <div>
