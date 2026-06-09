@@ -12,8 +12,8 @@ export interface ImportItem {
   processed_at?: string;
 }
 
-export function useCurriculumImports() {
-  const paginated = usePaginatedApi<ImportItem>("/curriculum_imports");
+export function useCurriculumImports(initialFilters: Record<string, unknown> = {}) {
+  const paginated = usePaginatedApi<ImportItem>("/curriculum_imports", initialFilters);
 
   const startImport = async (formData: FormData) => {
     const response = await api.post("/curriculum_imports", formData, {

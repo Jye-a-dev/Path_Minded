@@ -11,10 +11,22 @@ interface ProgramItem {
 }
 
 interface SelectionScreenProps {
-  onSelect: (programId: string) => void;
+  onSelect: (programIdOrMajor: string) => void;
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  icon?: React.ReactNode;
+  onlyMajor?: boolean;
 }
 
-export const SelectionScreen: React.FC<SelectionScreenProps> = ({ onSelect }) => {
+export const SelectionScreen: React.FC<SelectionScreenProps> = ({
+  onSelect,
+  title = "Học phần khung",
+  description = "Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý đề cương & tín chỉ học tập.",
+  buttonText = "Truy cập Học phần khung",
+  icon,
+  onlyMajor = false,
+}) => {
   const [programs, setPrograms] = useState<ProgramItem[]>([]);
   const [majors, setMajors] = useState<string[]>([]);
   const [selectedMajor, setSelectedMajor] = useState<string>("");
@@ -51,7 +63,9 @@ export const SelectionScreen: React.FC<SelectionScreenProps> = ({ onSelect }) =>
   });
 
   const handleEnter = () => {
-    if (selectedProgram) {
+    if (onlyMajor && selectedMajor) {
+      onSelect(selectedMajor);
+    } else if (selectedProgram) {
       onSelect(selectedProgram);
     }
   };
@@ -66,11 +80,11 @@ export const SelectionScreen: React.FC<SelectionScreenProps> = ({ onSelect }) =>
 
         <div className="text-center relative z-10">
           <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-650 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <BookOpen className="h-6 w-6 text-white" />
+            {icon || <BookOpen className="h-6 w-6 text-white" />}
           </div>
-          <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">Học phần khung</h2>
+          <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">{title}</h2>
           <p className="mt-2 text-xs text-slate-400">
-            Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý đề cương & tín chỉ học tập.
+            {description}
           </p>
         </div>
 
@@ -107,34 +121,36 @@ export const SelectionScreen: React.FC<SelectionScreenProps> = ({ onSelect }) =>
             </div>
 
             {/* Program Selection */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                Chương trình đào tạo (Program)
-              </label>
-              <select
-                disabled={!selectedMajor}
-                value={selectedProgram}
-                onChange={(e) => setSelectedProgram(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <option value="">-- Chọn chương trình học --</option>
-                {/* If there are unique majors, show filtered. If none exist (empty majors), show all programs directly */}
-                {(majors.length > 0 ? filteredPrograms : programs).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.program_name} {p.version ? `(Phiên bản ${p.version})` : ""} - {p.program_code}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!onlyMajor && (
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                  Chương trình đào tạo (Program)
+                </label>
+                <select
+                  disabled={!selectedMajor}
+                  value={selectedProgram}
+                  onChange={(e) => setSelectedProgram(e.target.value)}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <option value="">-- Chọn chương trình học --</option>
+                  {/* If there are unique majors, show filtered. If none exist (empty majors), show all programs directly */}
+                  {(majors.length > 0 ? filteredPrograms : programs).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.program_name} {p.version ? `(Phiên bản ${p.version})` : ""} - {p.program_code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
               type="button"
-              disabled={!selectedProgram}
+              disabled={onlyMajor ? !selectedMajor : !selectedProgram}
               onClick={handleEnter}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-sm text-white transition-all duration-300 disabled:opacity-40 disabled:hover:bg-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20 active:scale-98 cursor-pointer font-bold"
             >
-              Truy cập Học phần khung
+              {buttonText}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>

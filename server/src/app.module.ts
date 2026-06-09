@@ -25,6 +25,7 @@ import { StudentCourseResultsModule } from './modules/student_course_results/stu
 import { StudentsModule } from './modules/students/students.module';
 import { TranscriptUploadsModule } from './modules/transcript_uploads/transcript_uploads.module';
 import { UsersModule } from './modules/users/users.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { UsersModule } from './modules/users/users.module';
     CurriculumColumnMappingsModule,
     CourseTypeMappingsModule,
     KnowledgeBlockMappingsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

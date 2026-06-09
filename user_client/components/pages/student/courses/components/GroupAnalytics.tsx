@@ -1,5 +1,9 @@
 import React from "react";
 import { CourseResult } from "./CourseTable";
+import {
+  isPeOrDefenseCourse,
+  isPrepEnglishCourse,
+} from "../../simulator/components/simulatorMath";
 
 export function GroupAnalytics({ courses }: { courses: CourseResult[] }) {
   const total = courses.length;
@@ -11,13 +15,21 @@ export function GroupAnalytics({ courses }: { courses: CourseResult[] }) {
     (s, c) => s + (Number(c.credits) || 0),
     0
   );
-  const passedCredits = passed.reduce(
+
+  // Exclude PE/Defense and prep English from passed credits and GPA
+  const validPassed = passed.filter(
+    (c) =>
+      !isPeOrDefenseCourse(c.course_code, c.course_name || "", []) &&
+      !isPrepEnglishCourse(c.course_code, c.course_name || "")
+  );
+
+  const passedCredits = validPassed.reduce(
     (s, c) => s + (Number(c.credits) || 0),
     0
   );
 
   // Weighted GPA (score_4) on passed courses with credits
-  const gpaData = passed.filter(
+  const gpaData = validPassed.filter(
     (c) => c.score_4 != null && Number(c.credits) > 0
   );
   const gpa =

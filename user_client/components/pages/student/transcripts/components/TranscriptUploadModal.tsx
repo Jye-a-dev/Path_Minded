@@ -71,7 +71,7 @@ export function TranscriptUploadModal({
             Nhập bảng điểm mới
           </h2>
           <p className="text-xs text-neutral-400 mt-1">
-            Dán dữ liệu từ cổng đào tạo ASC/Edusoft hoặc tải tệp Excel bảng điểm lên.
+            Dán dữ liệu từ cổng đào tạo online/microsoft hoặc tải tệp Excel bảng điểm lên.
           </p>
         </div>
 

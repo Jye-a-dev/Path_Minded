@@ -5,108 +5,11 @@ import { CurriculumSheetSelector } from "./CurriculumSheetSelector";
 import { CurriculumWarningList } from "./CurriculumWarningList";
 import { CurriculumPreviewTable } from "./CurriculumPreviewTable";
 import { MergeStatusAlert } from "./partials/MergeStatusAlert";
-
-interface CoursePreviewItem {
-  courseCode: string;
-  courseName: string;
-  credits: number | null;
-  theoryHours: number | null;
-  practiceHours: number | null;
-  projectHours: number | null;
-  internshipHours: number | null;
-  expectedSemester: number | null;
-  courseGroup: string | null;
-  courseType: string;
-  prerequisite: string | null;
-  corequisite: string | null;
-  organizingSemester: string | null;
-  knowledgeBlock?: string | null;
-}
-
-interface WarningItem {
-  rowNumber: number | null;
-  code: string;
-  message: string;
-  rawValue: string;
-}
-
-const MERGEABLE_FIELDS = [
-  "expectedSemester",
-  "organizingSemester",
-  "credits",
-  "theoryHours",
-  "practiceHours",
-  "projectHours",
-  "internshipHours",
-  "courseGroup",
-  "courseType",
-  "prerequisite",
-  "corequisite",
-  "knowledgeBlock",
-] as const;
-
-type MergeableField = typeof MERGEABLE_FIELDS[number];
-
-const FIELD_LABELS: Record<MergeableField, string> = {
-  expectedSemester: "Học kỳ dự kiến",
-  organizingSemester: "Học kỳ tổ chức",
-  credits: "Số tín chỉ",
-  theoryHours: "Giờ lý thuyết",
-  practiceHours: "Giờ thực hành",
-  projectHours: "Giờ đồ án",
-  internshipHours: "Giờ thực tập",
-  courseGroup: "Nhóm môn học",
-  courseType: "Loại môn học",
-  prerequisite: "Môn tiên quyết",
-  corequisite: "Môn song hành",
-  knowledgeBlock: "Khối kiến thức",
-};
-
-function isPopulated(field: string, val: unknown): boolean {
-  if (val === null || val === undefined) return false;
-  if (typeof val === "string") {
-    const trimmed = val.trim();
-    if (
-      trimmed === "" ||
-      trimmed.toLowerCase() === "null" ||
-      trimmed.toLowerCase() === "undefined" ||
-      trimmed === "-" ||
-      trimmed === "0" ||
-      trimmed.toLowerCase() === "n/a"
-    ) {
-      return false;
-    }
-    if (field === "courseType" && trimmed === "OTHER") return false;
-  }
-  if (typeof val === "number") {
-    if (isNaN(val)) return false;
-    if ((field === "expectedSemester" || field === "organizingSemester") && val <= 0) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function getColumnCompleteness(coursesList: CoursePreviewItem[], field: MergeableField): number {
-  if (coursesList.length === 0) return 0;
-  let populatedCount = 0;
-  for (const course of coursesList) {
-    if (isPopulated(field, course[field])) {
-      populatedCount++;
-    }
-  }
-  return populatedCount / coursesList.length;
-}
-
-function getMergedValue<T>(field: MergeableField, valY: T, valX: T, prioSource: boolean): T {
-  const hasY = isPopulated(field, valY);
-  const hasX = isPopulated(field, valX);
-  if (prioSource) {
-    return hasX ? valX : valY;
-  } else {
-    return hasY ? valY : valX;
-  }
-}
+import { mergeCoursesList } from "./utils/curriculumMergeUtils";
+import type {
+  CoursePreviewItem,
+  WarningItem,
+} from "./utils/curriculumMergeUtils";
 
 interface CurriculumImportPreviewProps {
   activeSessionId: string;
@@ -171,55 +74,11 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
       }
 
       const sourceCourses: CoursePreviewItem[] = response.data.preview;
-      let mergeCount = 0;
 
-      // 1. Identify which fields are more complete in sourceCourses (Sheet 2) than in courses (Sheet 1)
-      const prioritizeSourceFields: Record<string, boolean> = {};
-      const prioritizedFieldLabels: string[] = [];
-
-      MERGEABLE_FIELDS.forEach((field) => {
-        const compY = getColumnCompleteness(courses, field);
-        const compX = getColumnCompleteness(sourceCourses, field);
-        if (compX > compY) {
-          prioritizeSourceFields[field] = true;
-          prioritizedFieldLabels.push(FIELD_LABELS[field]);
-        } else {
-          prioritizeSourceFields[field] = false;
-        }
-      });
-
-      const nextCourses = courses.map((courseY) => {
-        const matchingCourseX = sourceCourses.find(
-          (courseX) =>
-            courseX.courseCode.trim().toUpperCase() ===
-            courseY.courseCode.trim().toUpperCase() &&
-            courseX.courseType === courseY.courseType
-        ) || sourceCourses.find(
-          (courseX) =>
-            courseX.courseCode.trim().toUpperCase() ===
-            courseY.courseCode.trim().toUpperCase()
-        );
-
-        if (matchingCourseX) {
-          mergeCount++;
-          return {
-            ...courseY,
-            expectedSemester: getMergedValue("expectedSemester", courseY.expectedSemester, matchingCourseX.expectedSemester, !!prioritizeSourceFields.expectedSemester),
-            organizingSemester: getMergedValue("organizingSemester", courseY.organizingSemester, matchingCourseX.organizingSemester, !!prioritizeSourceFields.organizingSemester),
-            credits: getMergedValue("credits", courseY.credits, matchingCourseX.credits, !!prioritizeSourceFields.credits),
-            theoryHours: getMergedValue("theoryHours", courseY.theoryHours, matchingCourseX.theoryHours, !!prioritizeSourceFields.theoryHours),
-            practiceHours: getMergedValue("practiceHours", courseY.practiceHours, matchingCourseX.practiceHours, !!prioritizeSourceFields.practiceHours),
-            projectHours: getMergedValue("projectHours", courseY.projectHours, matchingCourseX.projectHours, !!prioritizeSourceFields.projectHours),
-            internshipHours: getMergedValue("internshipHours", courseY.internshipHours, matchingCourseX.internshipHours, !!prioritizeSourceFields.internshipHours),
-            courseGroup: getMergedValue("courseGroup", courseY.courseGroup, matchingCourseX.courseGroup, !!prioritizeSourceFields.courseGroup),
-            courseType: getMergedValue("courseType", courseY.courseType, matchingCourseX.courseType, !!prioritizeSourceFields.courseType),
-            prerequisite: getMergedValue("prerequisite", courseY.prerequisite, matchingCourseX.prerequisite, !!prioritizeSourceFields.prerequisite),
-            corequisite: getMergedValue("corequisite", courseY.corequisite, matchingCourseX.corequisite, !!prioritizeSourceFields.corequisite),
-            knowledgeBlock: getMergedValue("knowledgeBlock", courseY.knowledgeBlock, matchingCourseX.knowledgeBlock, !!prioritizeSourceFields.knowledgeBlock),
-          };
-        }
-        return courseY;
-      });
+      const { nextCourses, mergeCount, prioritizedFieldLabels } = mergeCoursesList(
+        courses,
+        sourceCourses
+      );
 
       setCourses(nextCourses);
 
@@ -272,55 +131,15 @@ export const CurriculumImportPreview: React.FC<CurriculumImportPreviewProps> = (
 
         if (response.data?.preview && Array.isArray(response.data.preview)) {
           const sourceCourses: CoursePreviewItem[] = response.data.preview;
-          let sheetMergeCount = 0;
 
-          // Compute prioritization for this source sheet against the current accumulated courses
-          const prioritizeSourceFields: Record<string, boolean> = {};
-          MERGEABLE_FIELDS.forEach((field) => {
-            const compY = getColumnCompleteness(currentCourses, field);
-            const compX = getColumnCompleteness(sourceCourses, field);
-            if (compX > compY) {
-              prioritizeSourceFields[field] = true;
-              allPrioritizedFields.add(FIELD_LABELS[field]);
-            } else {
-              prioritizeSourceFields[field] = false;
-            }
-          });
+          const { nextCourses, mergeCount, prioritizedFieldLabels } = mergeCoursesList(
+            currentCourses,
+            sourceCourses
+          );
 
-          currentCourses = currentCourses.map((courseY) => {
-            const matchingCourseX = sourceCourses.find(
-              (courseX) =>
-                courseX.courseCode.trim().toUpperCase() ===
-                courseY.courseCode.trim().toUpperCase() &&
-                courseX.courseType === courseY.courseType
-            ) || sourceCourses.find(
-              (courseX) =>
-                courseX.courseCode.trim().toUpperCase() ===
-                courseY.courseCode.trim().toUpperCase()
-            );
-
-            if (matchingCourseX) {
-              sheetMergeCount++;
-              return {
-                ...courseY,
-                expectedSemester: getMergedValue("expectedSemester", courseY.expectedSemester, matchingCourseX.expectedSemester, !!prioritizeSourceFields.expectedSemester),
-                organizingSemester: getMergedValue("organizingSemester", courseY.organizingSemester, matchingCourseX.organizingSemester, !!prioritizeSourceFields.organizingSemester),
-                credits: getMergedValue("credits", courseY.credits, matchingCourseX.credits, !!prioritizeSourceFields.credits),
-                theoryHours: getMergedValue("theoryHours", courseY.theoryHours, matchingCourseX.theoryHours, !!prioritizeSourceFields.theoryHours),
-                practiceHours: getMergedValue("practiceHours", courseY.practiceHours, matchingCourseX.practiceHours, !!prioritizeSourceFields.practiceHours),
-                projectHours: getMergedValue("projectHours", courseY.projectHours, matchingCourseX.projectHours, !!prioritizeSourceFields.projectHours),
-                internshipHours: getMergedValue("internshipHours", courseY.internshipHours, matchingCourseX.internshipHours, !!prioritizeSourceFields.internshipHours),
-                courseGroup: getMergedValue("courseGroup", courseY.courseGroup, matchingCourseX.courseGroup, !!prioritizeSourceFields.courseGroup),
-                courseType: getMergedValue("courseType", courseY.courseType, matchingCourseX.courseType, !!prioritizeSourceFields.courseType),
-                prerequisite: getMergedValue("prerequisite", courseY.prerequisite, matchingCourseX.prerequisite, !!prioritizeSourceFields.prerequisite),
-                corequisite: getMergedValue("corequisite", courseY.corequisite, matchingCourseX.corequisite, !!prioritizeSourceFields.corequisite),
-                knowledgeBlock: getMergedValue("knowledgeBlock", courseY.knowledgeBlock, matchingCourseX.knowledgeBlock, !!prioritizeSourceFields.knowledgeBlock),
-              };
-            }
-            return courseY;
-          });
-
-          totalMerged += sheetMergeCount;
+          currentCourses = nextCourses;
+          totalMerged += mergeCount;
+          prioritizedFieldLabels.forEach((label) => allPrioritizedFields.add(label));
         }
       }
 

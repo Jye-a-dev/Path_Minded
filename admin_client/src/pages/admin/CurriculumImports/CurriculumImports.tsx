@@ -4,12 +4,13 @@ import type { ImportItem } from "../../../hooks/useCurriculumImports";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import { CurriculumImportForm } from "./CurriculumImportForm";
 import { CurriculumImportPreview } from "./CurriculumImportPreview";
 import { getCurriculumImportsColumns } from "./CurriculumImportsColumns";
 import { api } from "../../../services/api";
 import { CurriculumImportsFilters } from "./partials/CurriculumImportsFilters";
+import { SelectionScreen } from "../CurriculumCourses/SelectionScreen";
 
 interface CoursePreviewItem {
   courseCode: string;
@@ -35,6 +36,49 @@ interface WarningItem {
 }
 
 export default function CurriculumImports() {
+  const [selectedMajor, setSelectedMajor] = useState<string | null>(() => {
+    return sessionStorage.getItem("selected_curriculum_import_major_name");
+  });
+
+  const handleSelectMajor = (major: string) => {
+    setSelectedMajor(major);
+    sessionStorage.setItem("selected_curriculum_import_major_name", major);
+  };
+
+  const handleClearMajor = () => {
+    setSelectedMajor(null);
+    sessionStorage.removeItem("selected_curriculum_import_major_name");
+  };
+
+  if (!selectedMajor) {
+    return (
+      <SelectionScreen
+        onSelect={handleSelectMajor}
+        title="Nhập chương trình học"
+        description="Vui lòng chọn Ngành để bắt đầu quản lý các phiên nhập chương trình học."
+        buttonText="Truy cập Nhập chương trình học"
+        onlyMajor={true}
+      />
+    );
+  }
+
+  return (
+    <CurriculumImportsManager
+      selectedMajor={selectedMajor}
+      onBack={handleClearMajor}
+    />
+  );
+}
+
+interface CurriculumImportsManagerProps {
+  selectedMajor: string;
+  onBack: () => void;
+}
+
+export function CurriculumImportsManager({
+  selectedMajor,
+  onBack,
+}: CurriculumImportsManagerProps) {
   const {
     data,
     total,
@@ -54,7 +98,7 @@ export default function CurriculumImports() {
     confirmImport,
     cancelImport,
     changeSheet,
-  } = useCurriculumImports();
+  } = useCurriculumImports({ major_name: selectedMajor });
 
   const [modalOpen, setModalOpen] = useState(false);
   const [programsList, setProgramsList] = useState<{ id: string; program_code: string; program_name: string; major_name?: string }[]>([]);
@@ -70,6 +114,7 @@ export default function CurriculumImports() {
     };
     void fetchPrograms();
   }, []);
+
   const [isFullWidth, setIsFullWidth] = useState(true);
 
   const [previewData, setPreviewData] = useState<CoursePreviewItem[] | null>(null);
@@ -212,9 +257,19 @@ export default function CurriculumImports() {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Nhập chương trình học</h1>
-          <p className="mt-1 text-xs text-slate-400">
-            Thu thập chi tiết đề cương môn học, đăng ký các môn điều kiện và lập bản đồ bảng tính chương trình học.
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Nhập chương trình học</h1>
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer active:scale-95"
+            >
+              <ArrowLeft size={12} />
+              Đổi ngành học
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-slate-400">
+            Đang quản lý ngành học: <strong className="text-indigo-400 font-bold">{selectedMajor || "N/A"}</strong>
           </p>
         </div>
       </div>
@@ -286,6 +341,7 @@ export default function CurriculumImports() {
           <CurriculumImportForm
             onSubmit={handleSubmit}
             onCancel={handleCloseModal}
+            defaultMajor={selectedMajor}
           />
         )}
       </Modal>

@@ -13,11 +13,15 @@ interface ProgramItem {
 interface CurriculumImportFormProps {
   onSubmit: (formData: FormData) => Promise<void>;
   onCancel: () => void;
+  defaultProgramId?: string;
+  defaultMajor?: string;
 }
 
 export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
   onSubmit,
   onCancel,
+  defaultProgramId,
+  defaultMajor,
 }) => {
   const [sourceType, setSourceType] = useState<"file" | "text">("text");
   const [formProgramId, setFormProgramId] = useState("");
@@ -50,6 +54,16 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
           )
         ).sort();
         setMajors(uniqueMajors);
+
+        if (defaultProgramId) {
+          setFormProgramId(defaultProgramId);
+          const found = list.find((p) => p.id === defaultProgramId);
+          if (found && found.major_name) {
+            setSelectedMajor(found.major_name);
+          }
+        } else if (defaultMajor) {
+          setSelectedMajor(defaultMajor);
+        }
       } catch (e) {
         console.error("Failed to load education program list:", e);
       } finally {
@@ -58,7 +72,7 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
     };
 
     loadPrograms();
-  }, []);
+  }, [defaultProgramId, defaultMajor]);
 
   // Filter programs based on selected major
   const filteredPrograms = programs.filter((p) => {
@@ -129,12 +143,13 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
             <select
               value={selectedMajor}
               required
+              disabled={!!defaultProgramId || !!defaultMajor}
               onChange={(e) => {
                 setSelectedMajor(e.target.value);
                 setFormProgramId(""); // reset program when major changes
                 setSearchQuery(""); // reset search query
               }}
-              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-50"
             >
               <option className="bg-slate-900 text-slate-100" value="">-- Chọn ngành học --</option>
               {majors.map((m) => (
@@ -166,7 +181,7 @@ export const CurriculumImportForm: React.FC<CurriculumImportFormProps> = ({
               </div>
             )}
             <select
-              disabled={!selectedMajor}
+              disabled={!!defaultProgramId || !selectedMajor}
               value={formProgramId}
               required
               onChange={(e) => setFormProgramId(e.target.value)}

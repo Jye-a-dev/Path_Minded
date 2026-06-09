@@ -34,7 +34,7 @@ const studentSections = [
         icon: BookOpen,
       },
       {
-        label: "Giả lập tốt nghiệp (What-If)",
+        label: "Giả lập tốt nghiệp",
         to: "/student/simulator",
         icon: Sparkles,
       },

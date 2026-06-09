@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { api } from "../../../services/api";
 import { useSettings } from "../../../providers/SettingsContext";
 import { 
   Settings, 
@@ -6,11 +8,60 @@ import {
   RotateCcw,
   Sparkles,
   LayoutGrid,
-  Check
+  Check,
+  Mail,
+  Phone,
+  ExternalLink
 } from "lucide-react";
 
 export default function SettingsPage() {
   const { settings, updateSetting, resetSettings } = useSettings();
+
+  // System Settings State (Advisor details, training hotlines)
+  const [advisorEmail, setAdvisorEmail] = useState("");
+  const [trainingHotline, setTrainingHotline] = useState("");
+  const [ascPortalUrl, setAscPortalUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await api.get("/settings");
+        if (res.data) {
+          setAdvisorEmail(res.data.advisor_email || "");
+          setTrainingHotline(res.data.training_hotline || "");
+          setAscPortalUrl(res.data.asc_portal_url || "");
+        }
+      } catch (err) {
+        console.error("Failed to load system settings:", err);
+      }
+    };
+    void loadSettings();
+  }, []);
+
+  const handleSaveSystemSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccess(false);
+    setSaveError(null);
+    try {
+      await api.put("/settings", {
+        advisor_email: advisorEmail,
+        training_hotline: trainingHotline,
+        asc_portal_url: ascPortalUrl,
+      });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: unknown) {
+      const apiError = err as { response?: { data?: { message?: string } } };
+      console.error("Failed to save system settings:", err);
+      setSaveError(apiError.response?.data?.message || "Đã xảy ra lỗi khi lưu cấu hình.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const backgroundThemes = [
     {
@@ -186,6 +237,89 @@ export default function SettingsPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Section 3: Student Contact Config (System CRUD) */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <Settings size={16} style={{ color: "var(--primary-color)" }} />
+              3. Cấu hình thông tin liên hệ sinh viên
+            </h2>
+            <p className="text-xs text-slate-400">
+              Quản trị viên có thể thay đổi các thông tin hiển thị trên trang liên hệ Cố vấn học tập của sinh viên.
+            </p>
+
+            <form onSubmit={handleSaveSystemSettings} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Email CVHT */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Mail size={13} className="text-slate-400" />
+                    Email Phòng CNTT
+                  </label>
+                  <input
+                    type="email"
+                    value={advisorEmail}
+                    onChange={(e) => setAdvisorEmail(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-650 focus:border-indigo-500 focus:outline-none transition-colors"
+                    placeholder="e.g. cvht@vlu.edu.vn"
+                  />
+                </div>
+
+                {/* Hotline */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Phone size={13} className="text-slate-400" />
+                    Hotline Phòng CNTT
+                  </label>
+                  <input
+                    type="text"
+                    value={trainingHotline}
+                    onChange={(e) => setTrainingHotline(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-650 focus:border-indigo-500 focus:outline-none transition-colors"
+                    placeholder="e.g. (028) 7109 9221"
+                  />
+                </div>
+              </div>
+
+              {/* ASC Portal URL */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  <ExternalLink size={13} className="text-slate-400" />
+                  Cổng đào tạo online
+                </label>
+                <input
+                  type="url"
+                  value={ascPortalUrl}
+                  onChange={(e) => setAscPortalUrl(e.target.value)}
+                  required
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-2.5 text-sm text-slate-200 placeholder-slate-650 focus:border-indigo-500 focus:outline-none transition-colors"
+                  placeholder="e.g. https://asc.vlu.edu.vn"
+                />
+              </div>
+
+              {saveError && (
+                <p className="text-xs text-rose-500 font-semibold">{saveError}</p>
+              )}
+
+              <div className="flex justify-end items-center gap-3 pt-2">
+                {success && (
+                  <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                    <Check size={14} /> Lưu cấu hình thành công!
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-550 text-white px-5 py-2.5 text-xs font-bold shadow-md hover:shadow-indigo-500/10 transition-all disabled:opacity-50 cursor-pointer"
+                  style={{ backgroundColor: "var(--primary-color)" }}
+                >
+                  {loading ? "Đang lưu..." : "Lưu cấu hình hệ thống"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
