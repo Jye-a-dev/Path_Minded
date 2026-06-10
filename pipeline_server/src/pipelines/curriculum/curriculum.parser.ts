@@ -9,7 +9,10 @@ import {
   TableState,
   RawRow,
 } from './parser/curriculum-parser.types';
-import { extractRowValues, getCellString } from './parser/curriculum-parser.utils';
+import {
+  extractRowValues,
+  getCellString,
+} from './parser/curriculum-parser.utils';
 import { detectHeaders } from './header.detector';
 import { parseTableCourse } from './parser/table-course.parser';
 import * as textCourseParser from './parser/text-course.parser';
@@ -70,7 +73,9 @@ export class CurriculumParser {
         ws.eachRow((row, rowNumber) => {
           if (rowNumber > 25) return;
           const vals = extractRowValues(row);
-          const stringVals = vals.map((v) => getCellString(v).trim()).filter(Boolean);
+          const stringVals = vals
+            .map((v) => getCellString(v).trim())
+            .filter(Boolean);
           if (stringVals.length > maxStringCount) {
             const numberCount = vals.filter(
               (v) =>
