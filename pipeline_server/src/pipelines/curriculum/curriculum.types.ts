@@ -30,6 +30,9 @@ export type CurriculumParseResult = {
   warnings: CurriculumWarning[];
   sheets: string[];
   activeSheetIndex: number;
+  headersDetected?: boolean;
+  rawHeaders?: string[];
+  potentialHeaderRow?: number;
 };
 
 export type RawCurriculumInput = {

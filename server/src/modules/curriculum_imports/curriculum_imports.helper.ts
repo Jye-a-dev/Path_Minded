@@ -171,6 +171,9 @@ export async function parseCurriculumWithPipeline(
   warnings: ParseWarningItem[];
   sheets: string[];
   activeSheetIndex: number;
+  headersDetected?: boolean;
+  rawHeaders?: string[];
+  potentialHeaderRow?: number;
 }> {
   // Fetch active column mappings from database
   const mappingResult = await queryExecutor.query<{
@@ -220,7 +223,23 @@ export async function parseCurriculumWithPipeline(
     warnings?: any[];
     sheets?: string[];
     activeSheetIndex?: number;
+    headersDetected?: boolean;
+    rawHeaders?: string[];
+    potentialHeaderRow?: number;
   };
+
+  // If headers were not detected, return immediately without KB resolution
+  if (parsedData.headersDetected === false) {
+    return {
+      preview: [],
+      warnings: [],
+      sheets: parsedData.sheets ?? [],
+      activeSheetIndex: parsedData.activeSheetIndex ?? 0,
+      headersDetected: false,
+      rawHeaders: parsedData.rawHeaders ?? [],
+      potentialHeaderRow: parsedData.potentialHeaderRow,
+    };
+  }
 
   // Fetch knowledge block mappings for preview auto-resolution
   const kbMappingsResult = await queryExecutor.query<KbMappingRow>(
@@ -369,7 +388,9 @@ export async function insertCurriculumCourses(
     courseCodes.push(courseCode);
     courseNames.push((course.courseName || course.course_name || '').trim());
     creditsList.push(course.credits ?? null);
-    expectedSemesters.push(course.expectedSemester || course.expected_semester || null);
+    expectedSemesters.push(
+      course.expectedSemester || course.expected_semester || null,
+    );
     courseGroups.push(course.courseGroup || course.course_group || null);
     courseTypes.push(course.courseType || course.course_type || 'REQUIRED');
     kbResolvedList.push(kbResolved);
@@ -405,7 +426,9 @@ export async function insertCurriculumCourses(
     );
     prerequisitesList.push(course.prerequisite || null);
     corequisitesList.push(course.corequisite || null);
-    organizingSemestersList.push(course.organizingSemester || course.organizing_semester || null);
+    organizingSemestersList.push(
+      course.organizingSemester || course.organizing_semester || null,
+    );
 
     const prereqStr = course.prerequisite || null;
     if (programId && prereqStr) {

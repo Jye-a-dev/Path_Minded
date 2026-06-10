@@ -9,7 +9,7 @@ import {
   TableState,
   RawRow,
 } from './parser/curriculum-parser.types';
-import { extractRowValues } from './parser/curriculum-parser.utils';
+import { extractRowValues, getCellString } from './parser/curriculum-parser.utils';
 import { detectHeaders } from './header.detector';
 import { parseTableCourse } from './parser/table-course.parser';
 import * as textCourseParser from './parser/text-course.parser';
@@ -28,6 +28,9 @@ export class CurriculumParser {
     warnings: CurriculumWarning[];
     sheets: string[];
     activeSheetIndex: number;
+    headersDetected?: boolean;
+    rawHeaders?: string[];
+    potentialHeaderRow?: number;
   }> {
     const wb = new Workbook();
     await wb.xlsx.load(buffer);
@@ -49,6 +52,48 @@ export class CurriculumParser {
         t1: TableHeaders;
         t2: TableHeaders | null;
       } | null = null;
+
+      // Check if standard headers are found
+      let headersFound = false;
+      ws.eachRow((row) => {
+        if (headersFound) return;
+        const vals = extractRowValues(row);
+        if (detectHeaders(vals, columnMappings)) {
+          headersFound = true;
+        }
+      });
+
+      if (!headersFound) {
+        let maxStringCount = 0;
+        let rawHeaders: string[] = [];
+        let potentialHeaderRow = -1;
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber > 25) return;
+          const vals = extractRowValues(row);
+          const stringVals = vals.map((v) => getCellString(v).trim()).filter(Boolean);
+          if (stringVals.length > maxStringCount) {
+            const numberCount = vals.filter(
+              (v) =>
+                typeof v === 'number' ||
+                (typeof v === 'string' && !isNaN(Number(v)) && v.trim() !== ''),
+            ).length;
+            if (numberCount < stringVals.length * 0.5) {
+              maxStringCount = stringVals.length;
+              rawHeaders = vals.map((v) => getCellString(v).trim());
+              potentialHeaderRow = rowNumber;
+            }
+          }
+        });
+        return {
+          courses: [],
+          warnings: [],
+          sheets,
+          activeSheetIndex,
+          headersDetected: false,
+          rawHeaders,
+          potentialHeaderRow,
+        };
+      }
 
       const context = {
         t1: {

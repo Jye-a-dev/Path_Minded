@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
   OnModuleInit,
+  MessageEvent,
 } from '@nestjs/common';
 import { Pool } from 'pg';
+import { Subject, Observable } from 'rxjs';
 import { DB_PROVIDER } from '../../constants/app.constant';
 import {
   CurriculumImportsPaginationResponse,
@@ -25,8 +26,28 @@ import {
   parsePrerequisites,
 } from './curriculum_imports.helper';
 
+interface DbCourseRecord {
+  id: string;
+  program_id: string;
+  course_code: string;
+  course_name: string;
+  credits: number;
+  theory_hours: number | null;
+  practice_hours: number | null;
+  knowledge_block: string;
+}
+
+interface ConflictDetails {
+  courseCode: string;
+  dbRecord: DbCourseRecord;
+  excelRecord: ParsedCourseItem;
+  diffFields: string[];
+}
+
 @Injectable()
 export class CurriculumImportsService implements OnModuleInit {
+  private progressSubjects = new Map<string, Subject<MessageEvent>>();
+
   constructor(
     @Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool,
     private readonly courseTypeMappingsService: CourseTypeMappingsService,
@@ -35,6 +56,11 @@ export class CurriculumImportsService implements OnModuleInit {
   async onModuleInit() {
     const client = await this.pool.connect();
     try {
+      // Add parsed_json column if not exists
+      await client.query(
+        `ALTER TABLE curriculum_imports ADD COLUMN IF NOT EXISTS parsed_json JSONB;`,
+      );
+
       // Skip migration if course_prerequisites already has data (one-off migration)
       const existingCount = await client.query<{ count: string }>(
         `SELECT COUNT(*) AS count FROM course_prerequisites`,
@@ -97,6 +123,15 @@ export class CurriculumImportsService implements OnModuleInit {
     }
   }
 
+  getProgressStream(id: string): Observable<MessageEvent> {
+    let subject = this.progressSubjects.get(id);
+    if (!subject) {
+      subject = new Subject<MessageEvent>();
+      this.progressSubjects.set(id, subject);
+    }
+    return subject.asObservable();
+  }
+
   async create(
     payload: Record<string, unknown>,
     file?: Express.Multer.File,
@@ -113,43 +148,26 @@ export class CurriculumImportsService implements OnModuleInit {
     );
     const importRecord = insertResult.rows[0];
 
-    const courseTypeMappingConfig =
-      await this.courseTypeMappingsService.getMappingConfig();
+    // Initialize the Subject for SSE
+    const subject = new Subject<MessageEvent>();
+    this.progressSubjects.set(importRecord.id, subject);
 
-    try {
-      const parsed = await parseCurriculumWithPipeline(
-        this.pool,
-        courseTypeMappingConfig,
-        {
-          file: file
-            ? {
-                buffer: file.buffer,
-                originalname: file.originalname,
-                mimetype: file.mimetype,
-              }
-            : null,
-          textContent: (payload.textContent as string) || null,
-        },
-      );
+    // Run background parser
+    const textContent = (payload.textContent as string) || null;
+    const mimetype = file ? file.mimetype : 'text/plain';
+    void this.processImportInBackground(
+      importRecord.id,
+      programId,
+      fileBuffer
+        ? { buffer: fileBuffer, originalname: fileName, mimetype }
+        : null,
+      textContent,
+      0,
+    );
 
-      await saveParseWarnings(this.pool, importRecord.id, parsed.warnings);
-
-      return {
-        importSession: importRecord,
-        preview: parsed.preview,
-        warnings: parsed.warnings,
-        sheets: parsed.sheets,
-        activeSheetIndex: parsed.activeSheetIndex,
-      };
-    } catch (error: any) {
-      await this.pool.query(
-        `UPDATE curriculum_imports SET import_status = 'FAILED', import_error = $1 WHERE id = $2`,
-        [error.message || 'Unknown error', importRecord.id],
-      );
-      throw new BadRequestException(
-        'Failed to process with pipeline server: ' + error.message,
-      );
-    }
+    return {
+      importSession: importRecord,
+    };
   }
 
   async reparse(id: string, payload: Record<string, unknown>): Promise<any> {
@@ -177,37 +195,248 @@ export class CurriculumImportsService implements OnModuleInit {
       );
     }
 
+    // Reset the Subject for SSE progress tracking
+    const subject = new Subject<MessageEvent>();
+    this.progressSubjects.set(id, subject);
+
+    // Run background parser
+    void this.processImportInBackground(
+      id,
+      importRecord.program_id,
+      {
+        buffer: fileBuffer,
+        originalname: importRecord.file_name,
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      null,
+      sheetIndex,
+    );
+
+    return {
+      importSession: importRecord,
+    };
+  }
+
+  private async processImportInBackground(
+    id: string,
+    programId: string | null,
+    file: {
+      buffer: Buffer | null;
+      originalname: string;
+      mimetype: string;
+    } | null,
+    textContent: string | null,
+    sheetIndex = 0,
+  ) {
+    // Artificial delay to allow client to open SSE connection
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const subject = this.progressSubjects.get(id);
+    const emit = (data: Record<string, unknown>) => {
+      if (subject) {
+        subject.next({ data: JSON.stringify(data) });
+      }
+    };
+
+    emit({ type: 'info', message: 'Khởi động cơ chế phân tích cú pháp...' });
+
     const courseTypeMappingConfig =
-      await this.courseTypeMappingsService.getMappingConfig();
+      (await this.courseTypeMappingsService.getMappingConfig()) as Record<
+        string,
+        unknown
+      >;
 
     try {
+      emit({
+        type: 'info',
+        message: 'Đang chuyển tệp đến bộ bóc tách chuyên dụng...',
+      });
+
       const parsed = await parseCurriculumWithPipeline(
         this.pool,
         courseTypeMappingConfig,
         {
-          file: {
-            buffer: fileBuffer,
-            originalname: importRecord.file_name,
-            mimetype:
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          },
+          file:
+            file && file.buffer
+              ? {
+                  buffer: file.buffer,
+                  originalname: file.originalname,
+                  mimetype: file.mimetype,
+                }
+              : null,
+          textContent,
           sheetIndex,
         },
       );
 
+      // Check header detection failure
+      if (parsed.headersDetected === false) {
+        emit({
+          type: 'unresolved_headers',
+          message:
+            'Không tìm thấy cấu trúc tiêu đề cột chuẩn. Cần khớp cột thủ công.',
+          rawHeaders: parsed.rawHeaders,
+          potentialHeaderRow: parsed.potentialHeaderRow,
+          sheets: parsed.sheets,
+          activeSheetIndex: parsed.activeSheetIndex,
+        });
+
+        // Save status in DB
+        await this.pool.query(
+          `UPDATE curriculum_imports SET parsed_json = $1 WHERE id = $2`,
+          [JSON.stringify(parsed), id],
+        );
+
+        if (subject) {
+          subject.complete();
+          this.progressSubjects.delete(id);
+        }
+        return;
+      }
+
+      emit({
+        type: 'info',
+        message: `Đã phát hiện tiêu đề cột thành công. Bắt đầu đối soát dữ liệu với CSDL (Tổng số: ${parsed.preview.length} học phần)...`,
+      });
+
+      const conflicts: any[] = [];
+      const courses = parsed.preview;
+
+      for (let i = 0; i < courses.length; i++) {
+        const course = courses[i];
+        const courseCode = course.courseCode || course.course_code;
+
+        if (!courseCode) continue;
+
+        // Query database to check for conflicts using the exact composite PK
+        const courseType =
+          course.courseType || course.course_type || 'REQUIRED';
+        const dbResult = await this.pool.query<DbCourseRecord>(
+          `SELECT * FROM curriculum_courses WHERE program_id = $1 AND course_code = $2 AND course_type = $3::course_type`,
+          [programId, courseCode, courseType],
+        );
+
+        let hasConflict = false;
+        let conflictDetails: ConflictDetails | null = null;
+
+        if (dbResult.rows.length > 0) {
+          const dbRecord = dbResult.rows[0];
+          const diffFields: string[] = [];
+
+          // Compare fields
+          if (
+            course.courseName &&
+            dbRecord.course_name &&
+            course.courseName.trim().toLowerCase() !==
+              dbRecord.course_name.trim().toLowerCase()
+          ) {
+            diffFields.push('courseName');
+          }
+          if (
+            course.credits != null &&
+            dbRecord.credits != null &&
+            Number(course.credits) !== Number(dbRecord.credits)
+          ) {
+            diffFields.push('credits');
+          }
+          if (
+            course.theoryHours != null &&
+            dbRecord.theory_hours != null &&
+            Number(course.theoryHours) !== Number(dbRecord.theory_hours)
+          ) {
+            diffFields.push('theoryHours');
+          }
+          if (
+            course.practiceHours != null &&
+            dbRecord.practice_hours != null &&
+            Number(course.practiceHours) !== Number(dbRecord.practice_hours)
+          ) {
+            diffFields.push('practiceHours');
+          }
+          if (
+            course.knowledgeBlock &&
+            dbRecord.knowledge_block &&
+            course.knowledgeBlock !== dbRecord.knowledge_block
+          ) {
+            diffFields.push('knowledgeBlock');
+          }
+
+          if (diffFields.length > 0) {
+            hasConflict = true;
+            conflictDetails = {
+              courseCode,
+              dbRecord,
+              excelRecord: course,
+              diffFields,
+            };
+            conflicts.push(conflictDetails);
+          }
+        }
+
+        // Artificial delay for visual processing stream
+        await new Promise((r) => setTimeout(r, 20));
+
+        if (hasConflict && conflictDetails) {
+          emit({
+            type: 'progress',
+            current: i + 1,
+            total: courses.length,
+            message: `⚠️ Phát hiện xung đột tại học phần ${courseCode}: lệch cột [${conflictDetails.diffFields.join(', ')}]`,
+            conflict: conflictDetails,
+          });
+        } else {
+          emit({
+            type: 'progress',
+            current: i + 1,
+            total: courses.length,
+            message: `✓ Kiểm tra học phần ${courseCode}: Đạt chuẩn, sẵn sàng import.`,
+          });
+        }
+      }
+
       await saveParseWarnings(this.pool, id, parsed.warnings, true);
 
-      return {
-        importSession: importRecord,
+      // Save completed results to CSDL
+      const parsedJsonData = {
         preview: parsed.preview,
         warnings: parsed.warnings,
         sheets: parsed.sheets,
         activeSheetIndex: parsed.activeSheetIndex,
+        conflicts,
       };
-    } catch (error: any) {
-      throw new BadRequestException(
-        'Failed to reparse with pipeline server: ' + error.message,
+
+      await this.pool.query(
+        `UPDATE curriculum_imports SET parsed_json = $1 WHERE id = $2`,
+        [JSON.stringify(parsedJsonData), id],
       );
+
+      emit({
+        type: 'completed',
+        message: 'Bóc tách và đối soát hoàn tất!',
+        preview: parsed.preview,
+        warnings: parsed.warnings,
+        sheets: parsed.sheets,
+        activeSheetIndex: parsed.activeSheetIndex,
+        conflicts,
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Lỗi không xác định';
+      emit({
+        type: 'error',
+        message: `Lỗi trong quá trình xử lý: ${message}`,
+      });
+
+      await this.pool.query(
+        `UPDATE curriculum_imports SET import_status = 'FAILED', import_error = $1 WHERE id = $2`,
+        [message, id],
+      );
+    } finally {
+      if (subject) {
+        subject.complete();
+        this.progressSubjects.delete(id);
+      }
     }
   }
 
@@ -253,10 +482,11 @@ export class CurriculumImportsService implements OnModuleInit {
 
       await client.query('COMMIT');
       return { message: 'Curriculum imported successfully' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       await client.query('ROLLBACK');
+      const message = error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(
-        'Failed to confirm curriculum import: ' + error.message,
+        'Failed to confirm curriculum import: ' + message,
       );
     } finally {
       client.release();

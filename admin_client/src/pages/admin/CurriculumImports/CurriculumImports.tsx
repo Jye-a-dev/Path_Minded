@@ -11,8 +11,12 @@ import { getCurriculumImportsColumns } from "./CurriculumImportsColumns";
 import { api } from "../../../services/api";
 import { CurriculumImportsFilters } from "./partials/CurriculumImportsFilters";
 import { SelectionScreen } from "../CurriculumCourses/SelectionScreen";
+import { RealtimeStreamConsole } from "./RealtimeStreamConsole";
+import { DynamicSchemaResolver } from "./DynamicSchemaResolver";
+import { ConflictResolutionCenter } from "./ConflictResolutionCenter";
+import type { ConflictItem } from "./ConflictResolutionCenter";
 
-interface CoursePreviewItem {
+export interface CoursePreviewItem {
   courseCode: string;
   courseName: string;
   credits: number | null;
@@ -26,9 +30,10 @@ interface CoursePreviewItem {
   prerequisite: string | null;
   corequisite: string | null;
   organizingSemester: string | null;
+  knowledgeBlock?: string | null;
 }
 
-interface WarningItem {
+export interface WarningItem {
   rowNumber: number | null;
   code: string;
   message: string;
@@ -117,6 +122,10 @@ export function CurriculumImportsManager({
 
   const [isFullWidth, setIsFullWidth] = useState(true);
 
+  const [importPhase, setImportPhase] = useState<"form" | "streaming" | "mapping" | "conflict_resolution" | "preview">("form");
+  const [rawHeaders, setRawHeaders] = useState<string[]>([]);
+  const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+
   const [previewData, setPreviewData] = useState<CoursePreviewItem[] | null>(null);
   const [previewWarnings, setPreviewWarnings] = useState<WarningItem[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -134,7 +143,7 @@ export function CurriculumImportsManager({
     isOpen: false,
     title: "",
     message: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const showNotification = (title: string, message: string, isDanger = false) => {
@@ -145,12 +154,13 @@ export function CurriculumImportsManager({
       confirmText: "Đóng",
       cancelText: null,
       isDanger,
-      onConfirm: () => {},
+      onConfirm: () => { },
     });
   };
 
   const handleOpenCreate = () => {
     setModalOpen(true);
+    setImportPhase("form");
   };
 
   const handleCloseModal = () => {
@@ -160,17 +170,17 @@ export function CurriculumImportsManager({
     setActiveSessionId(null);
     setSheetsList([]);
     setActiveSheetIndex(0);
+    setImportPhase("form");
+    setRawHeaders([]);
+    setConflicts([]);
   };
 
   const handleSubmit = async (formData: FormData) => {
     try {
       const data = await startImport(formData);
-      if (data) {
-        setPreviewData(data.preview ?? []);
-        setPreviewWarnings(data.warnings ?? []);
-        setActiveSessionId(data.importSession?.id ?? null);
-        setSheetsList(data.sheets ?? []);
-        setActiveSheetIndex(data.activeSheetIndex ?? 0);
+      if (data && data.importSession) {
+        setActiveSessionId(data.importSession.id);
+        setImportPhase("streaming");
       }
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
@@ -204,13 +214,8 @@ export function CurriculumImportsManager({
   const handleSheetChange = async (idx: number) => {
     if (!activeSessionId) return;
     try {
-      const data = await changeSheet(activeSessionId, idx);
-      if (data) {
-        setPreviewData(data.preview ?? []);
-        setPreviewWarnings(data.warnings ?? []);
-        setSheetsList(data.sheets ?? []);
-        setActiveSheetIndex(data.activeSheetIndex ?? 0);
-      }
+      await changeSheet(activeSessionId, idx);
+      setImportPhase("streaming");
     } catch (err) {
       const errObj = err as { response?: { data?: { message?: string } }; message?: string };
       showNotification("Lỗi", errObj.response?.data?.message || errObj.message || "Chuyển đổi trang tính thất bại.", true);
@@ -243,7 +248,7 @@ export function CurriculumImportsManager({
             confirmText: "Đóng",
             cancelText: null,
             isDanger: true,
-            onConfirm: () => {},
+            onConfirm: () => { },
           });
         }
       },
@@ -317,13 +322,25 @@ export function CurriculumImportsManager({
         isOpen={modalOpen}
         onClose={handleCloseModal}
         title={
-          previewData
+          importPhase === "preview"
             ? "Xem trước cấu trúc Chương trình đào tạo học phần"
-            : "Bắt đầu phiên nhập chương trình học mới"
+            : importPhase === "streaming"
+              ? "Đang phân tích dữ liệu & đối soát..."
+              : importPhase === "mapping"
+                ? "Ánh xạ Lược đồ cột Excel (Schema Resolver)"
+                : importPhase === "conflict_resolution"
+                  ? "Giải quyết Xung đột Dữ liệu (Conflict Resolution)"
+                  : "Bắt đầu phiên nhập chương trình học mới"
         }
-        size={previewData ? (isFullWidth ? "full" : "3xl") : "lg"}
+        size={
+          importPhase === "preview"
+            ? (isFullWidth ? "full" : "3xl")
+            : importPhase === "conflict_resolution" || importPhase === "mapping"
+              ? "2xl"
+              : "lg"
+        }
       >
-        {previewData ? (
+        {importPhase === "preview" && previewData ? (
           <CurriculumImportPreview
             key={`${activeSessionId}-${activeSheetIndex}`}
             activeSessionId={activeSessionId!}
@@ -336,6 +353,106 @@ export function CurriculumImportsManager({
             onSheetChange={handleSheetChange}
             isFullWidth={isFullWidth}
             onToggleFullWidth={() => setIsFullWidth(!isFullWidth)}
+          />
+        ) : importPhase === "streaming" && activeSessionId ? (
+          <RealtimeStreamConsole
+            importSessionId={activeSessionId}
+            onUnresolvedHeaders={(data) => {
+              setRawHeaders(data.rawHeaders);
+              setSheetsList(data.sheets);
+              setActiveSheetIndex(data.activeSheetIndex);
+              setImportPhase("mapping");
+            }}
+            onComplete={(data) => {
+              setPreviewData(data.preview);
+              setPreviewWarnings(data.warnings);
+              setSheetsList(data.sheets);
+              setActiveSheetIndex(data.activeSheetIndex);
+              setConflicts(data.conflicts);
+              if (data.conflicts && data.conflicts.length > 0) {
+                setImportPhase("conflict_resolution");
+              } else {
+                setImportPhase("preview");
+              }
+            }}
+            onCancel={handleCancelPreview}
+          />
+        ) : importPhase === "mapping" && activeSessionId ? (
+          <DynamicSchemaResolver
+            importSessionId={activeSessionId}
+            rawHeaders={rawHeaders}
+            sheets={sheetsList}
+            activeSheetIndex={activeSheetIndex}
+            onSuccess={async () => {
+              try {
+                await changeSheet(activeSessionId, 0);
+                setImportPhase("streaming");
+              } catch (e) {
+                console.error("Failed to reparse", e);
+                showNotification("Lỗi", "Không thể chạy lại luồng phân tích.", true);
+              }
+            }}
+            onCancel={handleCancelPreview}
+          />
+        ) : importPhase === "conflict_resolution" && activeSessionId ? (
+          <ConflictResolutionCenter
+            conflicts={conflicts}
+            onCancel={handleCancelPreview}
+            onResolve={(resolutions, customEdits = {}) => {
+              const updatedCourses: CoursePreviewItem[] = [];
+
+              for (const course of (previewData || [])) {
+                const code = course.courseCode || ((course as unknown as Record<string, unknown>).course_code as string);
+                const resolution = resolutions[code];
+                const conflict = conflicts.find((c) => c.courseCode === code);
+
+                if (!resolution || !conflict) {
+                  updatedCourses.push(course);
+                  continue;
+                }
+
+                if (resolution === "db") {
+                  // Giữ nguyên dữ liệu CSDL
+                  updatedCourses.push({
+                    ...course,
+                    courseName: conflict.dbRecord.course_name,
+                    credits: conflict.dbRecord.credits,
+                    theoryHours: conflict.dbRecord.theory_hours,
+                    practiceHours: conflict.dbRecord.practice_hours,
+                    knowledgeBlock: conflict.dbRecord.knowledge_block,
+                  });
+                } else if (resolution === "custom" && customEdits[code]) {
+                  const edit = customEdits[code];
+                  const newCourseCode = edit.courseCode || code;
+
+                  if (newCourseCode !== code) {
+                    // Versioning: Giữ lại bản ghi cũ (giữ nguyên), thêm môn học mới với mã đã đổi
+                    updatedCourses.push(course); // Môn cũ giữ nguyên
+                    updatedCourses.push({
+                      ...course,
+                      courseCode: newCourseCode,
+                      courseName: edit.courseName ?? course.courseName,
+                      credits: edit.credits ?? course.credits,
+                      theoryHours: edit.theoryHours ?? course.theoryHours,
+                      practiceHours: edit.practiceHours ?? course.practiceHours,
+                      knowledgeBlock: edit.knowledgeBlock ?? course.knowledgeBlock,
+                    });
+                  } else {
+                    // Tùy biến thuần túy (không đổi mã môn)
+                    updatedCourses.push({
+                      ...course,
+                      ...edit,
+                      courseCode: newCourseCode,
+                    });
+                  }
+                } else {
+                  // Ghi đè bằng dữ liệu Excel mới (mặc định)
+                  updatedCourses.push(course);
+                }
+              }
+              setPreviewData(updatedCourses);
+              setImportPhase("preview");
+            }}
           />
         ) : (
           <CurriculumImportForm

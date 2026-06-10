@@ -9,8 +9,11 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  Sse,
+  MessageEvent,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Observable } from 'rxjs';
 import {
   ApiBody,
   ApiOkResponse,
@@ -31,6 +34,12 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @Controller('curriculum_imports')
 export class CurriculumImportsController {
   constructor(private readonly service: CurriculumImportsService) {}
+
+  @ApiOperation({ summary: 'Get curriculum import progress stream (SSE)' })
+  @Sse(':id/progress')
+  progress(@Param('id') id: string): Observable<MessageEvent> {
+    return this.service.getProgressStream(id);
+  }
 
   @ApiOperation({ summary: 'Import curriculum Excel (create import session)' })
   @ApiConsumes('multipart/form-data', 'application/json')

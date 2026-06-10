@@ -36,6 +36,9 @@ export class CurriculumPipeline {
       warnings: CurriculumWarning[];
       sheets?: string[];
       activeSheetIndex?: number;
+      headersDetected?: boolean;
+      rawHeaders?: string[];
+      potentialHeaderRow?: number;
     };
 
     if (input.fileBuffer) {
@@ -57,7 +60,27 @@ export class CurriculumPipeline {
       warnings: parseWarnings,
       sheets = [],
       activeSheetIndex = 0,
+      headersDetected,
+      rawHeaders,
+      potentialHeaderRow,
     } = parsedResult;
+
+    // Early return when standard headers were not found — skip validator entirely
+    if (headersDetected === false) {
+      this.logger.warn(
+        'Standard column headers not detected — returning raw headers for manual mapping',
+      );
+      return {
+        preview: [],
+        warnings: [],
+        sheets,
+        activeSheetIndex,
+        headersDetected: false,
+        rawHeaders,
+        potentialHeaderRow,
+      };
+    }
+
     this.logger.log(`Parsed ${courses.length} courses from curriculum input`);
 
     // Validate parsed courses
@@ -68,6 +91,9 @@ export class CurriculumPipeline {
       warnings: [...parseWarnings, ...validationWarnings],
       sheets,
       activeSheetIndex,
+      headersDetected,
+      rawHeaders,
+      potentialHeaderRow,
     };
   }
 }

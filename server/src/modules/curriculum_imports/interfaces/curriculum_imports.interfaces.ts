@@ -9,6 +9,7 @@ export type CurriculumImportEntity = {
   import_error: string | null;
   uploaded_at: Date;
   processed_at: Date | null;
+  parsed_json?: any;
 };
 
 export type CurriculumImportResponse = CurriculumImportEntity;
