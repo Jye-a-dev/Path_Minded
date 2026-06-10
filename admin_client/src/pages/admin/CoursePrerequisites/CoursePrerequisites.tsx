@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
 import { useCoursePrerequisites } from "../../../hooks/useCoursePrerequisites";
 import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -9,9 +10,7 @@ import { api } from "../../../services/api";
 import { CoursePrerequisitesFilters } from "./partials/CoursePrerequisitesFilters";
 
 export default function CoursePrerequisites() {
-  const [initialProgramId] = useState(() => {
-    return sessionStorage.getItem("selected_prerequisites_program_id") || "";
-  });
+  const [persistedProgramId, setPersistedProgramId] = useReloadPersistentState("selected_prerequisites_program_id", "");
 
   const {
     data,
@@ -31,11 +30,17 @@ export default function CoursePrerequisites() {
     updateItem,
     deleteItem,
   } = useCoursePrerequisites(
-    { program_id: initialProgramId || undefined },
+    { program_id: persistedProgramId || undefined },
     {
       skip: (f) => !f.program_id,
     }
   );
+
+  useEffect(() => {
+    if (persistedProgramId) {
+      updateFilters({ program_id: persistedProgramId });
+    }
+  }, [persistedProgramId, updateFilters]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PrerequisiteItem | null>(null);
@@ -189,13 +194,13 @@ export default function CoursePrerequisites() {
 
   const handleEnter = () => {
     if (selectedProgram) {
-      sessionStorage.setItem("selected_prerequisites_program_id", selectedProgram);
+      setPersistedProgramId(selectedProgram);
       updateFilters({ program_id: selectedProgram });
     }
   };
 
   const handleClearProgram = () => {
-    sessionStorage.removeItem("selected_prerequisites_program_id");
+    setPersistedProgramId("");
     updateFilters({ program_id: undefined });
     setSelectedProgram("");
     setSelectedMajor("");

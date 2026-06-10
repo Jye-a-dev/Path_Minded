@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
 import { useAdvisors } from "../../../hooks/useAdvisors";
 import type { AdvisorItem } from "../../../hooks/useAdvisors";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -8,9 +9,7 @@ import { Plus, Edit2, Trash2, Briefcase, Link2, X, ArrowRight, RefreshCw } from 
 import { api } from "../../../services/api";
 
 export default function Advisors() {
-  const [initialDepartment] = useState(() => {
-    return sessionStorage.getItem("selected_advisors_department") || "";
-  });
+  const [persistedDepartment, setPersistedDepartment] = useReloadPersistentState("selected_advisors_department", "");
 
   const {
     data,
@@ -30,12 +29,18 @@ export default function Advisors() {
     deleteItem,
   } = useAdvisors(
     {
-      department: initialDepartment || undefined,
+      department: persistedDepartment || undefined,
     },
     {
       skip: (f) => !f.department,
     }
   );
+
+  useEffect(() => {
+    if (persistedDepartment) {
+      updateFilters({ department: persistedDepartment });
+    }
+  }, [persistedDepartment, updateFilters]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<AdvisorItem | null>(null);
@@ -69,7 +74,7 @@ export default function Advisors() {
 
   const handleEnter = () => {
     if (selectedDept) {
-      sessionStorage.setItem("selected_advisors_department", selectedDept);
+      setPersistedDepartment(selectedDept);
       updateFilters({
         department: selectedDept,
       });
@@ -77,7 +82,7 @@ export default function Advisors() {
   };
 
   const handleClearSelection = () => {
-    sessionStorage.removeItem("selected_advisors_department");
+    setPersistedDepartment("");
     updateFilters({
       department: undefined,
     });

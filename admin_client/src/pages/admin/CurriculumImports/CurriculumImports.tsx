@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
 import { useCurriculumImports } from "../../../hooks/useCurriculumImports";
 import type { ImportItem } from "../../../hooks/useCurriculumImports";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -41,18 +42,17 @@ export interface WarningItem {
 }
 
 export default function CurriculumImports() {
-  const [selectedMajor, setSelectedMajor] = useState<string | null>(() => {
-    return sessionStorage.getItem("selected_curriculum_import_major_name");
-  });
+  const [selectedMajor, setSelectedMajor] = useReloadPersistentState<string | null>(
+    "selected_curriculum_import_major_name",
+    null
+  );
 
   const handleSelectMajor = (major: string) => {
     setSelectedMajor(major);
-    sessionStorage.setItem("selected_curriculum_import_major_name", major);
   };
 
   const handleClearMajor = () => {
     setSelectedMajor(null);
-    sessionStorage.removeItem("selected_curriculum_import_major_name");
   };
 
   if (!selectedMajor) {

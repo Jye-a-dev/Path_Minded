@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
 import { Sparkles, Info, Loader2, Zap } from "lucide-react";
+import { useReloadPersistentState } from "@/hooks/useReloadPersistentState";
 
 import { SimulatorStats } from "./components/SimulatorStats";
 import { GpaProjectionTab } from "./components/GpaProjectionTab";
@@ -35,17 +36,17 @@ export default function GraduationSimulatorPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<"projection" | "delay">("projection");
+  const [activeTab, setActiveTab] = useReloadPersistentState<"projection" | "delay">("student_simulator_activeTab", "projection");
 
   // Simulation Projection States
-  const [targetGpa, setTargetGpa] = useState<number>(3.2);
-  const [mockGrades, setMockGrades] = useState<Record<string, string>>({}); // course_code -> letter_grade
-  const [nextSemesterGpa, setNextSemesterGpa] = useState<string>("");
+  const [targetGpa, setTargetGpa] = useReloadPersistentState<number>("student_simulator_targetGpa", 3.2);
+  const [mockGrades, setMockGrades] = useReloadPersistentState<Record<string, string>>("student_simulator_mockGrades", {}); // course_code -> letter_grade
+  const [nextSemesterGpa, setNextSemesterGpa] = useReloadPersistentState<string>("student_simulator_nextSemesterGpa", "");
 
   // Delay Simulation States
-  const [selectedCourseToFail, setSelectedCourseToFail] = useState<string>("");
-  const [retakeDelaySemesters, setRetakeDelaySemesters] = useState<number>(2); // Default to 2 semesters
-  const [isDelaySimulated, setIsDelaySimulated] = useState(false);
+  const [selectedCourseToFail, setSelectedCourseToFail] = useReloadPersistentState<string>("student_simulator_selectedCourseToFail", "");
+  const [retakeDelaySemesters, setRetakeDelaySemesters] = useReloadPersistentState<number>("student_simulator_retakeDelaySemesters", 2); // Default to 2 semesters
+  const [isDelaySimulated, setIsDelaySimulated] = useReloadPersistentState<boolean>("student_simulator_isDelaySimulated", false);
 
   // Load Initial Data
   useEffect(() => {

@@ -5,48 +5,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
 import {
   Users,
-  GraduationCap,
   Plus,
-  Edit2,
-  Trash2,
   Search,
   Loader2,
-  X,
   Filter,
-  CheckCircle2,
   AlertCircle,
   UserCheck
 } from "lucide-react";
 
-interface StudentItem {
-  id: string;
-  student_code: string;
-  full_name: string;
-  class_id?: string | null;
-  program_id?: string | null;
-  cohort_year?: number | null;
-  status: "ACTIVE" | "GRADUATED" | "DROPPED";
-  user_id?: string | null;
-}
-
-interface ClassItem {
-  id: string;
-  class_code: string;
-  class_name: string | null;
-  advisor_id: string | null;
-}
-
-interface ProgramItem {
-  id: string;
-  program_code: string;
-  program_name: string;
-}
-
-interface UserAccount {
-  id: string;
-  email: string;
-  role: string;
-}
+import StudentModal, { StudentItem, ClassItem, ProgramItem, UserAccount } from "./components/StudentModal";
+import SyncConfirmModal from "./components/SyncConfirmModal";
+import DeleteConfirmModal from "./components/DeleteConfirmModal";
+import NotificationModal, { NotificationItem } from "./components/NotificationModal";
+import StudentsTable from "./components/StudentsTable";
 
 interface Advisor {
   id: string;
@@ -73,26 +44,12 @@ export default function AdvisorStudentsPage() {
   const [saving, setSaving] = useState(false);
   const [showSyncConfirm, setShowSyncConfirm] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentItem | null>(null);
-  const [notification, setNotification] = useState<{
-    type: "success" | "error" | "info";
-    title: string;
-    message: string;
-  } | null>(null);
-
-  // Form states
-  const [studentCode, setStudentCode] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [classId, setClassId] = useState("");
-  const [programId, setProgramId] = useState("");
-  const [cohortYear, setCohortYear] = useState("");
-  const [status, setStatus] = useState<"ACTIVE" | "GRADUATED" | "DROPPED">("ACTIVE");
-  const [userId, setUserId] = useState("");
+  const [notification, setNotification] = useState<NotificationItem | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Fetch current advisor profile
       const advRes = await api.get(`/advisors?user_id=${user.id}`);
       let advisorRec: Advisor | null = null;
       if (advRes.data && advRes.data.length > 0) {
@@ -101,23 +58,19 @@ export default function AdvisorStudentsPage() {
       }
 
       if (advisorRec) {
-        // 2. Fetch only classes managed by this advisor
         const classesRes = await api.get(`/classes?advisor_id=${advisorRec.id}&limit=500`);
         const myClasses: ClassItem[] = classesRes.data || [];
         setClasses(myClasses);
         const myClassIds = new Set(myClasses.map((c) => c.id));
 
-        // 3. Fetch programs
         const programsRes = await api.get("/programs?limit=250");
         setPrograms(programsRes.data || []);
 
-        // 4. Fetch students and filter to only include those in my classes
         const studentsRes = await api.get("/students?limit=1000");
         const allStudents: StudentItem[] = studentsRes.data || [];
         const myStudents = allStudents.filter((s) => s.class_id && myClassIds.has(s.class_id));
         setStudents(myStudents);
 
-        // 5. Fetch student user accounts for linking
         try {
           const usersRes = await api.get("/users?role=STUDENT&limit=1000");
           setUsersList(usersRes.data || []);
@@ -137,7 +90,10 @@ export default function AdvisorStudentsPage() {
   }, [user]);
 
   useEffect(() => {
-    void fetchData();
+    const timer = setTimeout(() => {
+      void fetchData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchData]);
 
   const handleOpenCreate = () => {
@@ -150,53 +106,27 @@ export default function AdvisorStudentsPage() {
       return;
     }
     setEditingItem(null);
-    setStudentCode("");
-    setFullName("");
-    setClassId(classes[0]?.id || "");
-    setProgramId(programs[0]?.id || "");
-    setCohortYear(new Date().getFullYear().toString());
-    setStatus("ACTIVE");
-    setUserId("");
     setFormError("");
     setModalOpen(true);
   };
 
   const handleOpenEdit = (item: StudentItem) => {
     setEditingItem(item);
-    setStudentCode(item.student_code);
-    setFullName(item.full_name);
-    setClassId(item.class_id || "");
-    setProgramId(item.program_id || "");
-    setCohortYear(item.cohort_year?.toString() || "");
-    setStatus(item.status);
-    setUserId(item.user_id || "");
     setFormError("");
     setModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!studentCode.trim() || !fullName.trim()) {
-      setFormError("Vui lòng điền đầy đủ các trường bắt buộc");
-      return;
-    }
-    if (!classId) {
-      setFormError("Vui lòng chọn Lớp học");
-      return;
-    }
-
+  const handleSave = async (payload: {
+    student_code: string;
+    full_name: string;
+    class_id: string;
+    program_id: string | null;
+    cohort_year: number | null;
+    status: "ACTIVE" | "GRADUATED" | "DROPPED";
+    user_id: string | null;
+  }) => {
     setSaving(true);
     setFormError("");
-
-    const payload = {
-      student_code: studentCode.trim().toUpperCase(),
-      full_name: fullName.trim(),
-      class_id: classId,
-      program_id: programId || null,
-      cohort_year: cohortYear ? Number(cohortYear) : null,
-      status,
-      user_id: userId || null
-    };
 
     try {
       if (editingItem) {
@@ -205,6 +135,7 @@ export default function AdvisorStudentsPage() {
         await api.post("/students", payload);
       }
       setModalOpen(false);
+      
       // Reload students
       if (currentAdvisor) {
         const myClassIds = new Set(classes.map((c) => c.id));
@@ -213,8 +144,9 @@ export default function AdvisorStudentsPage() {
         const myStudents = allStudents.filter((s) => s.class_id && myClassIds.has(s.class_id));
         setStudents(myStudents);
       }
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || "Lỗi lưu thông tin sinh viên");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setFormError(error.response?.data?.message || "Lỗi lưu thông tin sinh viên");
     } finally {
       setSaving(false);
     }
@@ -232,12 +164,13 @@ export default function AdvisorStudentsPage() {
         title: "Xóa thành công",
         message: "Hồ sơ sinh viên đã được xóa vĩnh viễn khỏi hệ thống."
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       setDeletingStudent(null);
       setNotification({
         type: "error",
         title: "Lỗi xóa sinh viên",
-        message: err.response?.data?.message || "Không thể xóa sinh viên này"
+        message: error.response?.data?.message || "Không thể xóa sinh viên này"
       });
     }
   };
@@ -248,7 +181,6 @@ export default function AdvisorStudentsPage() {
     setLoading(true);
     try {
       let syncedCount = 0;
-      // Sync for each class managed by the advisor
       for (const cls of classes) {
         const res = await api.post(`/students/sync-users?class_id=${cls.id}`);
         syncedCount += res.data?.synced || 0;
@@ -265,11 +197,12 @@ export default function AdvisorStudentsPage() {
         const myStudents = allStudents.filter((s) => s.class_id && myClassIds.has(s.class_id));
         setStudents(myStudents);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       setNotification({
         type: "error",
         title: "Lỗi đồng bộ",
-        message: err.response?.data?.message || "Lỗi đồng bộ tài khoản"
+        message: error.response?.data?.message || "Lỗi đồng bộ tài khoản"
       });
     } finally {
       setLoading(false);
@@ -299,31 +232,6 @@ export default function AdvisorStudentsPage() {
     if (!id) return "Chưa chọn";
     const found = programs.find((p) => p.id === id);
     return found ? found.program_code : "N/A";
-  };
-
-  const getStatusBadge = (stat: string) => {
-    switch (stat) {
-      case "ACTIVE":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-250">
-            Đang học
-          </span>
-        );
-      case "GRADUATED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-250">
-            Tốt nghiệp
-          </span>
-        );
-      case "DROPPED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-250">
-            Thôi học
-          </span>
-        );
-      default:
-        return null;
-    }
   };
 
   if (loading) {
@@ -375,7 +283,7 @@ export default function AdvisorStudentsPage() {
           <button
             onClick={() => setShowSyncConfirm(true)}
             disabled={classes.length === 0}
-            className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-all cursor-pointer disabled:opacity-55"
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-55 hover:text-neutral-900 transition-all cursor-pointer disabled:opacity-55"
             title="Tự động liên kết tài khoản sinh viên dựa trên tên"
           >
             <UserCheck size={16} />
@@ -438,352 +346,50 @@ export default function AdvisorStudentsPage() {
 
       {/* Table list */}
       <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
-        {filteredStudents.length === 0 ? (
-          <div className="text-center py-20 space-y-4">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-50 border border-zinc-100 text-zinc-300">
-              <Users size={26} />
-            </div>
-            <h3 className="text-sm font-bold text-neutral-800">Không tìm thấy sinh viên nào</h3>
-            <p className="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
-              Bạn chưa quản lý sinh viên nào trong các lớp học được giao.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-zinc-50 text-neutral-400 border-b border-zinc-200 font-bold text-[10px] uppercase tracking-wider">
-                  <th className="px-5 py-3.5">MSSV</th>
-                  <th className="px-5 py-3.5">Họ và tên</th>
-                  <th className="px-5 py-3.5">Lớp</th>
-                  <th className="px-5 py-3.5">Khóa</th>
-                  <th className="px-5 py-3.5">Chương trình đào tạo</th>
-                  <th className="px-5 py-3.5">Tài khoản</th>
-                  <th className="px-5 py-3.5">Trạng thái</th>
-                  <th className="px-5 py-3.5 text-right">Hành động</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {filteredStudents.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-neutral-50/50 transition-colors text-neutral-700 bg-emerald-50/5"
-                  >
-                    <td className="px-5 py-4 font-mono font-bold text-neutral-900 text-xs">
-                      {item.student_code}
-                    </td>
-                    <td className="px-5 py-4 font-semibold text-neutral-900">
-                      {item.full_name}
-                    </td>
-                    <td className="px-5 py-4 font-bold text-neutral-600">
-                      {getClassName(item.class_id)}
-                    </td>
-                    <td className="px-5 py-4 text-neutral-500 font-bold font-mono">
-                      K{item.cohort_year ?? "—"}
-                    </td>
-                    <td className="px-5 py-4 text-neutral-500">
-                      {getProgramCode(item.program_id)}
-                    </td>
-                    <td className="px-5 py-4 font-mono text-neutral-500 text-xs">
-                      {item.user_id ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold bg-emerald-50/50 border border-emerald-100 px-2 py-0.5 rounded-md">
-                          <CheckCircle2 size={10} /> Đã liên kết
-                        </span>
-                      ) : (
-                        <span className="text-zinc-300 font-normal">Chưa tạo TK</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4">{getStatusBadge(item.status)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="inline-flex items-center gap-2 justify-end">
-                        <button
-                          onClick={() => handleOpenEdit(item)}
-                          className="inline-flex items-center justify-center p-2 rounded-lg border border-zinc-200 bg-white text-neutral-500 hover:bg-emerald-55 hover:border-emerald-200 hover:text-emerald-700 transition-colors cursor-pointer"
-                          title="Sửa hồ sơ"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => setDeletingStudent(item)}
-                          className="inline-flex items-center justify-center p-2 rounded-lg border border-red-105 bg-white text-red-400 hover:bg-red-50 hover:border-red-200 hover:text-red-650 transition-colors cursor-pointer"
-                          title="Xóa hồ sơ"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <StudentsTable
+          students={filteredStudents}
+          onEdit={handleOpenEdit}
+          onDelete={setDeletingStudent}
+          getClassName={getClassName}
+          getProgramCode={getProgramCode}
+        />
       </div>
 
       {/* Create / Edit Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4">
-          <div className="bg-white border border-zinc-200 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-fadeIn relative">
-            <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-neutral-100 text-neutral-400 transition"
-            >
-              <X size={18} />
-            </button>
-            <div className="p-6 border-b border-zinc-150">
-              <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-                <GraduationCap className="text-emerald-600" size={20} />
-                {editingItem ? "Sửa Hồ sơ Sinh viên" : "Thêm Sinh viên mới"}
-              </h3>
-            </div>
+      <StudentModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSave}
+        editingItem={editingItem}
+        classes={classes}
+        programs={programs}
+        usersList={usersList}
+        saving={saving}
+        error={formError}
+        setError={setFormError}
+      />
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {formError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex gap-2">
-                  <AlertCircle size={15} className="shrink-0" />
-                  <span>{formError}</span>
-                </div>
-              )}
+      {/* Sync Confirmation Modal */}
+      <SyncConfirmModal
+        isOpen={showSyncConfirm}
+        onClose={() => setShowSyncConfirm(false)}
+        onConfirm={handleSyncUsersConfirm}
+      />
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Mã số sinh viên (MSSV) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: SE170233"
-                  value={studentCode}
-                  onChange={(e) => setStudentCode(e.target.value)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 uppercase font-mono"
-                />
-              </div>
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deletingStudent}
+        onClose={() => setDeletingStudent(null)}
+        onConfirm={handleDeleteConfirm}
+        studentCode={deletingStudent?.student_code || ""}
+        studentName={deletingStudent?.full_name || ""}
+      />
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Họ và tên <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Nguyễn Văn A"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Niên khóa
-                </label>
-                <input
-                  type="number"
-                  placeholder="Ví dụ: 2023"
-                  value={cohortYear}
-                  onChange={(e) => setCohortYear(e.target.value)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 font-mono"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Lớp sinh viên (Chỉ lớp của bạn) <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-500 cursor-pointer font-bold"
-                >
-                  <option value="">-- Chọn lớp học --</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.class_code} - {c.class_name || "Lớp học"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Chương trình đào tạo
-                </label>
-                <select
-                  value={programId}
-                  onChange={(e) => setProgramId(e.target.value)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-500 cursor-pointer"
-                >
-                  <option value="">Chưa chọn</option>
-                  {programs.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.program_name} ({p.program_code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Tài khoản liên kết (E-mail)
-                </label>
-                <select
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-500 cursor-pointer font-mono"
-                >
-                  <option value="">Không liên kết tài khoản</option>
-                  {usersList.map((usr) => (
-                    <option key={usr.id} value={usr.id}>
-                      {usr.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                  Trạng thái học tập
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-500 cursor-pointer font-semibold"
-                >
-                  <option value="ACTIVE">Đang học (ACTIVE)</option>
-                  <option value="GRADUATED">Đã tốt nghiệp (GRADUATED)</option>
-                  <option value="DROPPED">Thôi học (DROPPED)</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-150">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="rounded-xl px-4 py-2 border border-zinc-255 bg-white hover:bg-neutral-50 text-neutral-500 text-xs font-bold transition cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-55 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-600/10 disabled:opacity-50"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 size={12} className="animate-spin" />
-                      Đang lưu...
-                    </>
-                  ) : (
-                    "Lưu thay đổi"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Custom Sync Confirmation Modal */}
-      {showSyncConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white border border-zinc-200 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-150 text-neutral-900 font-semibold text-xs">
-            <div className="p-6 border-b border-zinc-150 flex items-center gap-2.5">
-              <UserCheck className="text-emerald-600 h-5 w-5 shrink-0" />
-              <h3 className="text-sm font-extrabold text-neutral-900 tracking-wide uppercase">
-                Đồng bộ tài khoản sinh viên
-              </h3>
-            </div>
-            <div className="p-6 space-y-3">
-              <p className="text-neutral-500 leading-relaxed font-semibold">
-                Hệ thống sẽ tự động ghép nối tài khoản sinh viên dựa trên tên. Bạn có muốn tiếp tục?
-              </p>
-            </div>
-            <div className="p-6 border-t border-zinc-150 flex justify-end gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowSyncConfirm(false)}
-                className="rounded-xl px-4 py-2 border border-zinc-250 bg-white hover:bg-neutral-50 text-neutral-550 font-bold cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleSyncUsersConfirm}
-                className="rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-55 text-white font-bold cursor-pointer shadow-lg shadow-emerald-600/10"
-              >
-                Xác nhận đồng bộ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Custom Delete Confirmation Modal */}
-      {deletingStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white border border-zinc-200 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-150 text-neutral-900 font-semibold text-xs">
-            <div className="p-6 border-b border-zinc-150 flex items-center gap-2.5">
-              <Trash2 className="text-rose-600 h-5 w-5 shrink-0 animate-bounce" />
-              <h3 className="text-sm font-extrabold text-rose-600 tracking-wide uppercase font-bold">
-                Xóa hồ sơ sinh viên
-              </h3>
-            </div>
-            <div className="p-6 space-y-3">
-              <p className="text-neutral-500 leading-relaxed font-semibold">
-                Bạn có chắc chắn muốn xóa hồ sơ sinh viên <span className="font-extrabold text-neutral-900 underline">{deletingStudent.student_code} ({deletingStudent.full_name})</span>? Hành động này không thể hoàn tác.
-              </p>
-            </div>
-            <div className="p-6 border-t border-zinc-150 flex justify-end gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setDeletingStudent(null)}
-                className="rounded-xl px-4 py-2 border border-zinc-250 bg-white hover:bg-neutral-50 text-neutral-550 font-bold cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                className="rounded-xl px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer shadow-lg shadow-rose-600/10"
-              >
-                Xác nhận xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Custom Alert/Notification Modal */}
-      {notification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white border border-zinc-200 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative animate-in zoom-in-95 duration-150 text-neutral-900 font-semibold text-xs">
-            <div className="p-6 border-b border-zinc-150 flex items-center gap-2.5">
-              {notification.type === "success" ? (
-                <CheckCircle2 className="text-emerald-600 h-5 w-5 shrink-0" />
-              ) : (
-                <AlertCircle className="text-rose-600 h-5 w-5 shrink-0" />
-              )}
-              <h3 className={`text-sm font-extrabold uppercase tracking-wide ${notification.type === "success" ? "text-emerald-600" : "text-rose-600"}`}>
-                {notification.title}
-              </h3>
-            </div>
-            <div className="p-6 space-y-3">
-              <p className="text-neutral-500 leading-relaxed font-semibold">
-                {notification.message}
-              </p>
-            </div>
-            <div className="p-6 border-t border-zinc-150 flex justify-end shrink-0">
-              <button
-                type="button"
-                onClick={() => setNotification(null)}
-                className={`rounded-xl px-5 py-2 font-bold cursor-pointer transition text-white ${notification.type === "success" ? "bg-emerald-600 hover:bg-emerald-55 shadow-lg shadow-emerald-600/10" : "bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/10"}`}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Alert/Notification Modal */}
+      <NotificationModal
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
     </div>
   );
 }

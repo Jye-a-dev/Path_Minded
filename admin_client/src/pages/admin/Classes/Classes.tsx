@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
 import { useClasses } from "../../../hooks/useClasses";
 import type { ClassItem } from "../../../hooks/useClasses";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -8,9 +9,7 @@ import { Plus, Edit2, Trash2, Building2, RefreshCw, ArrowRight } from "lucide-re
 import { api } from "../../../services/api";
 
 export default function Classes() {
-  const [initialProgramId] = useState(() => {
-    return sessionStorage.getItem("selected_classes_program_id") || "";
-  });
+  const [persistedProgramId, setPersistedProgramId] = useReloadPersistentState("selected_classes_program_id", "");
 
   const {
     data,
@@ -30,12 +29,18 @@ export default function Classes() {
     deleteItem,
   } = useClasses(
     {
-      program_id: initialProgramId || undefined,
+      program_id: persistedProgramId || undefined,
     },
     {
       skip: (f) => !f.program_id,
     }
   );
+
+  useEffect(() => {
+    if (persistedProgramId) {
+      updateFilters({ program_id: persistedProgramId });
+    }
+  }, [persistedProgramId, updateFilters]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassItem | null>(null);
@@ -133,7 +138,7 @@ export default function Classes() {
 
   const handleEnter = () => {
     if (selectedProgram) {
-      sessionStorage.setItem("selected_classes_program_id", selectedProgram);
+      setPersistedProgramId(selectedProgram);
       updateFilters({
         program_id: selectedProgram,
       });
@@ -141,7 +146,7 @@ export default function Classes() {
   };
 
   const handleClearSelection = () => {
-    sessionStorage.removeItem("selected_classes_program_id");
+    setPersistedProgramId("");
     updateFilters({
       program_id: undefined,
     });

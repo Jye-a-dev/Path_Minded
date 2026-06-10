@@ -20,12 +20,40 @@ interface Advisor {
   full_name: string;
 }
 
+interface ClassItem {
+  id: string;
+  class_code: string;
+  class_name: string | null;
+  cohort_year: number | null;
+  advisor_id: string | null;
+  program_id: string | null;
+}
+
+interface StudentItem {
+  id: string;
+  student_code: string;
+  full_name: string;
+  class_id?: string | null;
+  program_id?: string | null;
+  cohort_year?: number | null;
+  status: "ACTIVE" | "GRADUATED" | "DROPPED";
+  user_id?: string | null;
+}
+
+interface ProgramItem {
+  id: string;
+  program_code: string;
+  program_name: string;
+}
+
 export default function AdvisorDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [classCount, setClassCount] = useState(0);
   const [studentCount, setStudentCount] = useState(0);
   const [exportCount, setExportCount] = useState(0);
+  const [curriculumValue, setCurriculumValue] = useState("Chưa phân công");
+  const [curriculumDesc, setCurriculumDesc] = useState("Không có CTDT được liên kết");
 
   useEffect(() => {
     if (!user) return;
@@ -39,18 +67,39 @@ export default function AdvisorDashboard() {
 
           // 2. Fetch classes for this advisor
           const classesRes = await api.get(`/classes?advisor_id=${advisorRec.id}&limit=500`);
-          const myClasses = classesRes.data || [];
+          const myClasses: ClassItem[] = classesRes.data || [];
           setClassCount(myClasses.length);
 
-          const myClassIds = new Set(myClasses.map((c: any) => c.id));
+          const myClassIds = new Set(myClasses.map((c) => c.id));
 
           // 3. Fetch students to count those in my classes
           const studentsRes = await api.get("/students?limit=1000");
-          const allStudents = studentsRes.data || [];
-          const myStudents = allStudents.filter((s: any) => s.class_id && myClassIds.has(s.class_id));
+          const allStudents: StudentItem[] = studentsRes.data || [];
+          const myStudents = allStudents.filter((s) => s.class_id && myClassIds.has(s.class_id));
           setStudentCount(myStudents.length);
 
-          // 4. Fetch export logs count
+          // 4. Fetch programs to match class program_ids
+          try {
+            const programsRes = await api.get("/programs?limit=250");
+            const allPrograms: ProgramItem[] = programsRes.data || [];
+            
+            const myProgramIds = Array.from(
+              new Set(myClasses.map((c) => c.program_id).filter(Boolean))
+            );
+            
+            const myPrograms = allPrograms.filter((p) => myProgramIds.includes(p.id));
+            
+            if (myPrograms.length > 0) {
+              setCurriculumValue(myPrograms.map((p) => p.program_code).join(", "));
+              setCurriculumDesc(
+                myPrograms.map((p) => p.program_name).join(", ")
+              );
+            }
+          } catch (err) {
+            console.error("Failed to load programs for dashboard:", err);
+          }
+
+          // 5. Fetch export logs count
           try {
             const logsRes = await api.get(`/exports?advisor_id=${advisorRec.id}&limit=200`);
             setExportCount(logsRes.data?.length || 0);
@@ -76,9 +125,9 @@ export default function AdvisorDashboard() {
     },
     {
       label: "Chương trình đào tạo",
-      value: "PathMinded Core",
+      value: curriculumValue,
       icon: <Layers className="h-5 w-5 text-emerald-600" />,
-      desc: "Hệ thống chuẩn hóa khung"
+      desc: curriculumDesc
     },
     {
       label: "Báo cáo ma trận đã xuất",
@@ -123,7 +172,7 @@ export default function AdvisorDashboard() {
         {stats.map((stat, idx) => (
           <div
             key={idx}
-            className="group flex flex-col bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-350 hover:-translate-y-1"
+            className="group flex flex-col bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-350 hover:-translate-y-1 min-w-0"
           >
             <div className="flex justify-between items-center">
               <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
@@ -133,11 +182,11 @@ export default function AdvisorDashboard() {
                 {stat.icon}
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-2xl font-extrabold text-neutral-950">
+            <div className="mt-4 min-w-0" title={`${stat.value}\n${stat.desc}`}>
+              <span className="text-2xl font-extrabold text-neutral-950 block truncate">
                 {stat.value}
               </span>
-              <p className="text-xs text-neutral-400 mt-1 font-medium">
+              <p className="text-xs text-neutral-400 mt-1 font-medium block truncate">
                 {stat.desc}
               </p>
             </div>

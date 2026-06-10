@@ -1,21 +1,20 @@
-import { useState } from "react";
+import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
 import { SelectionScreen } from "./SelectionScreen";
 import { CurriculumCoursesManager } from "./CurriculumCoursesManager";
 
 // ─── Entry Component Export ──────────────────────────────────────
 export default function CurriculumCourses() {
-  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(() => {
-    return sessionStorage.getItem("selected_curriculum_program_id");
-  });
+  const [selectedProgramId, setSelectedProgramId] = useReloadPersistentState<string | null>(
+    "selected_curriculum_program_id",
+    null
+  );
 
   const handleSelectProgram = (id: string) => {
     setSelectedProgramId(id);
-    sessionStorage.setItem("selected_curriculum_program_id", id);
   };
 
   const handleClearProgram = () => {
     setSelectedProgramId(null);
-    sessionStorage.removeItem("selected_curriculum_program_id");
   };
 
   if (!selectedProgramId) {
