@@ -223,7 +223,7 @@ export const MatrixTable: React.FC<MatrixTableProps> = ({
       <div className="flex items-center justify-between border-b-2 border-black bg-slate-50 px-6 py-3 shrink-0">
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-lg font-extrabold text-black tracking-tight">
+            <h2 className="text-lg font-extrabold text-black! tracking-tight">
               Ma trận kiểm định học tập
             </h2>
             {matrixData && (

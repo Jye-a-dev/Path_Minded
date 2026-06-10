@@ -13,6 +13,7 @@ import {
   BookOpen,
   BarChart3,
   Settings,
+  FolderInput,
 } from "lucide-react";
 
 const advisorSections = [
@@ -43,6 +44,11 @@ const advisorSections = [
         label: "Nhập khung chương trình",
         to: "/advisor/curriculum",
         icon: UploadCloud,
+      },
+      {
+        label: "Nhập lớp học",
+        to: "/advisor/class_imports",
+        icon: FolderInput,
       },
       {
         label: "Bảng điểm sinh viên",

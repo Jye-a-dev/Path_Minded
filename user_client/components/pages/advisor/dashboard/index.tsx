@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/services/api";
 import { 
   Users, 
   FileSpreadsheet, 
@@ -10,33 +11,90 @@ import {
   ArrowRight,
   Layers,
   Settings,
-  ShieldAlert
+  ShieldAlert,
+  Loader2
 } from "lucide-react";
+
+interface Advisor {
+  id: string;
+  full_name: string;
+}
 
 export default function AdvisorDashboard() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [classCount, setClassCount] = useState(0);
+  const [studentCount, setStudentCount] = useState(0);
+  const [exportCount, setExportCount] = useState(0);
 
-  // Mock advisor stats
+  useEffect(() => {
+    if (!user) return;
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        // 1. Fetch current advisor profile
+        const advRes = await api.get(`/advisors?user_id=${user.id}`);
+        if (advRes.data && advRes.data.length > 0) {
+          const advisorRec: Advisor = advRes.data[0];
+
+          // 2. Fetch classes for this advisor
+          const classesRes = await api.get(`/classes?advisor_id=${advisorRec.id}&limit=500`);
+          const myClasses = classesRes.data || [];
+          setClassCount(myClasses.length);
+
+          const myClassIds = new Set(myClasses.map((c: any) => c.id));
+
+          // 3. Fetch students to count those in my classes
+          const studentsRes = await api.get("/students?limit=1000");
+          const allStudents = studentsRes.data || [];
+          const myStudents = allStudents.filter((s: any) => s.class_id && myClassIds.has(s.class_id));
+          setStudentCount(myStudents.length);
+
+          // 4. Fetch export logs count
+          try {
+            const logsRes = await api.get(`/exports?advisor_id=${advisorRec.id}&limit=200`);
+            setExportCount(logsRes.data?.length || 0);
+          } catch {
+            setExportCount(0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void fetchStats();
+  }, [user]);
+
   const stats = [
     {
       label: "Số lớp quản lý",
-      value: "4 Lớp học",
+      value: `${classCount} Lớp học`,
       icon: <Users className="h-5 w-5 text-violet-600" />,
-      desc: "Tổng cộng 240 sinh viên"
+      desc: `Tổng cộng ${studentCount} sinh viên`
     },
     {
-      label: "Yêu cầu nhập khung",
-      value: "12 Chương trình",
+      label: "Chương trình đào tạo",
+      value: "PathMinded Core",
       icon: <Layers className="h-5 w-5 text-emerald-600" />,
-      desc: "Đã chuẩn hóa thành công"
+      desc: "Hệ thống chuẩn hóa khung"
     },
     {
       label: "Báo cáo ma trận đã xuất",
-      value: "45 Lượt",
+      value: `${exportCount} Lượt`,
       icon: <FileSpreadsheet className="h-5 w-5 text-indigo-600" />,
       desc: "Định dạng Excel chuẩn VLU"
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl w-full px-4 py-6 space-y-8 relative">
@@ -55,7 +113,7 @@ export default function AdvisorDashboard() {
             Khu vực làm việc Cố vấn, {user?.display_name || user?.email || "Cố vấn"}!
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Quản lý chương trình đào tạo, chuẩn hóa bảng điểm và xuất các ma trận theo dõi tiến độ sinh viên.
+            Quản lý chương trình đào tạo, chuẩn hóa bảng điểm và xuất các ma trận theo dõi tiến độ sinh viên của riêng bạn.
           </p>
         </div>
       </div>
@@ -131,7 +189,7 @@ export default function AdvisorDashboard() {
             <span className="text-xs text-neutral-400 font-semibold uppercase">Tải xuống tức thì trong 3 giây</span>
             <Link 
               href="/advisor/classes"
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-500 transition-all cursor-pointer group"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-55 transition-all cursor-pointer group"
             >
               Xem danh sách lớp
               <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -150,7 +208,7 @@ export default function AdvisorDashboard() {
           <div className="p-4 rounded-xl bg-neutral-50 border border-zinc-150">
             <h4 className="text-sm font-bold text-neutral-900">Phân quyền tài khoản</h4>
             <p className="text-xs text-neutral-500 mt-2 leading-relaxed">
-              Tài khoản của bạn được cấp quyền `{user?.role}`. Bạn có quyền thao tác với các mô đun nhập liệu học phần, điểm số và quản lý sinh viên.
+              Tài khoản của bạn được cấp quyền `{user?.role}`. Bạn có quyền thao tác với các mô đun nhập liệu học phần, điểm số và quản lý sinh viên của lớp bạn cố vấn.
             </p>
           </div>
           <div className="p-4 rounded-xl bg-neutral-50 border border-zinc-150">
