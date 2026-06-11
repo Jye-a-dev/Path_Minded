@@ -66,7 +66,7 @@ const advisorSections = [
     title: "Tiện ích",
     items: [
       {
-        label: "Cài đặt tài khoản",
+        label: "Cài đặt hiển thị",
         to: "/advisor/settings",
         icon: Settings,
       },
@@ -135,7 +135,7 @@ export default function AdvisorLayout({
       ]}
       footerBottomLeft={`© ${new Date().getFullYear()} PathMinded Inc. Bảo lưu mọi quyền.`}
       footerBottomRight="Hệ thống ma trận điều khiển học thuật"
-      profileHref="/advisor/settings"
+      profileHref="/advisor/profile"
     >
       {children}
     </DashboardShell>

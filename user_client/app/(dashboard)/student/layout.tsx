@@ -12,6 +12,7 @@ import {
   BookOpen,
   MessageCircle,
   Sparkles,
+  Settings,
 } from "lucide-react";
 
 const studentSections = [
@@ -52,6 +53,16 @@ const studentSections = [
         label: "Liên hệ Cố vấn",
         to: "/student/advisor",
         icon: MessageCircle,
+      },
+    ],
+  },
+  {
+    title: "Tiện ích",
+    items: [
+      {
+        label: "Cài đặt hiển thị",
+        to: "/student/settings",
+        icon: Settings,
       },
     ],
   },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { SettingsProvider } from "@/providers/SettingsProvider";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="vi" className={plusJakartaSans.variable}>
       <body className="min-h-screen bg-[#f6f4ef] text-neutral-900 font-sans">
         <AuthProvider>
-          {children}
+          <SettingsProvider>
+            {children}
+          </SettingsProvider>
         </AuthProvider>
       </body>
     </html>

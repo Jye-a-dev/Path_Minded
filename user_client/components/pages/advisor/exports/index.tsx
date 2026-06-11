@@ -6,15 +6,8 @@ import { api } from "@/services/api";
 import { useReloadPersistentState } from "@/hooks/useReloadPersistentState";
 import {
   FileSpreadsheet,
-  Download,
-  Building2,
   Loader2,
-  CheckCircle,
-  ArrowLeft,
-  ArrowRight,
-  TableProperties,
-  AlertCircle,
-  Trash2
+  AlertCircle
 } from "lucide-react";
 
 import FeedbackModal from "./components/FeedbackModal";
@@ -25,6 +18,10 @@ import OnlineMatrixTable, {
   MatrixResult,
   MatrixPreviewData
 } from "./components/OnlineMatrixTable";
+import ClassSelectorCard from "./components/ClassSelectorCard";
+import MatrixHeader from "./components/MatrixHeader";
+import DeleteLogModal from "./components/DeleteLogModal";
+import NotificationModal, { NotificationData } from "./components/NotificationModal";
 
 export interface ClassItem {
   id: string;
@@ -77,11 +74,7 @@ export default function AdvisorExportsPage() {
   } | null>(null);
   const [savingResult, setSavingResult] = useState(false);
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{
-    type: "success" | "error" | "info";
-    title: string;
-    message: string;
-  } | null>(null);
+  const [notification, setNotification] = useState<NotificationData | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -430,131 +423,28 @@ export default function AdvisorExportsPage() {
 
       {/* ONLINE MATRIX TAB */}
       {activeTab === "matrix" && !viewMatrix && (
-        <div className="flex items-center justify-center py-12 px-4 min-h-[50vh] relative z-10">
-          <div className="max-w-md w-full space-y-6 p-8 rounded-2xl border border-zinc-200 bg-white shadow-xl relative overflow-hidden transition-all duration-300 hover:border-emerald-200 hover:shadow-2xl">
-            <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="text-center relative z-10">
-              <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-emerald-500 to-emerald-650 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-white">
-                <TableProperties className="h-6 w-6" />
-              </div>
-              <h2 className="mt-5 text-xl font-extrabold text-neutral-900 tracking-tight">Ma trận kiểm định học tập</h2>
-              <p className="mt-2 text-xs text-neutral-500 leading-relaxed">
-                Vui lòng chọn lớp học do bạn cố vấn để bắt đầu đối soát, cập nhật điểm số và kết xuất ma trận học tập trực tuyến.
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-4 relative z-10">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-                  Lớp học phụ trách (Class)
-                </label>
-                <select
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 bg-neutral-55 px-4 py-3 text-sm font-semibold text-neutral-800 focus:border-emerald-500 focus:bg-white focus:outline-none transition-all cursor-pointer hover:border-zinc-300"
-                >
-                  {classes.length === 0 ? (
-                    <option value="">Không có lớp phụ trách</option>
-                  ) : (
-                    classes.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.class_code} {cls.class_name ? `(${cls.class_name})` : ""}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              {selectedClassId && (
-                <div className="space-y-1.5 bg-neutral-50 p-4 rounded-xl border border-zinc-200">
-                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                    Cố vấn học tập (CVHT)
-                  </span>
-                  <span className="text-sm font-extrabold text-neutral-800 block">
-                    {currentAdvisor?.full_name || "Chưa xác định"}
-                  </span>
-                </div>
-              )}
-
-              <button
-                type="button"
-                disabled={!selectedClassId}
-                onClick={() => setViewMatrix(true)}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-55 px-5 py-3.5 text-sm font-bold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-600/25 active:scale-98 cursor-pointer"
-              >
-                Truy cập Ma trận học tập
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <ClassSelectorCard
+          selectedClassId={selectedClassId}
+          setSelectedClassId={setSelectedClassId}
+          classes={classes}
+          currentAdvisorName={currentAdvisor?.full_name}
+          onAccessMatrix={() => setViewMatrix(true)}
+        />
       )}
 
       {/* MATRIX PREVIEW DISPLAY */}
       {activeTab === "matrix" && viewMatrix && (
         <div className="space-y-4 relative z-10">
-          <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setViewMatrix(false)}
-                className="p-2.5 rounded-xl border border-zinc-200 hover:border-zinc-300 hover:bg-neutral-50 text-neutral-700 transition cursor-pointer"
-                title="Quay lại"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <div>
-                <h2 className="text-base font-extrabold text-neutral-900 tracking-tight flex items-center gap-1.5">
-                  <Building2 size={16} className="text-emerald-600" />
-                  Lớp: {classes.find((c) => c.id === selectedClassId)?.class_code || "N/A"}
-                </h2>
-                {matrixData && (
-                  <p className="text-xs text-neutral-400 font-bold mt-0.5 font-mono">
-                    Chương trình: {matrixData.programInfo.program_code} · {matrixData.programInfo.program_name}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-              {stats && (
-                <div className="flex items-center gap-2 bg-neutral-50 border border-zinc-200 rounded-xl p-1.5 text-[10px] font-bold">
-                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg">
-                    Đạt: {stats.passed}
-                  </span>
-                  <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg">
-                    Học: {stats.studying}
-                  </span>
-                  <span className="px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg">
-                    Rớt: {stats.failed}
-                  </span>
-                </div>
-              )}
-
-              {selectedClassId && (
-                <button
-                  onClick={() => {
-                    const cls = classes.find((c) => c.id === selectedClassId);
-                    if (cls) handleDownloadExcel(selectedClassId, cls.class_code);
-                  }}
-                  disabled={downloadingId === selectedClassId || matrixLoading}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-55 px-4 py-2 text-xs font-bold text-white shadow-lg transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {downloadingId === selectedClassId ? (
-                    <>
-                      <Loader2 size={12} className="animate-spin" />
-                      Đang kết xuất...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={12} />
-                      Tải Excel
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
+          <MatrixHeader
+            setViewMatrix={setViewMatrix}
+            classes={classes}
+            selectedClassId={selectedClassId}
+            matrixData={matrixData}
+            stats={stats}
+            handleDownloadExcel={handleDownloadExcel}
+            downloadingId={downloadingId}
+            matrixLoading={matrixLoading}
+          />
 
           <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-125">
             {matrixLoading ? (
@@ -622,67 +512,17 @@ export default function AdvisorExportsPage() {
       )}
 
       {/* Custom Delete Confirmation Modal */}
-      {deletingLogId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white border border-zinc-200 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-150 text-neutral-900 font-semibold text-xs">
-            <div className="p-6 border-b border-zinc-150 flex items-center gap-2.5">
-              <Trash2 className="text-rose-600 h-5 w-5 shrink-0 animate-bounce" />
-              <h3 className="text-sm font-extrabold text-rose-600 tracking-wide uppercase">
-                Xóa lịch sử xuất dữ liệu
-              </h3>
-            </div>
-            <div className="p-6 space-y-3">
-              <p className="text-neutral-500 leading-relaxed font-semibold">
-                Bạn có chắc chắn muốn xóa vĩnh viễn bản ghi xuất dữ liệu này? Hành động này không thể hoàn tác.
-              </p>
-            </div>
-            <div className="p-6 border-t border-zinc-150 flex justify-end gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setDeletingLogId(null)}
-                className="rounded-xl px-4 py-2 border border-zinc-250 bg-white hover:bg-neutral-50 text-neutral-550 font-bold cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteLogConfirm}
-                className="rounded-xl px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer shadow-lg shadow-rose-600/10"
-              >
-                Xác nhận xóa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteLogModal
+        isOpen={!!deletingLogId}
+        onClose={() => setDeletingLogId(null)}
+        onConfirm={handleDeleteLogConfirm}
+      />
 
       {/* Custom Alert/Notification Modal */}
-      {notification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-          <div className="bg-white border border-zinc-200 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden relative animate-in zoom-in-95 duration-150 text-neutral-900 font-semibold text-xs">
-            <div className="p-6 border-b border-zinc-150 flex items-center gap-2.5">
-              <CheckCircle className="text-emerald-600 h-5 w-5 shrink-0" />
-              <h3 className="text-sm font-extrabold uppercase tracking-wide text-emerald-600">
-                {notification.title}
-              </h3>
-            </div>
-            <div className="p-6 space-y-3">
-              <p className="text-neutral-500 leading-relaxed font-semibold">
-                {notification.message}
-              </p>
-            </div>
-            <div className="p-6 border-t border-zinc-150 flex justify-end shrink-0">
-              <button
-                type="button"
-                onClick={() => setNotification(null)}
-                className="rounded-xl px-5 py-2 font-bold cursor-pointer transition text-white bg-emerald-600 hover:bg-emerald-55 shadow-lg shadow-emerald-600/10"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NotificationModal
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
     </div>
   );
 }

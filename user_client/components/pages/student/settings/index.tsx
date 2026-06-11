@@ -11,7 +11,7 @@ import {
   Check
 } from "lucide-react";
 
-export default function AdvisorSettingsPage() {
+export default function StudentSettingsPage() {
   const { settings, updateSetting, resetSettings } = useSettings();
 
   const backgroundThemes = [
@@ -58,27 +58,27 @@ export default function AdvisorSettingsPage() {
   ];
 
   const accentColors = [
-    { id: "emerald" as const, name: "Xanh lá (Cố vấn)", hex: "#059669" },
-    { id: "teal" as const, name: "Xanh ngọc", hex: "#0d9488" },
     { id: "violet" as const, name: "Tím hoa cà (Sinh viên)", hex: "#7c3aed" },
     { id: "indigo" as const, name: "Xanh chàm", hex: "#4f46e5" },
+    { id: "emerald" as const, name: "Xanh lá (Cố vấn)", hex: "#059669" },
+    { id: "teal" as const, name: "Xanh ngọc", hex: "#0d9488" },
     { id: "rose" as const, name: "Hồng đỏ", hex: "#e11d48" },
     { id: "amber" as const, name: "Vàng hổ phách", hex: "#d97706" },
   ];
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-4 relative">
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-400/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-400/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header Title */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 pb-6 relative z-10">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-neutral-950 flex items-center gap-3 m-0">
-            <Settings className="h-7 w-7 animate-spin-slow text-emerald-600" />
+            <Settings className="h-7 w-7 animate-spin-slow text-violet-600" />
             Cài đặt hiển thị & giao diện
           </h1>
           <p className="text-sm text-neutral-500 mt-1.5">
-            Tùy chỉnh màu sắc chủ đề, hình nền cổng, kích thước bảng dữ liệu và các hiệu ứng giao diện của cổng Cố vấn.
+            Tùy chỉnh màu sắc chủ đề, hình nền cổng, kích thước bảng dữ liệu và các hiệu ứng giao diện của cổng Sinh viên.
           </p>
         </div>
         <button
@@ -96,7 +96,7 @@ export default function AdvisorSettingsPage() {
           {/* Section 1: Background Theme */}
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 space-y-4 shadow-sm">
             <h2 className="text-sm font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-2">
-              <LayoutGrid size={16} className="text-emerald-600" />
+              <LayoutGrid size={16} className="text-violet-600" />
               1. Lựa chọn hình nền giao diện
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -108,7 +108,7 @@ export default function AdvisorSettingsPage() {
                     onClick={() => updateSetting("bgTheme", theme.id)}
                     className={`flex flex-col text-left rounded-xl p-4 border transition-all cursor-pointer select-none group relative overflow-hidden ${
                       isSelected
-                        ? "bg-slate-50 border-emerald-600"
+                        ? "bg-slate-50 border-violet-600"
                         : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-neutral-50/30"
                     }`}
                     style={
@@ -153,7 +153,7 @@ export default function AdvisorSettingsPage() {
           {/* Section 2: Accent Color */}
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 space-y-4 shadow-sm">
             <h2 className="text-sm font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-2">
-              <Palette size={16} className="text-emerald-600" />
+              <Palette size={16} className="text-violet-600" />
               2. Màu sắc chủ đề (Nút bấm, điểm nhấn, chữ đặc biệt)
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -165,7 +165,7 @@ export default function AdvisorSettingsPage() {
                     onClick={() => updateSetting("accentColor", color.id)}
                     className={`flex items-center gap-3 rounded-xl p-3 border transition-all cursor-pointer select-none group relative ${
                       isSelected
-                        ? "bg-slate-50 border-emerald-600"
+                        ? "bg-slate-50 border-violet-600"
                         : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-neutral-50/30"
                     }`}
                     style={
@@ -197,7 +197,7 @@ export default function AdvisorSettingsPage() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 space-y-6 shadow-sm">
             <h2 className="text-sm font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-2">
-              <Layout size={16} className="text-emerald-600" />
+              <Layout size={16} className="text-violet-600" />
               3. Cấu hình hiển thị màn hình
             </h2>
 
@@ -216,7 +216,7 @@ export default function AdvisorSettingsPage() {
                   onClick={() => updateSetting("compactTables", !settings.compactTables)}
                   className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none"
                   style={{
-                    backgroundColor: settings.compactTables ? "var(--primary-color, #059669)" : "rgba(100, 116, 139, 0.2)"
+                    backgroundColor: settings.compactTables ? "var(--primary-color, #7c3aed)" : "rgba(100, 116, 139, 0.2)"
                   }}
                 >
                   <span
@@ -241,7 +241,7 @@ export default function AdvisorSettingsPage() {
                   onClick={() => updateSetting("glassmorphism", !settings.glassmorphism)}
                   className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none"
                   style={{
-                    backgroundColor: settings.glassmorphism ? "var(--primary-color, #059669)" : "rgba(100, 116, 139, 0.2)"
+                    backgroundColor: settings.glassmorphism ? "var(--primary-color, #7c3aed)" : "rgba(100, 116, 139, 0.2)"
                   }}
                 >
                   <span
@@ -266,7 +266,7 @@ export default function AdvisorSettingsPage() {
                   onClick={() => updateSetting("showNavbar", !settings.showNavbar)}
                   className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none"
                   style={{
-                    backgroundColor: settings.showNavbar ? "var(--primary-color, #059669)" : "rgba(100, 116, 139, 0.2)"
+                    backgroundColor: settings.showNavbar ? "var(--primary-color, #7c3aed)" : "rgba(100, 116, 139, 0.2)"
                   }}
                 >
                   <span
@@ -291,7 +291,7 @@ export default function AdvisorSettingsPage() {
                   onClick={() => updateSetting("meshGradient", !settings.meshGradient)}
                   className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none"
                   style={{
-                    backgroundColor: settings.meshGradient ? "var(--primary-color, #059669)" : "rgba(100, 116, 139, 0.2)"
+                    backgroundColor: settings.meshGradient ? "var(--primary-color, #7c3aed)" : "rgba(100, 116, 139, 0.2)"
                   }}
                 >
                   <span
