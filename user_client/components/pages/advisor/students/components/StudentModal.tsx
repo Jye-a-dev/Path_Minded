@@ -10,6 +10,8 @@ export interface StudentItem {
   cohort_year?: number | null;
   status: "ACTIVE" | "GRADUATED" | "DROPPED";
   user_id?: string | null;
+  active_alert_type?: "PROBATION_RISK" | "GPA_WARNING" | "CREDIT_WARNING" | null;
+  active_alert_description?: string | null;
 }
 
 export interface ClassItem {

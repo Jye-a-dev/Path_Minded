@@ -15,6 +15,7 @@ import {
 } from './interfaces/transcript_uploads.interfaces';
 import { handleDatabaseError } from '../../common/utils/database-error.util';
 import { QueryTranscriptUploadsDto } from './dto/query-transcript-uploads.dto';
+import { AlertEvaluationService } from '../alerts/alert-evaluation.service';
 
 // Type definitions for parsing and merging results
 interface ParsedCourseResult {
@@ -82,7 +83,10 @@ interface AttemptItem {
 
 @Injectable()
 export class TranscriptUploadsService implements OnModuleInit {
-  constructor(@Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool) {}
+  constructor(
+    @Inject(DB_PROVIDER.PG_POOL) private readonly pool: Pool,
+    private readonly alertEvaluationService: AlertEvaluationService,
+  ) {}
 
   async onModuleInit() {
     await this.pool.query(
@@ -388,6 +392,14 @@ export class TranscriptUploadsService implements OnModuleInit {
         );
 
         await client.query('COMMIT');
+
+        // Evaluate student's academic warning status after successful transcript processing
+        try {
+          await this.alertEvaluationService.evaluateStudent(studentId);
+        } catch (evalError) {
+          // Log evaluation error but do not fail the transcript upload operation
+          console.error(`Alert evaluation failed for student ${studentId}:`, evalError);
+        }
 
         return {
           uploadSession: uploadRecord,

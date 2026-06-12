@@ -1,5 +1,5 @@
-import React from "react";
-import { Sliders, Calendar, Info, RotateCcw, Zap } from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Sliders, Info, RotateCcw, Zap, ChevronDown } from "lucide-react";
 import { CurriculumCourse, CourseResult, CLASSIFICATIONS, GRADE_VALUES } from "./types";
 
 interface GpaProjectionTabProps {
@@ -35,19 +35,42 @@ export function GpaProjectionTab({
   mockGrades,
   setMockGrades,
 }: GpaProjectionTabProps) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Column: Target Inputs */}
-      <div className="lg:col-span-1 space-y-6">
-        {/* target GPA box */}
-        <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
-            <Sliders size={16} className="text-violet-600" />
-            Thiết lập mục tiêu đầu ra
-          </h3>
+  const [expandedSemesters, setExpandedSemesters] = useState<Record<number, boolean>>({});
 
-          <div className="space-y-1">
-            <label className="text-xs text-neutral-500 font-semibold">
+  const remainingSemesters = useMemo(() => {
+    return Array.from(new Set(remainingCourses.map((c) => c.expected_semester || 99)))
+      .sort((a, b) => a - b);
+  }, [remainingCourses]);
+
+  // Set the first remaining semester expanded by default
+  useEffect(() => {
+    if (remainingSemesters.length > 0) {
+      setExpandedSemesters({ [remainingSemesters[0]]: true });
+    }
+  }, [remainingSemesters]);
+
+  const toggleSemester = (sem: number) => {
+    setExpandedSemesters((prev) => ({
+      ...prev,
+      [sem]: !prev[sem],
+    }));
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* Left Column: Settings Panel */}
+      <div className="lg:col-span-1 space-y-5">
+        <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm space-y-5">
+          <div className="border-b border-zinc-150 pb-3">
+            <h3 className="text-sm font-extrabold text-neutral-900 flex items-center gap-1.5">
+              <Sliders size={15} className="text-violet-650" />
+              Thông số Giả lập GPA
+            </h3>
+          </div>
+
+          {/* Target GPA input with slider and presets */}
+          <div className="space-y-2.5">
+            <label className="text-xs text-neutral-500 font-bold block">
               Mục tiêu GPA tích lũy tốt nghiệp:
             </label>
             <div className="flex items-center gap-3">
@@ -58,235 +81,229 @@ export function GpaProjectionTab({
                 step="0.05"
                 value={targetGpa}
                 onChange={(e) => setTargetGpa(parseFloat(e.target.value))}
-                className="w-full accent-violet-600 cursor-pointer"
+                className="flex-1 accent-violet-600 cursor-pointer h-1.5 bg-zinc-150 rounded-lg appearance-none"
               />
-              <span className="text-lg font-extrabold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-100 min-w-12.5 text-center">
+              <span className="text-xs font-black text-violet-700 bg-violet-50 px-2 py-1 rounded-lg border border-violet-100 min-w-10 text-center font-mono">
                 {targetGpa.toFixed(2)}
               </span>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <span className="text-xs text-neutral-400 font-bold block">
-              Preset nhanh:
-            </span>
-            <div className="grid grid-cols-2 gap-2">
+            
+            {/* Presets grid */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               {CLASSIFICATIONS.map((c) => (
                 <button
                   key={c.label}
                   onClick={() => setTargetGpa(c.minGpa)}
-                  className={`text-xs font-bold py-2 px-3 border rounded-xl transition-all text-center ${
-                    c.color
-                  } ${
+                  className={`text-[10px] font-bold py-2 px-2 border rounded-xl transition-all text-center cursor-pointer ${
                     targetGpa === c.minGpa
-                      ? "ring-2 ring-violet-500/20 border-violet-400"
-                      : ""
+                      ? "bg-violet-600 border-violet-600 text-white shadow-xs"
+                      : "bg-white border-zinc-200 text-neutral-600 hover:border-zinc-300"
                   }`}
                 >
-                  Bằng {c.label} (≥{c.minGpa.toFixed(2)})
+                  Bằng {c.label} (≥{c.minGpa.toFixed(1)})
                 </button>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* next semester GPA box */}
-        <div className="bg-white border border-zinc-200 rounded-2xl p-5 shadow-sm space-y-3">
-          <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
-            <Calendar size={16} className="text-indigo-600" />
-            Thử nghiệm GPA học kỳ tới
-          </h3>
-          <p className="text-xs text-neutral-400 leading-relaxed">
-            Nhập GPA kỳ tới (ví dụ học kỳ này bạn muốn kéo điểm) để xem áp lực
-            cho các kỳ tiếp theo giảm thế nào:
-          </p>
-          <div>
+          {/* Test Next Semester GPA Input */}
+          <div className="border-t border-zinc-100 pt-4 space-y-2">
+            <label className="text-xs text-neutral-500 font-bold block">
+              Giả lập học tập kỳ tới:
+            </label>
             <input
               type="number"
               min="0"
               max="4.0"
               step="0.1"
-              placeholder="Nhập GPA kỳ vọng (e.g. 3.2)"
+              placeholder="Nhập GPA kỳ tới (ví dụ: 3.2)"
               value={nextSemesterGpa}
               onChange={(e) => setNextSemesterGpa(e.target.value)}
-              className="w-full text-sm font-medium border border-zinc-200 rounded-xl px-4.5 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10"
+              className="w-full text-xs font-bold border border-zinc-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/10 font-mono"
             />
+            <p className="text-[10px] text-neutral-450 leading-relaxed font-medium">
+              Nhập điểm kì vọng để xem mức độ giảm áp lực GPA cho các kỳ còn lại.
+            </p>
           </div>
         </div>
 
-        {/* Calculation Info Note */}
-        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4.5 space-y-2.5">
-          <div className="flex gap-2 text-neutral-500 text-xs leading-relaxed">
-            <Info size={16} className="shrink-0 text-violet-500 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-bold text-neutral-700">
-                Công thức dự phóng
-              </span>
-              <p>
-                GPA yêu cầu trung bình cho các môn còn lại được tự động tính
-                toán dựa trên tổng số tín chỉ của chương trình và bảng điểm đã
-                có.
-              </p>
-            </div>
+        {/* Informational Help Note */}
+        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 flex gap-2.5 text-neutral-500 text-[11px] leading-relaxed">
+          <Info size={15} className="shrink-0 text-violet-500 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-bold text-neutral-700">Công thức dự phóng</span>
+            <p>
+              GPA cần đạt được tính dựa trên số tín chỉ chưa học và điểm tích lũy thực tế của bạn.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Right Column: Calculations Outputs and Interactive Course Mocking */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Projections calculation output board */}
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm space-y-5">
-          <h3 className="text-base font-bold text-neutral-900">
+      {/* Right Column: Outcomes and Collapsible Course Mock Planner */}
+      <div className="lg:col-span-2 space-y-5">
+        {/* Output Outcomes */}
+        <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm space-y-4">
+          <h3 className="text-sm font-extrabold text-neutral-900 border-b border-zinc-100 pb-2.5">
             Kết quả dự phóng & Khả thi
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border border-zinc-200 rounded-xl p-4 flex flex-col justify-center">
-              <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
-                GPA còn lại tối thiểu cần đạt
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border border-zinc-200 rounded-2xl p-4 flex flex-col justify-center">
+              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                GPA trung bình cần đạt các môn còn lại
               </span>
-              <div className="flex items-baseline gap-2 mt-2">
+              <div className="flex items-baseline gap-1 mt-1">
                 <span
-                  className={`text-3xl font-extrabold ${
-                    requiredGpaOnRemaining > 4.0
-                      ? "text-red-600"
-                      : "text-violet-600"
+                  className={`text-2xl font-black ${
+                    requiredGpaOnRemaining > 4.0 ? "text-red-600" : "text-violet-650"
                   }`}
                 >
                   {remainingCredits > 0 ? requiredGpaOnRemaining.toFixed(2) : "0.00"}
                 </span>
-                <span className="text-sm text-neutral-400 font-medium ml-0.5">
-                  / 4.0
-                </span>
+                <span className="text-xs text-neutral-400 font-bold">/ 4.0</span>
               </div>
-              <span className="text-[10px] text-neutral-400 mt-1 font-medium">
-                (Tính cho trung bình {remainingCredits} tín chỉ còn lại)
+              <span className="text-[10px] text-neutral-400 font-medium">
+                (Áp dụng cho {remainingCredits} tín chỉ còn lại)
               </span>
             </div>
 
-            <div className="border border-zinc-200 rounded-xl p-4 flex flex-col justify-between">
-              <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                Mức độ khả thi
+            <div className="border border-zinc-200 rounded-2xl p-4 flex flex-col justify-between">
+              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                Đánh giá mức độ khả thi
               </span>
               <span
-                className={`inline-block text-xs font-bold px-3 py-1.5 rounded-lg border text-center ${
+                className={`inline-block text-[10.5px] font-bold px-2.5 py-1 rounded-lg border text-center ${
                   feasibilityConfig.bg
                 }`}
               >
                 {feasibilityConfig.text}
               </span>
-              <p className="text-[10px] text-neutral-400 mt-2 font-medium">
+              <p className="text-[10px] text-neutral-450 mt-2 font-medium">
                 {requiredGpaOnRemaining > 4.0
-                  ? "Bạn đã tích lũy điểm thấp, dù đạt 4.0 tất cả môn còn lại vẫn không đạt được mục tiêu này."
+                  ? "GPA tích lũy hiện tại thấp, mục tiêu này toán học không khả thi."
                   : requiredGpaOnRemaining > 3.2
-                  ? "Khá thử thách. Bạn cần tập trung cao độ để giành được nhiều điểm giỏi/xuất sắc (A, B+)."
-                  : "Mục tiêu nằm trong tầm tay nếu duy trì sức học trung bình - khá hiện tại."}
+                  ? "Đòi hỏi nỗ lực lớn, bạn cần đạt phần lớn các môn từ điểm B+ trở lên."
+                  : "Mục tiêu nằm trong tầm tay nếu duy trì phong độ hiện tại."}
               </p>
             </div>
           </div>
 
-          {/* With next semester simulation */}
+          {/* Next Semester Scenario details */}
           {nextSemesterProjection && (
-            <div className="bg-violet-50 border border-violet-100 rounded-xl p-4 space-y-2">
-              <h4 className="text-xs font-bold text-violet-700 flex items-center gap-1.5">
-                <Zap size={14} /> Kịch bản học kỳ tới:
-              </h4>
-              <p className="text-xs text-neutral-600 leading-relaxed">
-                Nếu kỳ tới bạn đạt{" "}
-                <span className="font-bold text-violet-700">
-                  {nextSemesterGpa} GPA
-                </span>{" "}
-                (giả định 15 tín chỉ), GPA tích lũy của bạn sẽ tăng lên{" "}
-                <span className="font-bold text-violet-700">
-                  {nextSemesterProjection.projectedGpa.toFixed(2)}
+            <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 flex gap-3 text-xs leading-relaxed text-neutral-600">
+              <Zap size={16} className="text-violet-655 shrink-0 mt-0.5 animate-pulse" />
+              <div>
+                <span className="font-bold text-violet-800">Kịch bản học kỳ tới: </span>
+                <span>
+                  Nếu đạt <strong>{nextSemesterGpa} GPA</strong> (quy đổi ~15 TC), GPA tích lũy sẽ tăng lên{" "}
+                  <strong>{nextSemesterProjection.projectedGpa.toFixed(2)}</strong>. Yêu cầu cho các kỳ tiếp theo sẽ giảm từ{" "}
+                  <span className="line-through">{requiredGpaOnRemaining.toFixed(2)}</span> xuống còn{" "}
+                  <strong className="text-emerald-700">{nextSemesterProjection.newRequiredGpa.toFixed(2)}</strong>.
                 </span>
-                . Áp lực các kỳ còn lại sau đó sẽ giảm: điểm trung bình cần đạt
-                giảm từ{" "}
-                <span className="font-semibold text-neutral-600">
-                  {requiredGpaOnRemaining.toFixed(2)}
-                </span>{" "}
-                xuống còn{" "}
-                <span className="font-bold text-emerald-600">
-                  {nextSemesterProjection.newRequiredGpa.toFixed(2)}
-                </span>
-                !
-              </p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Interactive Grade Mock Planner */}
-        <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm space-y-4">
+        {/* Collapsible Mock Planner List */}
+        <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
-              <h3 className="text-base font-bold text-neutral-900">
+              <h3 className="text-sm font-extrabold text-neutral-900">
                 Kế hoạch điểm số thử nghiệm (Mock Grades Planner)
               </h3>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Chọn điểm giả định cho các môn chưa học bên dưới để xem sự thay
-                đổi trực tiếp của GPA.
+              <p className="text-[10.5px] text-neutral-400 mt-0.5">
+                Chọn điểm giả lập cho từng môn học để thấy GPA tích lũy thay đổi theo thời gian thực.
               </p>
             </div>
             {Object.keys(mockGrades).length > 0 && (
               <button
                 onClick={() => setMockGrades({})}
-                className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 font-semibold"
+                className="inline-flex items-center gap-1 text-[10px] text-neutral-400 hover:text-neutral-600 font-bold border border-zinc-200 rounded-lg px-2 py-1 bg-white cursor-pointer"
               >
-                <RotateCcw size={12} /> Đặt lại
+                <RotateCcw size={10} /> Đặt lại
               </button>
             )}
           </div>
 
-          <div className="space-y-6 max-h-125 overflow-y-auto pr-1">
-            {/* Group remaining courses by expected semester */}
-            {Array.from(new Set(remainingCourses.map((c) => c.expected_semester)))
-              .sort((a, b) => a - b)
-              .map((semNum) => {
-                const coursesInSem = remainingCourses.filter(
-                  (c) => c.expected_semester === semNum
-                );
-                if (coursesInSem.length === 0) return null;
+          {/* Group Remaining Courses into Collapsible Accordions */}
+          <div className="space-y-3 max-h-120 overflow-y-auto pr-1">
+            {remainingSemesters.map((semNum) => {
+              const coursesInSem = remainingCourses.filter(
+                (c) => (c.expected_semester || 99) === semNum
+              );
+              if (coursesInSem.length === 0) return null;
 
-                return (
-                  <div key={semNum} className="space-y-2">
-                    <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider border-l-2 border-violet-500 pl-2">
-                      Học kỳ {semNum}
-                    </h4>
+              const isExpanded = !!expandedSemesters[semNum];
 
-                    <div className="divide-y divide-zinc-100 border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50/20">
+              // Count how many courses have mocked grades in this semester
+              const mockCount = coursesInSem.filter(c => mockGrades[c.course_code] && mockGrades[c.course_code] !== "NONE").length;
+
+              return (
+                <div key={semNum} className="border border-zinc-200 rounded-2xl overflow-hidden bg-white shadow-xs">
+                  {/* Collapsible Header */}
+                  <button
+                    type="button"
+                    onClick={() => toggleSemester(semNum)}
+                    className="w-full flex items-center justify-between p-3.5 bg-zinc-50/50 hover:bg-zinc-50 transition-colors text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-650" />
+                      <span className="text-xs font-extrabold text-neutral-800">
+                        Học kỳ {semNum}
+                      </span>
+                      <span className="text-[10px] text-neutral-400 font-bold">
+                        ({coursesInSem.length} môn)
+                      </span>
+                      {mockCount > 0 && (
+                        <span className="bg-violet-100 text-violet-700 text-[8px] font-bold px-1.5 py-0.2 rounded border border-violet-200">
+                          Đã giả lập {mockCount} môn
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-neutral-400 transition-transform duration-200 ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Collapsible Body */}
+                  {isExpanded && (
+                    <div className="divide-y divide-zinc-100 bg-white">
                       {coursesInSem.map((course) => {
                         const result = results.find(
                           (r) => r.course_code === course.course_code
                         );
                         const isStudying = result?.status === "STUDYING";
-                        const currentSelectedMock =
-                          mockGrades[course.course_code] || "NONE";
+                        const currentSelectedMock = mockGrades[course.course_code] || "NONE";
 
                         return (
                           <div
                             key={course.course_code}
-                            className="p-3 flex items-center justify-between text-xs hover:bg-white transition-colors"
+                            className="p-3 flex items-center justify-between text-xs hover:bg-zinc-50/20 transition-colors gap-3"
                           >
-                            <div className="space-y-0.5 max-w-[70%]">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-mono font-bold text-violet-600">
+                            <div className="space-y-0.5 max-w-[65%]">
+                              <div className="flex items-center flex-wrap gap-1.5">
+                                <span className="font-mono font-bold text-violet-655">
                                   {course.course_code}
                                 </span>
                                 {course.is_required && (
-                                  <span className="bg-red-50 text-red-600 border border-red-100 px-1 py-0.2 rounded text-[8px] font-bold">
+                                  <span className="bg-red-50 text-red-650 border border-red-100 px-1.5 py-0.2 rounded text-[8px] font-bold">
                                     Bắt buộc
                                   </span>
                                 )}
                                 {isStudying && (
-                                  <span className="bg-amber-50 text-amber-600 border border-amber-100 px-1 py-0.2 rounded text-[8px] font-bold">
+                                  <span className="bg-amber-50 text-amber-650 border border-amber-100 px-1.5 py-0.2 rounded text-[8px] font-bold">
                                     Đang học
                                   </span>
                                 )}
                               </div>
-                              <p className="font-medium text-neutral-700 truncate">
+                              <p className="font-bold text-neutral-800 truncate" title={course.course_name}>
                                 {course.course_name}
                               </p>
-                              <p className="text-[10px] text-neutral-400">
+                              <p className="text-[10px] text-neutral-450 font-bold">
                                 {course.credits} tín chỉ ·{" "}
                                 {course.knowledge_block === "SPECIALIZED"
                                   ? "Chuyên ngành"
@@ -305,13 +322,13 @@ export function GpaProjectionTab({
                                     [course.course_code]: e.target.value,
                                   }))
                                 }
-                                className={`text-xs font-bold rounded-lg border px-2.5 py-1.5 outline-none cursor-pointer transition-colors ${
+                                className={`text-[11px] font-bold rounded-xl border px-2.5 py-2 outline-none cursor-pointer transition-colors ${
                                   currentSelectedMock !== "NONE"
-                                    ? "bg-violet-50 text-violet-600 border-violet-200"
+                                    ? "bg-violet-50 text-violet-655 border-violet-200 shadow-inner"
                                     : "bg-white text-neutral-400 border-zinc-200 hover:border-zinc-300"
                                 }`}
                               >
-                                <option value="NONE">— Giả lập điểm —</option>
+                                <option value="NONE">— Chưa giả lập —</option>
                                 {Object.keys(GRADE_VALUES).map((g) => (
                                   <option key={g} value={g}>
                                     Điểm {g} ({GRADE_VALUES[g].toFixed(1)})
@@ -323,9 +340,10 @@ export function GpaProjectionTab({
                         );
                       })}
                     </div>
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

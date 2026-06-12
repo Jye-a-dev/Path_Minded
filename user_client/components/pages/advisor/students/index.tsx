@@ -18,6 +18,7 @@ import SyncConfirmModal from "./components/SyncConfirmModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import NotificationModal, { NotificationItem } from "./components/NotificationModal";
 import StudentsTable from "./components/StudentsTable";
+import AdvisingLogModal from "./components/AdvisingLogModal";
 
 interface Advisor {
   id: string;
@@ -36,6 +37,7 @@ export default function AdvisorStudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [activeFilterTab, setActiveFilterTab] = useState<"all" | "warning">("all");
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,6 +47,8 @@ export default function AdvisorStudentsPage() {
   const [showSyncConfirm, setShowSyncConfirm] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState<StudentItem | null>(null);
   const [notification, setNotification] = useState<NotificationItem | null>(null);
+  const [advisingStudent, setAdvisingStudent] = useState<StudentItem | null>(null);
+  const [advisingModalOpen, setAdvisingModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -209,18 +213,40 @@ export default function AdvisorStudentsPage() {
     }
   };
 
-  // Filter students
-  const filteredStudents = students.filter((s) => {
-    const query = searchQuery.toLowerCase().trim();
-    const matchesSearch =
-      s.student_code.toLowerCase().includes(query) ||
-      s.full_name.toLowerCase().includes(query);
+  const getSeverityScore = (alertType?: string | null) => {
+    if (alertType === "PROBATION_RISK") return 3;
+    if (alertType === "GPA_WARNING") return 2;
+    if (alertType === "CREDIT_WARNING") return 1;
+    return 0;
+  };
 
-    const matchesClass = !selectedClass || s.class_id === selectedClass;
-    const matchesStatus = !selectedStatus || s.status === selectedStatus;
+  // Filter & Sort students
+  const sortedAndFilteredStudents = React.useMemo(() => {
+    let list = students.filter((s) => {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        s.student_code.toLowerCase().includes(query) ||
+        s.full_name.toLowerCase().includes(query);
 
-    return matchesSearch && matchesClass && matchesStatus;
-  });
+      const matchesClass = !selectedClass || s.class_id === selectedClass;
+      const matchesStatus = !selectedStatus || s.status === selectedStatus;
+      
+      const matchesWarningTab = activeFilterTab === "all" || !!s.active_alert_type;
+
+      return matchesSearch && matchesClass && matchesStatus && matchesWarningTab;
+    });
+
+    // Sort: if on warning tab, sort by severity descending
+    if (activeFilterTab === "warning") {
+      list = [...list].sort((a, b) => {
+        const scoreA = getSeverityScore(a.active_alert_type);
+        const scoreB = getSeverityScore(b.active_alert_type);
+        return scoreB - scoreA;
+      });
+    }
+
+    return list;
+  }, [students, searchQuery, selectedClass, selectedStatus, activeFilterTab]);
 
   const getClassName = (id?: string | null) => {
     if (!id) return "Chưa xếp lớp";
@@ -299,6 +325,31 @@ export default function AdvisorStudentsPage() {
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex border-b border-zinc-200 gap-6">
+        <button
+          onClick={() => setActiveFilterTab("all")}
+          className={`pb-3 text-sm font-bold border-b-2 px-2 transition-all cursor-pointer ${
+            activeFilterTab === "all"
+              ? "border-emerald-600 text-emerald-600"
+              : "border-transparent text-neutral-400 hover:text-neutral-600"
+          }`}
+        >
+          Tất cả sinh viên ({students.length})
+        </button>
+        <button
+          onClick={() => setActiveFilterTab("warning")}
+          className={`pb-3 text-sm font-bold border-b-2 px-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+            activeFilterTab === "warning"
+              ? "border-red-650 text-red-650"
+              : "border-transparent text-neutral-400 hover:text-neutral-600"
+          }`}
+        >
+          <AlertCircle size={14} className={students.some(s => s.active_alert_type) ? "text-red-500 animate-pulse" : ""} />
+          <span>Danh sách cảnh báo học vụ ({students.filter(s => s.active_alert_type).length})</span>
+        </button>
+      </div>
+
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center bg-white p-4 border border-zinc-200 rounded-2xl shadow-sm">
         <div className="relative flex-1">
@@ -347,9 +398,13 @@ export default function AdvisorStudentsPage() {
       {/* Table list */}
       <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
         <StudentsTable
-          students={filteredStudents}
+          students={sortedAndFilteredStudents}
           onEdit={handleOpenEdit}
           onDelete={setDeletingStudent}
+          onAdvisingLog={(item) => {
+            setAdvisingStudent(item);
+            setAdvisingModalOpen(true);
+          }}
           getClassName={getClassName}
           getProgramCode={getProgramCode}
         />
@@ -389,6 +444,15 @@ export default function AdvisorStudentsPage() {
       <NotificationModal
         notification={notification}
         onClose={() => setNotification(null)}
+      />
+
+      {/* Advising Logs CRUD Modal */}
+      <AdvisingLogModal
+        isOpen={advisingModalOpen}
+        onClose={() => setAdvisingModalOpen(false)}
+        student={advisingStudent}
+        advisorId={currentAdvisor?.id || null}
+        onAlertResolved={fetchData}
       />
     </div>
   );

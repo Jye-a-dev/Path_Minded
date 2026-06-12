@@ -145,11 +145,13 @@ export const PrerequisiteForm: React.FC<PrerequisiteFormProps> = ({
         </label>
         <select
           value={formType}
-          onChange={(e) => setFormType(e.target.value as "REQUIRED" | "RECOMMENDED")}
+          onChange={(e) => setFormType(e.target.value as "REQUIRED" | "RECOMMENDED" | "PREVIOUS" | "OTHER")}
           className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none transition-all"
         >
-          <option className="bg-slate-900 text-slate-100" value="REQUIRED">BẮT BUỘC (Khóa cứng)</option>
+          <option className="bg-slate-900 text-slate-100" value="REQUIRED">BẮT BUỘC (Tiên quyết - Khóa cứng)</option>
+          <option className="bg-slate-900 text-slate-100" value="PREVIOUS">ĐIỀU KIỆN HỌC TRƯỚC (Học xong rớt/đậu đều được)</option>
           <option className="bg-slate-900 text-slate-100" value="RECOMMENDED">KHUYẾN NGHỊ (Chỉ cảnh báo thông tin)</option>
+          <option className="bg-slate-900 text-slate-100" value="OTHER">KHÁC</option>
         </select>
       </div>
 

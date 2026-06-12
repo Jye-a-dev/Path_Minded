@@ -1,11 +1,12 @@
 import React from "react";
-import { Users, CheckCircle2, Edit2, Trash2 } from "lucide-react";
+import { Users, CheckCircle2, Edit2, Trash2, AlertCircle, MessageSquare } from "lucide-react";
 import { StudentItem } from "./StudentModal";
 
 interface StudentsTableProps {
   students: StudentItem[];
   onEdit: (item: StudentItem) => void;
   onDelete: (item: StudentItem) => void;
+  onAdvisingLog: (item: StudentItem) => void;
   getClassName: (id?: string | null) => string;
   getProgramCode: (id?: string | null) => string;
 }
@@ -14,6 +15,7 @@ export default function StudentsTable({
   students,
   onEdit,
   onDelete,
+  onAdvisingLog,
   getClassName,
   getProgramCode
 }: StudentsTableProps) {
@@ -81,7 +83,30 @@ export default function StudentsTable({
                 {item.student_code}
               </td>
               <td className="px-5 py-4 font-semibold text-neutral-900">
-                {item.full_name}
+                <div>
+                  <div className="font-semibold text-neutral-900">{item.full_name}</div>
+                  {item.active_alert_type && (
+                    <div className="mt-1 flex items-center">
+                      <span
+                        className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold border ${
+                          item.active_alert_type === "PROBATION_RISK"
+                            ? "bg-red-50 text-red-750 border-red-200"
+                            : item.active_alert_type === "GPA_WARNING"
+                            ? "bg-amber-55 text-amber-750 border-amber-200"
+                            : "bg-blue-50 text-blue-750 border-blue-200"
+                        }`}
+                        title={item.active_alert_description || ""}
+                      >
+                        <AlertCircle size={9} className="shrink-0" />
+                        {item.active_alert_type === "PROBATION_RISK"
+                          ? "Cảnh báo thôi học"
+                          : item.active_alert_type === "GPA_WARNING"
+                          ? "Cảnh báo GPA thấp"
+                          : "Cảnh báo trễ tiến độ"}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </td>
               <td className="px-5 py-4 font-bold text-neutral-600">
                 {getClassName(item.class_id)}
@@ -104,6 +129,13 @@ export default function StudentsTable({
               <td className="px-5 py-4">{getStatusBadge(item.status)}</td>
               <td className="px-5 py-4 text-right">
                 <div className="inline-flex items-center gap-2 justify-end">
+                  <button
+                    onClick={() => onAdvisingLog(item)}
+                    className="inline-flex items-center justify-center p-2 rounded-lg border border-zinc-200 bg-white text-neutral-500 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-colors cursor-pointer"
+                    title="Nhật ký tư vấn & Cảnh báo"
+                  >
+                    <MessageSquare size={13} />
+                  </button>
                   <button
                     onClick={() => onEdit(item)}
                     className="inline-flex items-center justify-center p-2 rounded-lg border border-zinc-200 bg-white text-neutral-500 hover:bg-emerald-55 hover:border-emerald-200 hover:text-emerald-700 transition-colors cursor-pointer"

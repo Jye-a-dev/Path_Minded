@@ -369,6 +369,7 @@ export async function insertCurriculumCourses(
   const prereqProgramIds: string[] = [];
   const prereqCourseCodes: string[] = [];
   const prereqCodes: string[] = [];
+  const prereqTypes: string[] = [];
 
   for (const course of courses) {
     const kbResolved =
@@ -438,6 +439,19 @@ export async function insertCurriculumCourses(
         prereqProgramIds.push(programId);
         prereqCourseCodes.push(courseCode);
         prereqCodes.push(prereqCode);
+        prereqTypes.push('REQUIRED');
+      }
+    }
+
+    const coreqStr = course.corequisite || null;
+    if (programId && coreqStr) {
+      const coreqs = parsePrerequisites(coreqStr);
+      for (const coreqCode of coreqs) {
+        if (coreqCode === courseCode) continue;
+        prereqProgramIds.push(programId);
+        prereqCourseCodes.push(courseCode);
+        prereqCodes.push(coreqCode);
+        prereqTypes.push('PREVIOUS');
       }
     }
   }
@@ -493,10 +507,10 @@ export async function insertCurriculumCourses(
   if (prereqProgramIds.length > 0) {
     await client.query(
       `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
-       SELECT UNNEST($1::uuid[]), UNNEST($2::text[]), UNNEST($3::text[]), 'REQUIRED'
+       SELECT UNNEST($1::uuid[]), UNNEST($2::text[]), UNNEST($3::text[]), UNNEST($4::text[])
        ON CONFLICT (program_id, course_code, prerequisite_course_code) 
-       DO NOTHING`,
-      [prereqProgramIds, prereqCourseCodes, prereqCodes],
+       DO UPDATE SET prerequisite_type = EXCLUDED.prerequisite_type`,
+      [prereqProgramIds, prereqCourseCodes, prereqCodes, prereqTypes],
     );
   }
 }

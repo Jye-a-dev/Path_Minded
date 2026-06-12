@@ -6,11 +6,12 @@ import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { CurriculumCourseForm } from "./CurriculumCourseForm";
 import { getCurriculumCoursesColumns } from "./CurriculumCoursesColumns";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, List, Network } from "lucide-react";
 import { api } from "../../../services/api";
 import { ColumnVisibilityToggle } from "./partials/ColumnVisibilityToggle";
 import { CurriculumCoursesFilters } from "./partials/CurriculumCoursesFilters";
 import { useColumnLabels } from "../../../hooks/useColumnLabels";
+import { InteractiveGraph } from "../../../components/data_display/InteractiveGraph";
 
 interface DropdownItem {
   id: string;
@@ -34,6 +35,7 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
   selectedProgramId,
   onBack,
 }) => {
+  const [viewMode, setViewMode] = useState<"table" | "graph">("table");
   const {
     data,
     total,
@@ -290,6 +292,34 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
             Đang quản lý chương trình: <strong className="text-indigo-400 font-bold">{activeProgramName || "N/A"}</strong>
           </p>
         </div>
+
+        {/* View Mode Toggle Switch */}
+        <div className="flex items-center rounded-lg border border-slate-800 bg-slate-950 p-1 self-start sm:self-auto shadow-inner">
+          <button
+            type="button"
+            onClick={() => setViewMode("table")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              viewMode === "table"
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <List size={13} />
+            Dạng bảng
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("graph")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              viewMode === "graph"
+                ? "bg-slate-800 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Network size={13} />
+            Sơ đồ trực quan
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -299,67 +329,71 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
       )}
 
       {/* Data Table */}
-      <DataTable<CourseItem>
-        columns={columns}
-        data={data}
-        loading={loading}
-        total={total}
-        page={page}
-        limit={limit}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Tìm kiếm mã môn hoặc tên môn..."
-        enableSelection={true}
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-        filters={
-          <CurriculumCoursesFilters
-            filters={filters}
-            updateFilters={updateFilters}
-            clearFilters={clearFilters}
-            selectedProgramId={selectedProgramId}
-            programsList={programsList}
-            knowledgeBlocks={knowledgeBlocks}
-          />
-        }
-        rightActions={
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Column Hiding Toggle */}
-            <ColumnVisibilityToggle
-              visibleColumns={visibleColumns}
-              onChange={setVisibleColumns}
+      {viewMode === "table" ? (
+        <DataTable<CourseItem>
+          columns={columns}
+          data={data}
+          loading={loading}
+          total={total}
+          page={page}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Tìm kiếm mã môn hoặc tên môn..."
+          enableSelection={true}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          filters={
+            <CurriculumCoursesFilters
+              filters={filters}
+              updateFilters={updateFilters}
+              clearFilters={clearFilters}
+              selectedProgramId={selectedProgramId}
+              programsList={programsList}
+              knowledgeBlocks={knowledgeBlocks}
             />
+          }
+          rightActions={
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Column Hiding Toggle */}
+              <ColumnVisibilityToggle
+                visibleColumns={visibleColumns}
+                onChange={setVisibleColumns}
+              />
 
-            {selectedIds.length > 0 && (
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-1.5 rounded-lg bg-rose-600/20 px-3.5 py-2 text-sm font-semibold text-rose-400 border border-rose-500/30 hover:bg-rose-600/30 hover:text-white transition-all cursor-pointer"
+                >
+                  <Trash2 size={16} />
+                  Xóa đã chọn ({selectedIds.length})
+                </button>
+              )}
+
               <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-1.5 rounded-lg bg-rose-600/20 px-3.5 py-2 text-sm font-semibold text-rose-400 border border-rose-500/30 hover:bg-rose-600/30 hover:text-white transition-all cursor-pointer"
+                onClick={handleDeleteAll}
+                className="flex items-center gap-1.5 rounded-lg bg-amber-600/10 px-3.5 py-2 text-sm font-semibold text-amber-400 border border-amber-500/20 hover:bg-amber-600/20 hover:text-amber-300 transition-all cursor-pointer"
               >
                 <Trash2 size={16} />
-                Xóa đã chọn ({selectedIds.length})
+                Xóa tất cả môn học
               </button>
-            )}
 
-            <button
-              onClick={handleDeleteAll}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-600/10 px-3.5 py-2 text-sm font-semibold text-amber-400 border border-amber-500/20 hover:bg-amber-600/20 hover:text-amber-300 transition-all cursor-pointer"
-            >
-              <Trash2 size={16} />
-              Xóa tất cả môn học
-            </button>
-
-            <button
-              onClick={handleOpenCreate}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
-            >
-              <Plus size={16} />
-              Tạo Môn học
-            </button>
-          </div>
-        }
-      />
+              <button
+                onClick={handleOpenCreate}
+                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+              >
+                <Plus size={16} />
+                Tạo Môn học
+              </button>
+            </div>
+          }
+        />
+      ) : (
+        <InteractiveGraph programId={selectedProgramId} />
+      )}
 
       {/* Modal Popup */}
       <Modal

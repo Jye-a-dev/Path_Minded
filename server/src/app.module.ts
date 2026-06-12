@@ -26,6 +26,8 @@ import { StudentsModule } from './modules/students/students.module';
 import { TranscriptUploadsModule } from './modules/transcript_uploads/transcript_uploads.module';
 import { UsersModule } from './modules/users/users.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { AlertsModule } from './modules/alerts/alerts.module';
+import { SyncModule } from './modules/sync/sync.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { SettingsModule } from './modules/settings/settings.module';
     CourseTypeMappingsModule,
     KnowledgeBlockMappingsModule,
     SettingsModule,
+    AlertsModule,
+    SyncModule,
   ],
   controllers: [AppController],
   providers: [

@@ -48,4 +48,9 @@ export class QueryStudentsDto extends BaseQueryDto {
   @IsOptional()
   @IsString()
   has_grades?: string;
+
+  @ApiPropertyOptional({ example: 'true' })
+  @IsOptional()
+  @IsString()
+  has_active_alert?: string;
 }

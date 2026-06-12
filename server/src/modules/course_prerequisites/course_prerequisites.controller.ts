@@ -158,4 +158,14 @@ export class CoursePrerequisitesController {
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.service.remove(id);
   }
+
+  @ApiOperation({
+    summary: 'Sync course prerequisites from curriculum courses',
+  })
+  @Post('sync-from-curriculum')
+  syncFromCurriculum(
+    @Query('program_id') programId: string,
+  ): Promise<{ count: number }> {
+    return this.service.syncFromCurriculum(programId);
+  }
 }

@@ -120,6 +120,13 @@ export class StudentsService {
         `${existsClause} (SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id)`,
       );
     }
+    if (query.has_active_alert !== undefined) {
+      const existsClause =
+        query.has_active_alert === 'true' ? 'EXISTS' : 'NOT EXISTS';
+      clauses.push(
+        `${existsClause} (SELECT 1 FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE')`,
+      );
+    }
 
     const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
     return { where, values, idx };
@@ -137,7 +144,9 @@ export class StudentsService {
           s.class_id, s.program_id, s.cohort_year, s.status, s.advisor_feedback,
           s.created_at, s.updated_at,
           COALESCE(u.email, cir.email) AS email,
-          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
+          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades,
+          (SELECT alert_type FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE' LIMIT 1) AS active_alert_type,
+          (SELECT description FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE' LIMIT 1) AS active_alert_description
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN LATERAL (
@@ -182,7 +191,9 @@ export class StudentsService {
           s.class_id, s.program_id, s.cohort_year, s.status, s.advisor_feedback,
           s.created_at, s.updated_at,
           COALESCE(u.email, cir.email) AS email,
-          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
+          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades,
+          (SELECT alert_type FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE' LIMIT 1) AS active_alert_type,
+          (SELECT description FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE' LIMIT 1) AS active_alert_description
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN LATERAL (
@@ -224,7 +235,9 @@ export class StudentsService {
           s.class_id, s.program_id, s.cohort_year, s.status, s.advisor_feedback,
           s.created_at, s.updated_at,
           COALESCE(u.email, cir.email) AS email,
-          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades
+          EXISTS(SELECT 1 FROM student_course_results scr WHERE scr.student_id = s.id) AS has_grades,
+          (SELECT alert_type FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE' LIMIT 1) AS active_alert_type,
+          (SELECT description FROM academic_alerts aa WHERE aa.student_id = s.id AND aa.alert_status = 'ACTIVE' LIMIT 1) AS active_alert_description
         FROM students s
         LEFT JOIN users u ON s.user_id = u.id
         LEFT JOIN LATERAL (

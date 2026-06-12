@@ -5,11 +5,14 @@ import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { PrerequisiteForm } from "./PrerequisiteForm";
-import { Plus, Edit2, Trash2, GitFork, RefreshCw, ArrowRight } from "lucide-react";
+import { Plus, Edit2, Trash2, GitFork, RefreshCw, ArrowRight, List, Network } from "lucide-react";
 import { api } from "../../../services/api";
 import { CoursePrerequisitesFilters } from "./partials/CoursePrerequisitesFilters";
+import { InteractiveGraph } from "../../../components/data_display/InteractiveGraph";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 
 export default function CoursePrerequisites() {
+  const [viewMode, setViewMode] = useState<"table" | "graph">("table");
   const [persistedProgramId, setPersistedProgramId] = useReloadPersistentState("selected_prerequisites_program_id", "");
 
   const {
@@ -44,6 +47,37 @@ export default function CoursePrerequisites() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PrerequisiteItem | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [isSyncConfirmOpen, setIsSyncConfirmOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+ 
+  const handleSyncFromCurriculum = () => {
+    if (!filters.program_id) return;
+    setIsSyncConfirmOpen(true);
+  };
+
+  const executeSyncFromCurriculum = async () => {
+    setSyncing(true);
+    try {
+      const response = await api.post(
+        `/course_prerequisites/sync-from-curriculum?program_id=${filters.program_id}`
+      );
+      const count = response.data?.count ?? 0;
+      alert(`Đồng bộ thành công! Đã tạo ${count} liên kết điều kiện môn học (Tiên quyết & Học trước).`);
+      
+      const currentProgramId = filters.program_id;
+      clearFilters();
+      setTimeout(() => {
+        updateFilters({ program_id: currentProgramId });
+      }, 50);
+    } catch (err) {
+      console.error("Failed to sync from curriculum:", err);
+      alert(err instanceof Error ? err.message : "Đồng bộ thất bại");
+    } finally {
+      setSyncing(false);
+    }
+  };
   
   // Program lists and selection states
   const [programsList, setProgramsList] = useState<{ id: string; program_code: string; program_name: string; major_name?: string | null; version?: string | null }[]>([]);
@@ -94,13 +128,19 @@ export default function CoursePrerequisites() {
     setModalOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn mối quan hệ điều kiện tiên quyết này?")) {
-      try {
-        await deleteItem(id);
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Xóa điều kiện tiên quyết thất bại");
-      }
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deletingId) return;
+    try {
+      await deleteItem(deletingId);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Xóa điều kiện tiên quyết thất bại");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -138,22 +178,29 @@ export default function CoursePrerequisites() {
       header: "Loại điều kiện",
       accessorKey: "prerequisite_type",
       render: (row: PrerequisiteItem) => {
-        const isRequired = row.prerequisite_type === "REQUIRED";
         const statusMap: Record<string, string> = {
-          REQUIRED: "BẮT BUỘC",
+          REQUIRED: "TIÊN QUYẾT (BẮT BUỘC)",
           RECOMMENDED: "KHUYẾN NGHỊ",
           PREVIOUS: "MÔN HỌC TRƯỚC",
           OTHER: "KHÁC"
         };
+        const getStyle = (type: string) => {
+          switch (type) {
+            case "REQUIRED":
+              return "bg-rose-500/10 text-rose-400 border-rose-500/20";
+            case "PREVIOUS":
+              return "bg-sky-500/10 text-sky-400 border-sky-500/20";
+            case "RECOMMENDED":
+              return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+            default:
+              return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+          }
+        };
         return (
           <span
-            className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${
-              isRequired
-                ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-            }`}
+            className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold border uppercase tracking-wide ${getStyle(row.prerequisite_type)}`}
           >
-            {statusMap[row.prerequisite_type] || "BẮT BUỘC"}
+            {statusMap[row.prerequisite_type] || "TIÊN QUYẾT (BẮT BUỘC)"}
           </span>
         );
       },
@@ -336,7 +383,35 @@ export default function CoursePrerequisites() {
                 </p>
               </div>
             </div>
-            <div>
+            <div className="flex flex-wrap items-center gap-3">
+              {/* View Mode Toggle Switch */}
+              <div className="flex items-center rounded-lg border border-slate-800 bg-slate-950 p-1 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === "table"
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <List size={13} />
+                  Dạng bảng
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("graph")}
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === "graph"
+                      ? "bg-slate-800 text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Network size={13} />
+                  Sơ đồ trực quan
+                </button>
+              </div>
+
               <button
                 onClick={handleClearProgram}
                 className="w-full md:w-auto rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition-all cursor-pointer"
@@ -346,35 +421,50 @@ export default function CoursePrerequisites() {
             </div>
           </div>
 
-          <DataTable<PrerequisiteItem>
-            columns={columns}
-            data={data}
-            loading={loading}
-            total={total}
-            page={page}
-            limit={limit}
-            onPageChange={setPage}
-            onLimitChange={setLimit}
-            searchValue={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Tìm kiếm mã môn học..."
-            filters={
-              <CoursePrerequisitesFilters
-                filters={filters}
-                updateFilters={updateFilters}
-                clearFilters={clearFilters}
-              />
-            }
-            rightActions={
-              <button
-                onClick={handleOpenCreate}
-                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
-              >
-                <Plus size={16} />
-                Tạo môn tiên quyết
-              </button>
-            }
-          />
+          {viewMode === "table" ? (
+            <DataTable<PrerequisiteItem>
+              columns={columns}
+              data={data}
+              loading={loading}
+              total={total}
+              page={page}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Tìm kiếm mã môn học..."
+              filters={
+                <CoursePrerequisitesFilters
+                  filters={filters}
+                  updateFilters={updateFilters}
+                  clearFilters={clearFilters}
+                />
+              }
+              rightActions={
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={syncing}
+                    onClick={handleSyncFromCurriculum}
+                    className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2 text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                    Đồng bộ từ Khung chương trình
+                  </button>
+                  <button
+                    onClick={handleOpenCreate}
+                    className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+                  >
+                    <Plus size={16} />
+                    Tạo môn tiên quyết
+                  </button>
+                </div>
+              }
+            />
+          ) : (
+            <InteractiveGraph programId={filters.program_id as string} />
+          )}
         </div>
       )}
 
@@ -393,6 +483,33 @@ export default function CoursePrerequisites() {
           onCancel={handleCloseModal}
         />
       </Modal>
+
+      {/* Sync Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isSyncConfirmOpen}
+        onClose={() => setIsSyncConfirmOpen(false)}
+        title="Đồng bộ từ Khung chương trình"
+        message={`Hệ thống sẽ đồng bộ hóa toàn bộ danh sách điều kiện môn học từ khung chương trình (bằng cách phân tích cột ĐK tiên quyết và Học trước).\n\nDữ liệu điều kiện môn học cũ của chương trình này sẽ bị xóa. Bạn có chắc chắn muốn tiếp tục?`}
+        confirmText="Đồng bộ ngay"
+        cancelText="Hủy"
+        isDanger={true}
+        onConfirm={executeSyncFromCurriculum}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setDeletingId(null);
+        }}
+        title="Xóa điều kiện môn học"
+        message="Bạn có chắc chắn muốn xóa vĩnh viễn mối quan hệ điều kiện tiên quyết này?"
+        confirmText="Xóa vĩnh viễn"
+        cancelText="Hủy"
+        isDanger={true}
+        onConfirm={executeDelete}
+      />
     </div>
   );
 }

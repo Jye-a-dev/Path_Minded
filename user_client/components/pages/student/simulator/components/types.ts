@@ -49,4 +49,5 @@ export interface CourseResult {
 export interface PrerequisiteRule {
   course_code: string;
   prerequisite_course_code: string;
+  prerequisite_type?: string;
 }

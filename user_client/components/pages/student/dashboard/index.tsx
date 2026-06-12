@@ -1,13 +1,13 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
 import {
   isPeOrDefenseCourse,
   isPrepEnglishCourse,
 } from "../simulator/components/simulatorMath";
-import { ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+import { ShieldCheck, AlertCircle, Loader2, ArrowRight } from "lucide-react";
 import { DashboardStats } from "./components/DashboardStats";
 import { RoadmapSection } from "./components/RoadmapSection";
 import { ProfileCard } from "./components/ProfileCard";
@@ -28,6 +28,18 @@ interface ProgramInfo {
   total_credits?: number;
 }
 
+interface ActiveAlert {
+  id: string;
+  student_id: string;
+  alert_type: "PROBATION_RISK" | "GPA_WARNING" | "CREDIT_WARNING";
+  alert_status: "ACTIVE" | "RESOLVED";
+  gpa?: number | null;
+  total_credits?: number | null;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function StudentOverviewPage() {
   const { user } = useAuth();
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
@@ -35,6 +47,47 @@ export default function StudentOverviewPage() {
   const [programInfo, setProgramInfo] = useState<ProgramInfo | null>(null);
   const [accumulatedCredits, setAccumulatedCredits] = useState<number | null>(null);
   const [cumulativeGpa, setCumulativeGpa] = useState<number | null>(null);
+  const [activeAlert, setActiveAlert] = useState<ActiveAlert | null>(null);
+
+  const fetchActiveAlert = useCallback(async (studentId: string) => {
+    try {
+      const res = await api.get(`/alerts/active?studentId=${studentId}`);
+      setActiveAlert(res.data);
+    } catch (err) {
+      console.error("Failed to fetch active alert:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!studentProfile?.id) return;
+    
+    const timer = setTimeout(() => {
+      void fetchActiveAlert(studentProfile.id);
+    }, 0);
+
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const eventSourceUrl = `${apiBaseUrl}/sync/alerts/stream?studentId=${studentProfile.id}`;
+    const eventSource = new EventSource(eventSourceUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        console.log("SSE update received:", payload);
+        void fetchActiveAlert(studentProfile.id);
+      } catch (err) {
+        console.error("Failed to parse SSE event data:", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("SSE Connection error:", err);
+    };
+
+    return () => {
+      clearTimeout(timer);
+      eventSource.close();
+    };
+  }, [studentProfile?.id, fetchActiveAlert]);
 
   useEffect(() => {
     if (!user) return;
@@ -190,6 +243,65 @@ export default function StudentOverviewPage() {
           theo khung chương trình cá nhân.
         </p>
       </div>
+
+      {/* Warning Banner */}
+      {activeAlert && (
+        <div
+          className={`relative z-10 border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all shadow-md ${
+            activeAlert.alert_type === "PROBATION_RISK"
+              ? "bg-red-50/90 border-red-200 text-red-900 shadow-red-100/30"
+              : "bg-amber-50/90 border-amber-200 text-amber-950 shadow-amber-100/30"
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <div
+              className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 border ${
+                activeAlert.alert_type === "PROBATION_RISK"
+                  ? "bg-red-100 border-red-200 text-red-650"
+                  : "bg-amber-100 border-amber-200 text-amber-650"
+              }`}
+            >
+              <AlertCircle size={22} className={activeAlert.alert_type === "PROBATION_RISK" ? "animate-pulse" : ""} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-extrabold tracking-tight">
+                {activeAlert.alert_type === "PROBATION_RISK"
+                  ? "CẢNH BÁO: RỦI RO BỊ BUỘC THÔI HỌC / ĐÌNH CHỈ"
+                  : activeAlert.alert_type === "GPA_WARNING"
+                  ? "CẢNH BÁO HỌC VỤ: GPA DƯỚI MỨC AN TOÀN"
+                  : "CẢNH BÁO HỌC PHẦN TIÊN QUYẾT / CHẬM TIẾN ĐỘ"}
+              </h4>
+              <p className="text-xs opacity-90 leading-relaxed font-semibold">
+                {activeAlert.description}
+              </p>
+              {activeAlert.gpa !== null && activeAlert.gpa !== undefined && (
+                <div className="flex items-center gap-3.5 text-[10px] font-bold mt-1.5 opacity-80">
+                  <span>GPA hiện tại: <span className="underline">{Number(activeAlert.gpa).toFixed(2)}</span></span>
+                  {activeAlert.total_credits && (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-350" />
+                      <span>Số tín chỉ bị ảnh hưởng: {activeAlert.total_credits}</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="shrink-0">
+            <Link
+              href="/student/simulator"
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-sm ${
+                activeAlert.alert_type === "PROBATION_RISK"
+                  ? "bg-red-600 hover:bg-red-700 text-white shadow-red-200"
+                  : "bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200"
+              }`}
+            >
+              <span>Xem giải pháp & Giả lập</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Stats Row ───────────────────────────────────────────── */}
       <DashboardStats

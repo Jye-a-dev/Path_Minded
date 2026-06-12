@@ -100,6 +100,7 @@ interface SimulatedRoadmapResult {
   newMaxSem: number;
   affectedCount: number;
   dependencyChain: string[];
+  affectedCourses: { course_code: string; course_name: string; delay: number }[];
 }
 
 export function computeSimulatedRoadmap(
@@ -130,6 +131,10 @@ export function computeSimulatedRoadmap(
   });
 
   prereqs.forEach((r) => {
+    // PREVIOUS and RECOMMENDED prerequisites do not propagate delay warnings
+    if (r.prerequisite_type === "PREVIOUS" || r.prerequisite_type === "RECOMMENDED") {
+      return;
+    }
     if (childrenOf[r.prerequisite_course_code] && childrenOf[r.course_code]) {
       childrenOf[r.prerequisite_course_code].push(r.course_code);
       parentsOf[r.course_code].push(r.prerequisite_course_code);
@@ -219,6 +224,25 @@ export function computeSimulatedRoadmap(
     }
   }
 
+  // Trace affected courses detailed delays list
+  const affectedCoursesList: { course_code: string; course_name: string; delay: number }[] = [];
+  if (isDelaySimulated && selectedCourseToFail) {
+    affectedCourses.forEach((code) => {
+      if (code !== selectedCourseToFail) {
+        const origSem = originalSemesters[code] ?? 1;
+        const newSem = scheduledSemesters[code] ?? 1;
+        const delay = newSem - origSem;
+        if (delay > 0) {
+          affectedCoursesList.push({
+            course_code: code,
+            course_name: courseMap[code]?.course_name || code,
+            delay
+          });
+        }
+      }
+    });
+  }
+
   return {
     semestersList,
     delayAmount,
@@ -226,5 +250,6 @@ export function computeSimulatedRoadmap(
     newMaxSem: maxSem,
     affectedCount: affectedCourses.size - 1, // Exclude the failed course itself
     dependencyChain,
+    affectedCourses: affectedCoursesList,
   };
 }

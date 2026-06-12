@@ -77,31 +77,47 @@ export class CurriculumImportsService implements OnModuleInit {
         program_id: string;
         course_code: string;
         prerequisite: string | null;
+        corequisite: string | null;
       }>(
-        `SELECT program_id, course_code, prerequisite 
+        `SELECT program_id, course_code, prerequisite, corequisite 
          FROM curriculum_courses 
-         WHERE prerequisite IS NOT NULL AND prerequisite <> ''`,
+         WHERE (prerequisite IS NOT NULL AND prerequisite <> '')
+            OR (corequisite IS NOT NULL AND corequisite <> '')`,
       );
 
       const courses = coursesResult.rows;
       if (courses.length === 0) return;
 
       console.log(
-        `Found ${courses.length} courses with prerequisites. Populating course_prerequisites table...`,
+        `Found ${courses.length} courses with prerequisites/corequisites. Populating course_prerequisites table...`,
       );
 
       // Build all rows to insert
       const programIds: string[] = [];
       const courseCodes: string[] = [];
       const prereqCodes: string[] = [];
+      const prereqTypes: string[] = [];
 
       for (const course of courses) {
-        const prereqs = parsePrerequisites(course.prerequisite);
-        for (const prereqCode of prereqs) {
-          if (prereqCode === course.course_code) continue;
-          programIds.push(course.program_id);
-          courseCodes.push(course.course_code);
-          prereqCodes.push(prereqCode);
+        if (course.prerequisite) {
+          const prereqs = parsePrerequisites(course.prerequisite);
+          for (const prereqCode of prereqs) {
+            if (prereqCode === course.course_code) continue;
+            programIds.push(course.program_id);
+            courseCodes.push(course.course_code);
+            prereqCodes.push(prereqCode);
+            prereqTypes.push('REQUIRED');
+          }
+        }
+        if (course.corequisite) {
+          const coreqs = parsePrerequisites(course.corequisite);
+          for (const coreqCode of coreqs) {
+            if (coreqCode === course.course_code) continue;
+            programIds.push(course.program_id);
+            courseCodes.push(course.course_code);
+            prereqCodes.push(coreqCode);
+            prereqTypes.push('PREVIOUS');
+          }
         }
       }
 
@@ -109,9 +125,10 @@ export class CurriculumImportsService implements OnModuleInit {
         // Single batch INSERT using unnest — avoids N round-trips
         await client.query(
           `INSERT INTO course_prerequisites (program_id, course_code, prerequisite_course_code, prerequisite_type)
-           SELECT UNNEST($1::uuid[]), UNNEST($2::text[]), UNNEST($3::text[]), 'REQUIRED'
-           ON CONFLICT (program_id, course_code, prerequisite_course_code) DO NOTHING`,
-          [programIds, courseCodes, prereqCodes],
+           SELECT UNNEST($1::uuid[]), UNNEST($2::text[]), UNNEST($3::text[]), UNNEST($4::text[])
+           ON CONFLICT (program_id, course_code, prerequisite_course_code) 
+           DO UPDATE SET prerequisite_type = EXCLUDED.prerequisite_type`,
+          [programIds, courseCodes, prereqCodes, prereqTypes],
         );
       }
 

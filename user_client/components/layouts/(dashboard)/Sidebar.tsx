@@ -117,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Link
             href={homeHref}
             onClick={() => setSidebarOpen(false)}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+            className={`hover-primary-accent flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
               pathname === homeHref
                 ? `${accentClass} text-white ${activeShadowClass}`
                 : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <Link
                           href={item.to}
                           onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                          className={`hover-primary-accent flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                             isActive
                               ? `${accentClass} text-white ${activeShadowClass}`
                               : "text-slate-500 hover:bg-slate-100/80 hover:text-slate-900"

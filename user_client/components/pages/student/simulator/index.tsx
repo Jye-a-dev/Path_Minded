@@ -23,6 +23,7 @@ import {
   PrerequisiteRule,
   GRADE_VALUES,
 } from "./components/types";
+import { InteractiveGraph } from "../InteractiveGraph";
 
 export default function GraduationSimulatorPage() {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ export default function GraduationSimulatorPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Tab State
-  const [activeTab, setActiveTab] = useReloadPersistentState<"projection" | "delay">("student_simulator_activeTab", "projection");
+  const [activeTab, setActiveTab] = useReloadPersistentState<"projection" | "delay" | "graph">("student_simulator_activeTab", "projection");
 
   // Simulation Projection States
   const [targetGpa, setTargetGpa] = useReloadPersistentState<number>("student_simulator_targetGpa", 3.2);
@@ -420,6 +421,16 @@ export default function GraduationSimulatorPage() {
             >
               Giả lập trượt môn & Chậm tiến độ (Prerequisite Delay)
             </button>
+            <button
+              onClick={() => setActiveTab("graph")}
+              className={`pb-3 text-sm font-bold border-b-2 px-6 transition-all ${
+                activeTab === "graph"
+                  ? "border-violet-600 text-violet-600"
+                  : "border-transparent text-neutral-400 hover:text-neutral-600"
+              }`}
+            >
+              Bản đồ Tri thức tương tác (Interactive Graph)
+            </button>
           </div>
 
           {/* ── TAB 1: GPA PROJECTION ─────────────────────────────── */}
@@ -452,6 +463,20 @@ export default function GraduationSimulatorPage() {
               simulatedRoadmap={simulatedRoadmap}
               failSimulatorCourseOptions={failSimulatorCourseOptions}
               results={results}
+            />
+          )}
+
+          {/* ── TAB 3: INTERACTIVE KNOWLEDGE GRAPH ────────────────── */}
+          {activeTab === "graph" && (
+            <InteractiveGraph
+              curriculum={curriculum}
+              results={results}
+              prereqs={prereqs}
+              onSimulateFailure={(code) => {
+                setSelectedCourseToFail(code);
+                setIsDelaySimulated(true);
+                setActiveTab("delay");
+              }}
             />
           )}
         </div>
