@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePrograms } from "../../../hooks/usePrograms";
 import type { ProgramItem } from "../../../hooks/usePrograms";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { ProgramForm } from "./ProgramForm";
-import { Plus, Edit2, Trash2, BookOpen, GraduationCap, ChevronLeft, LayoutGrid, Loader2, Search, X, Filter } from "lucide-react";
+import { CurriculumImportsManager } from "../CurriculumImports/CurriculumImports";
+import { Plus, Edit2, Trash2, BookOpen, GraduationCap, ChevronLeft, LayoutGrid, Loader2, Search, X, Filter, UploadCloud } from "lucide-react";
 import { api } from "../../../services/api";
 
 export default function Programs() {
@@ -27,10 +29,20 @@ export default function Programs() {
     deleteItem,
   } = usePrograms();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "imports" ? "imports" : "programs";
+  const selectedMajor = searchParams.get("major") || null;
+
+  const handleTabChange = (tab: "programs" | "imports") => {
+    const nextParams: Record<string, string> = { tab };
+    if (selectedMajor) {
+      nextParams.major = selectedMajor;
+    }
+    setSearchParams(nextParams);
+  };
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProgramItem | null>(null);
-
-  const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
   const [allMajors, setAllMajors] = useState<string[]>([]);
   const [allVersions, setAllVersions] = useState<string[]>([]);
   const [loadingMajors, setLoadingMajors] = useState(true);
@@ -74,13 +86,21 @@ export default function Programs() {
   }, [majorRefreshKey]);
 
   const handleSelectMajor = (major: string | null) => {
-    setSelectedMajor(major);
+    const nextParams: Record<string, string> = { tab: activeTab };
+    if (major) {
+      nextParams.major = major;
+    }
+    setSearchParams(nextParams);
+  };
+
+  // Synchronize major query parameter with the API hook's filters
+  useEffect(() => {
     updateFilters({
-      major_name: major && major !== "TẤT CẢ" ? major : undefined,
+      major_name: selectedMajor && selectedMajor !== "TẤT CẢ" ? selectedMajor : undefined,
       version: undefined,
       total_credits: undefined,
     });
-  };
+  }, [selectedMajor, updateFilters]);
 
   const handleClearFilters = () => {
     setSearch("");
@@ -357,130 +377,168 @@ export default function Programs() {
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Định nghĩa các ma trận đề cương học thuật, trình độ học vị và ngưỡng tín chỉ tốt nghiệp.
+              {activeTab === "programs"
+                ? "Định nghĩa các ma trận đề cương học thuật, trình độ học vị và ngưỡng tín chỉ tốt nghiệp."
+                : "Tải lên và bóc tách cấu trúc học phần từ bảng tính Excel để đồng bộ vào cơ sở dữ liệu."}
             </p>
           </div>
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">
-          {error}
-        </div>
-      )}
+      {/* Tabs Selector */}
+      <div className="flex items-center gap-2 bg-slate-950/50 border border-slate-800/60 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => handleTabChange("programs")}
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-300 cursor-pointer ${
+            activeTab === "programs"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/40"
+          }`}
+        >
+          <BookOpen size={14} />
+          Danh sách chương trình
+        </button>
+        <button
+          onClick={() => handleTabChange("imports")}
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-300 cursor-pointer ${
+            activeTab === "imports"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/40"
+          }`}
+        >
+          <UploadCloud size={14} />
+          Phiên nhập liệu (Excel)
+        </button>
+      </div>
 
-      {/* Data Table */}
-      <DataTable<ProgramItem>
-        columns={columns}
-        data={data}
-        loading={loading}
-        total={total}
-        page={page}
-        limit={limit}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Tìm kiếm mã hoặc tên chương trình..."
-        filters={
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Filter icon or label */}
-            <div className="flex items-center gap-1 text-xs font-bold text-slate-400 uppercase tracking-wider pr-1">
-              <Filter size={12} className="text-indigo-400" />
-              <span>Bộ lọc:</span>
+      {activeTab === "programs" ? (
+        <>
+          {error && (
+            <div className="rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">
+              {error}
             </div>
+          )}
 
-            {/* Major Filter Dropdown */}
-            <select
-              value={selectedMajor || ""}
-              onChange={(e) => handleSelectMajor(e.target.value || null)}
-              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:border-slate-700 transition-colors"
-            >
-              <option className="bg-slate-900 text-slate-100" value="TẤT CẢ">
-                Tất cả chuyên ngành
-              </option>
-              {allMajors.map((major) => (
-                <option className="bg-slate-900 text-slate-100" key={major} value={major}>
-                  {major}
-                </option>
-              ))}
-            </select>
+          {/* Data Table */}
+          <DataTable<ProgramItem>
+            columns={columns}
+            data={data}
+            loading={loading}
+            total={total}
+            page={page}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Tìm kiếm mã hoặc tên chương trình..."
+            filters={
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Filter icon or label */}
+                <div className="flex items-center gap-1 text-xs font-bold text-slate-400 uppercase tracking-wider pr-1">
+                  <Filter size={12} className="text-indigo-400" />
+                  <span>Bộ lọc:</span>
+                </div>
 
-            {/* Version Filter Dropdown */}
-            <select
-              value={(filters.version as string) || ""}
-              onChange={(e) => updateFilters({ version: e.target.value || undefined })}
-              className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:border-slate-700 transition-colors"
-            >
-              <option className="bg-slate-900 text-slate-100" value="">
-                Tất cả phiên bản
-              </option>
-              {allVersions.map((v) => (
-                <option className="bg-slate-900 text-slate-100" key={v} value={v}>
-                  Phiên bản {v}
-                </option>
-              ))}
-            </select>
+                {/* Major Filter Dropdown */}
+                <select
+                  value={selectedMajor || ""}
+                  onChange={(e) => handleSelectMajor(e.target.value || null)}
+                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:border-slate-700 transition-colors"
+                >
+                  <option className="bg-slate-900 text-slate-100" value="TẤT CẢ">
+                    Tất cả chuyên ngành
+                  </option>
+                  {allMajors.map((major) => (
+                    <option className="bg-slate-900 text-slate-100" key={major} value={major}>
+                      {major}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Total Credits Input */}
-            <input
-              type="number"
-              placeholder="Tín chỉ..."
-              value={(filters.total_credits as string) || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                updateFilters({ total_credits: val ? Number(val) : undefined });
-              }}
-              className="w-24 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none hover:border-slate-700 transition-all"
-            />
+                {/* Version Filter Dropdown */}
+                <select
+                  value={(filters.version as string) || ""}
+                  onChange={(e) => updateFilters({ version: e.target.value || undefined })}
+                  className="rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:border-slate-700 transition-colors"
+                >
+                  <option className="bg-slate-900 text-slate-100" value="">
+                    Tất cả phiên bản
+                  </option>
+                  {allVersions.map((v) => (
+                    <option className="bg-slate-900 text-slate-100" key={v} value={v}>
+                      Phiên bản {v}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Clear Filters Button */}
-            {(search || filters.version || filters.total_credits !== undefined) && (
+                {/* Total Credits Input */}
+                <input
+                  type="number"
+                  placeholder="Tín chỉ..."
+                  value={(filters.total_credits as string) || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateFilters({ total_credits: val ? Number(val) : undefined });
+                  }}
+                  className="w-24 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none hover:border-slate-700 transition-all"
+                />
+
+                {/* Clear Filters Button */}
+                {(search || filters.version || filters.total_credits !== undefined) && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-355 font-semibold px-2 py-1.5 rounded bg-rose-500/5 border border-rose-500/10 hover:border-rose-500/20 transition-all cursor-pointer"
+                  >
+                    <X size={12} />
+                    Xóa lọc
+                  </button>
+                )}
+              </div>
+            }
+            rightActions={
               <button
-                onClick={handleClearFilters}
-                className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-355 font-semibold px-2 py-1.5 rounded bg-rose-500/5 border border-rose-500/10 hover:border-rose-500/20 transition-all cursor-pointer"
+                onClick={handleOpenCreate}
+                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
               >
-                <X size={12} />
-                Xóa lọc
+                <Plus size={16} />
+                Tạo Chương trình
               </button>
-            )}
-          </div>
-        }
-        rightActions={
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 transition-all cursor-pointer"
+            }
+          />
+
+          {/* Modal Popup */}
+          <Modal
+            isOpen={modalOpen}
+            onClose={handleCloseModal}
+            title={editingItem ? "Chỉnh sửa Chương trình đào tạo" : "Tạo Chương trình đào tạo mới"}
           >
-            <Plus size={16} />
-            Tạo Chương trình
-          </button>
-        }
-      />
+            <ProgramForm
+              key={editingItem ? editingItem.id : "create"}
+              editingItem={editingItem}
+              onSubmit={handleSubmit}
+              onCancel={handleCloseModal}
+            />
+          </Modal>
 
-      {/* Modal Popup */}
-      <Modal
-        isOpen={modalOpen}
-        onClose={handleCloseModal}
-        title={editingItem ? "Chỉnh sửa Chương trình đào tạo" : "Tạo Chương trình đào tạo mới"}
-      >
-        <ProgramForm
-          key={editingItem ? editingItem.id : "create"}
-          editingItem={editingItem}
-          onSubmit={handleSubmit}
-          onCancel={handleCloseModal}
+          {/* Delete Confirm Modal */}
+          <ConfirmModal
+            isOpen={!!deleteTarget}
+            onClose={() => { setDeleteTarget(null); setDeleteError(null); }}
+            title="Xóa Chương trình đào tạo"
+            message={`Bạn có chắc chắn muốn xóa vĩnh viễn chương trình "${deleteTarget?.program_name}"?\n\nHành động này không thể hoàn tác.${deleteError ? `\n\n⚠ ${deleteError}` : ""}`}
+            confirmText="Xóa vĩnh viễn"
+            isDanger
+            onConfirm={handleConfirmDelete}
+          />
+        </>
+      ) : (
+        <CurriculumImportsManager
+          selectedMajor={selectedMajor}
+          onBack={() => handleSelectMajor(null)}
+          hideHeader={true}
         />
-      </Modal>
-
-      {/* Delete Confirm Modal */}
-      <ConfirmModal
-        isOpen={!!deleteTarget}
-        onClose={() => { setDeleteTarget(null); setDeleteError(null); }}
-        title="Xóa Chương trình đào tạo"
-        message={`Bạn có chắc chắn muốn xóa vĩnh viễn chương trình "${deleteTarget?.program_name}"?\n\nHành động này không thể hoàn tác.${deleteError ? `\n\n⚠ ${deleteError}` : ""}`}
-        confirmText="Xóa vĩnh viễn"
-        isDanger
-        onConfirm={handleConfirmDelete}
-      />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
+import { useSearchParams } from "react-router-dom";
 import { useCoursePrerequisites } from "../../../hooks/useCoursePrerequisites";
 import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -10,10 +10,12 @@ import { api } from "../../../services/api";
 import { CoursePrerequisitesFilters } from "./partials/CoursePrerequisitesFilters";
 import { InteractiveGraph } from "../../../components/data_display/InteractiveGraph";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
+import { SelectionCard } from "../../../components/ui/SelectionCard";
 
 export default function CoursePrerequisites() {
   const [viewMode, setViewMode] = useState<"table" | "graph">("table");
-  const [persistedProgramId, setPersistedProgramId] = useReloadPersistentState("selected_prerequisites_program_id", "");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const persistedProgramId = searchParams.get("programId") || "";
 
   const {
     data,
@@ -241,14 +243,12 @@ export default function CoursePrerequisites() {
 
   const handleEnter = () => {
     if (selectedProgram) {
-      setPersistedProgramId(selectedProgram);
-      updateFilters({ program_id: selectedProgram });
+      setSearchParams({ programId: selectedProgram });
     }
   };
 
   const handleClearProgram = () => {
-    setPersistedProgramId("");
-    updateFilters({ program_id: undefined });
+    setSearchParams({});
     setSelectedProgram("");
     setSelectedMajor("");
   };
@@ -274,86 +274,66 @@ export default function CoursePrerequisites() {
       )}
 
       {!filters.program_id ? (
-        /* Dropdown Major and Program Selection Screen (Identical to SelectionScreen) */
-        <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 min-h-[65vh]">
-          <div className="max-w-md w-full space-y-8 p-8 rounded-2xl border border-slate-800 bg-slate-950/80 backdrop-blur-xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-slate-700">
-            {/* Glow effect */}
-            <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="text-center relative z-10">
-              <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-650 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <GitFork className="h-6 w-6 text-white" />
-              </div>
-              <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">Điều kiện môn học</h2>
-              <p className="mt-2 text-xs text-slate-400">
-                Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý điều kiện tiên quyết.
-              </p>
-            </div>
-
-            {loadingPrograms ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-500 text-xs">
-                <RefreshCw className="h-6 w-6 animate-spin text-indigo-500" />
-                <span>Đang tải thông tin chương trình...</span>
-              </div>
-            ) : (
-              <div className="mt-8 space-y-6 relative z-10">
-                {/* Sector / Major Selection */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                    Ngành học (Major)
-                  </label>
-                  <select
-                    value={selectedMajor}
-                    onChange={(e) => {
-                      setSelectedMajor(e.target.value);
-                      setSelectedProgram(""); // reset program when major changes
-                    }}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
-                  >
-                    <option value="">-- Chọn ngành học --</option>
-                    {majors.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Program Selection */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                    Chương trình đào tạo (Program)
-                  </label>
-                  <select
-                    disabled={!selectedMajor}
-                    value={selectedProgram}
-                    onChange={(e) => setSelectedProgram(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <option value="">-- Chọn chương trình học --</option>
-                    {filteredPrograms.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.program_name} {p.version ? `(Phiên bản ${p.version})` : ""} - {p.program_code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="button"
-                  disabled={!selectedProgram}
-                  onClick={handleEnter}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-sm text-white transition-all duration-300 disabled:opacity-40 disabled:hover:bg-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20 active:scale-98 cursor-pointer font-bold"
-                >
-                  Truy cập Điều kiện môn học
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+        <SelectionCard
+          icon={<GitFork className="h-6 w-6 text-white" />}
+          title="Điều kiện môn học"
+          description="Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý điều kiện tiên quyết."
+          loading={loadingPrograms}
+          loadingText="Đang tải thông tin chương trình..."
+        >
+          {/* Sector / Major Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Ngành học (Major)
+            </label>
+            <select
+              value={selectedMajor}
+              onChange={(e) => {
+                setSelectedMajor(e.target.value);
+                setSelectedProgram(""); // reset program when major changes
+              }}
+              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
+            >
+              <option value="">-- Chọn ngành học --</option>
+              {majors.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+
+          {/* Program Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Chương trình đào tạo (Program)
+            </label>
+            <select
+              disabled={!selectedMajor}
+              value={selectedProgram}
+              onChange={(e) => setSelectedProgram(e.target.value)}
+              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <option value="">-- Chọn chương trình học --</option>
+              {filteredPrograms.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.program_name} {p.version ? `(Phiên bản ${p.version})` : ""} - {p.program_code}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="button"
+            disabled={!selectedProgram}
+            onClick={handleEnter}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-sm text-white transition-all duration-300 disabled:opacity-40 disabled:hover:bg-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20 active:scale-98 cursor-pointer font-bold"
+          >
+            Truy cập Điều kiện môn học
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </SelectionCard>
       ) : (
         /* Data Table Screen */
         <div className="space-y-6">

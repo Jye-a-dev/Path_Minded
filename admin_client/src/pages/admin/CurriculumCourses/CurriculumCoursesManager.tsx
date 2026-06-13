@@ -278,7 +278,7 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Học phần khung</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Học phần </h1>
             <button
               type="button"
               onClick={onBack}
@@ -399,7 +399,7 @@ export const CurriculumCoursesManager: React.FC<CurriculumCoursesManagerProps> =
       <Modal
         isOpen={modalOpen}
         onClose={handleCloseModal}
-        title={editingItem ? "Chỉnh sửa môn học học phần khung" : "Thêm môn học vào học phần khung"}
+        title={editingItem ? "Chỉnh sửa môn học học phần " : "Thêm môn học vào học phần "}
         size="lg"
       >
         <CurriculumCourseForm

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
 import { useCurriculumImports } from "../../../hooks/useCurriculumImports";
 import type { ImportItem } from "../../../hooks/useCurriculumImports";
 import { DataTable } from "../../../components/data_display/DataTable";
@@ -11,7 +10,6 @@ import { CurriculumImportPreview } from "./CurriculumImportPreview";
 import { getCurriculumImportsColumns } from "./CurriculumImportsColumns";
 import { api } from "../../../services/api";
 import { CurriculumImportsFilters } from "./partials/CurriculumImportsFilters";
-import { SelectionScreen } from "../CurriculumCourses/SelectionScreen";
 import { RealtimeStreamConsole } from "./RealtimeStreamConsole";
 import { DynamicSchemaResolver } from "./DynamicSchemaResolver";
 import { ConflictResolutionCenter } from "./ConflictResolutionCenter";
@@ -41,48 +39,16 @@ export interface WarningItem {
   rawValue: string;
 }
 
-export default function CurriculumImports() {
-  const [selectedMajor, setSelectedMajor] = useReloadPersistentState<string | null>(
-    "selected_curriculum_import_major_name",
-    null
-  );
-
-  const handleSelectMajor = (major: string) => {
-    setSelectedMajor(major);
-  };
-
-  const handleClearMajor = () => {
-    setSelectedMajor(null);
-  };
-
-  if (!selectedMajor) {
-    return (
-      <SelectionScreen
-        onSelect={handleSelectMajor}
-        title="Nhập chương trình học"
-        description="Vui lòng chọn Ngành để bắt đầu quản lý các phiên nhập chương trình học."
-        buttonText="Truy cập Nhập chương trình học"
-        onlyMajor={true}
-      />
-    );
-  }
-
-  return (
-    <CurriculumImportsManager
-      selectedMajor={selectedMajor}
-      onBack={handleClearMajor}
-    />
-  );
-}
-
 interface CurriculumImportsManagerProps {
   selectedMajor: string;
   onBack: () => void;
+  hideHeader?: boolean;
 }
 
 export function CurriculumImportsManager({
   selectedMajor,
   onBack,
+  hideHeader = false,
 }: CurriculumImportsManagerProps) {
   const {
     data,
@@ -103,7 +69,9 @@ export function CurriculumImportsManager({
     confirmImport,
     cancelImport,
     changeSheet,
-  } = useCurriculumImports({ major_name: selectedMajor });
+  } = useCurriculumImports(
+    selectedMajor && selectedMajor !== "TẤT CẢ" ? { major_name: selectedMajor } : {}
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [programsList, setProgramsList] = useState<{ id: string; program_code: string; program_name: string; major_name?: string }[]>([]);
@@ -260,24 +228,26 @@ export function CurriculumImportsManager({
   return (
     <div className="space-y-8">
       {/* Title Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Nhập chương trình học</h1>
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer active:scale-95"
-            >
-              <ArrowLeft size={12} />
-              Đổi ngành học
-            </button>
+      {!hideHeader && (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Nhập chương trình học</h1>
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer active:scale-95"
+              >
+                <ArrowLeft size={12} />
+                Đổi ngành học
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-slate-400">
+              Đang quản lý ngành học: <strong className="text-indigo-400 font-bold">{selectedMajor || "N/A"}</strong>
+            </p>
           </div>
-          <p className="mt-1.5 text-xs text-slate-400">
-            Đang quản lý ngành học: <strong className="text-indigo-400 font-bold">{selectedMajor || "N/A"}</strong>
-          </p>
         </div>
-      </div>
+      )}
 
       {error && (
         <div className="rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">
@@ -458,7 +428,7 @@ export function CurriculumImportsManager({
           <CurriculumImportForm
             onSubmit={handleSubmit}
             onCancel={handleCloseModal}
-            defaultMajor={selectedMajor}
+            defaultMajor={selectedMajor === "TẤT CẢ" ? undefined : selectedMajor}
           />
         )}
       </Modal>

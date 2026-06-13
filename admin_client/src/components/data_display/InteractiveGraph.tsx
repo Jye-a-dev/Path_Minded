@@ -25,6 +25,56 @@ export const InteractiveGraph: React.FC<InteractiveGraphProps> = ({ programId })
   // Selection state
   const [selectedCourseCode, setSelectedCourseCode] = useState<string | null>(null);
 
+  // Expand state
+  const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close expand mode on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isExpanded) {
+        setIsExpanded(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isExpanded]);
+
+  const toggleExpand = () => setIsExpanded((prev) => !prev);
+
+  // Dynamically elevate z-index of layout ancestors to escape stacking contexts when expanded
+  useEffect(() => {
+    if (!isExpanded || !containerRef.current) return;
+
+    let parent = containerRef.current.parentElement;
+    const modifiedElements: HTMLElement[] = [];
+
+    while (parent && parent !== document.body) {
+      const hasZIndexClass = Array.from(parent.classList).some(cls => cls.startsWith("z-"));
+      if (hasZIndexClass) {
+        const originalZIndex = parent.style.zIndex;
+        parent.style.zIndex = "9999";
+        parent.setAttribute("data-orig-z", originalZIndex);
+        modifiedElements.push(parent);
+      }
+      parent = parent.parentElement;
+    }
+
+    return () => {
+      modifiedElements.forEach(el => {
+        const orig = el.getAttribute("data-orig-z");
+        if (orig !== null && orig !== "") {
+          el.style.zIndex = orig;
+        } else {
+          el.style.removeProperty("z-index");
+        }
+        el.removeAttribute("data-orig-z");
+      });
+    };
+  }, [isExpanded]);
+
   // Load curriculum and prerequisites
   useEffect(() => {
     if (!programId) return;
@@ -217,7 +267,15 @@ export const InteractiveGraph: React.FC<InteractiveGraphProps> = ({ programId })
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[85vh]">
+    <div
+      ref={containerRef}
+      className={
+        isExpanded
+          ? "fixed inset-0 bg-slate-950 p-6 flex flex-col lg:flex-row gap-6"
+          : "flex flex-col lg:flex-row gap-6 h-[85vh]"
+      }
+      style={isExpanded ? { zIndex: 9999 } : undefined}
+    >
       <GraphCanvas
         curriculum={curriculum}
         layout={layout}
@@ -234,6 +292,8 @@ export const InteractiveGraph: React.FC<InteractiveGraphProps> = ({ programId })
         zoomOut={zoomOut}
         resetZoom={resetZoom}
         prereqs={prereqs}
+        isExpanded={isExpanded}
+        onToggleExpand={toggleExpand}
       />
       <CourseInfoPanel selectedCourseDetails={selectedCourseDetails} />
     </div>

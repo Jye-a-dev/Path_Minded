@@ -1,20 +1,18 @@
-import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
+import { useSearchParams } from "react-router-dom";
 import { SelectionScreen } from "./SelectionScreen";
 import { CurriculumCoursesManager } from "./CurriculumCoursesManager";
 
 // ─── Entry Component Export ──────────────────────────────────────
 export default function CurriculumCourses() {
-  const [selectedProgramId, setSelectedProgramId] = useReloadPersistentState<string | null>(
-    "selected_curriculum_program_id",
-    null
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedProgramId = searchParams.get("programId") || null;
 
   const handleSelectProgram = (id: string) => {
-    setSelectedProgramId(id);
+    setSearchParams({ programId: id });
   };
 
   const handleClearProgram = () => {
-    setSelectedProgramId(null);
+    setSearchParams({});
   };
 
   if (!selectedProgramId) {

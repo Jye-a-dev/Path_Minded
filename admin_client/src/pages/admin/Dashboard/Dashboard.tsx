@@ -103,7 +103,7 @@ export default function Dashboard() {
               </p>
               <div className="mt-6 space-y-3">
                 <Link
-                  to="/admin/curriculum_imports"
+                  to="/admin/programs?tab=imports"
                   className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3 hover:bg-slate-800/40 hover:border-slate-700 transition"
                 >
                   <div className="flex items-center gap-3">

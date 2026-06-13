@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Info, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Info, ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2 } from "lucide-react";
 import type { CourseItem } from "../../../hooks/useCurriculumCourses";
 import type { PrerequisiteItem } from "../../../hooks/useCoursePrerequisites";
 
@@ -19,6 +19,8 @@ interface GraphCanvasProps {
   zoomOut: () => void;
   resetZoom: () => void;
   prereqs: PrerequisiteItem[];
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export function GraphCanvas({
@@ -37,6 +39,8 @@ export function GraphCanvas({
   zoomOut,
   resetZoom,
   prereqs,
+  isExpanded = false,
+  onToggleExpand,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +85,19 @@ export function GraphCanvas({
         >
           <RotateCcw size={16} />
         </button>
+        {onToggleExpand && (
+          <>
+            <div className="w-px h-4 bg-slate-800 mx-1" />
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              title={isExpanded ? "Thu nhỏ" : "Toàn màn hình"}
+            >
+              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Legend Indicator */}

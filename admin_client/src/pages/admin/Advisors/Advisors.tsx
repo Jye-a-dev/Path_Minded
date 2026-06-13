@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { useReloadPersistentState } from "../../../hooks/useReloadPersistentState";
+import { useSearchParams } from "react-router-dom";
 import { useAdvisors } from "../../../hooks/useAdvisors";
 import type { AdvisorItem } from "../../../hooks/useAdvisors";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { AdvisorForm } from "./AdvisorForm";
-import { Plus, Edit2, Trash2, Briefcase, Link2, X, ArrowRight, RefreshCw } from "lucide-react";
+import { Plus, Edit2, Trash2, Briefcase, Link2, X, ArrowRight } from "lucide-react";
 import { api } from "../../../services/api";
+import { SelectionCard } from "../../../components/ui/SelectionCard";
 
 export default function Advisors() {
-  const [persistedDepartment, setPersistedDepartment] = useReloadPersistentState("selected_advisors_department", "");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const persistedDepartment = searchParams.get("department") || "";
 
   const {
     data,
@@ -74,18 +76,12 @@ export default function Advisors() {
 
   const handleEnter = () => {
     if (selectedDept) {
-      setPersistedDepartment(selectedDept);
-      updateFilters({
-        department: selectedDept,
-      });
+      setSearchParams({ department: selectedDept });
     }
   };
 
   const handleClearSelection = () => {
-    setPersistedDepartment("");
-    updateFilters({
-      department: undefined,
-    });
+    setSearchParams({});
     setSelectedDept("");
   };
 
@@ -187,64 +183,44 @@ export default function Advisors() {
 
   return (
     <div className="space-y-6">
-      {!activeFilters?.department ? (
-        /* Selection Screen */
-        <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 min-h-[65vh]">
-          <div className="max-w-md w-full space-y-8 p-8 rounded-2xl border border-slate-800 bg-slate-950/80 backdrop-blur-xl shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-slate-700">
-            {/* Glow effect */}
-            <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="text-center relative z-10">
-              <div className="mx-auto h-12 w-12 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-650 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <Briefcase className="h-6 w-6 text-white" />
-              </div>
-              <h2 className="mt-6 text-xl font-extrabold text-white tracking-tight">Cố vấn học tập</h2>
-              <p className="mt-2 text-xs text-slate-400">
-                Vui lòng chọn Khoa / Ban để bắt đầu quản lý hồ sơ cố vấn học tập.
-              </p>
-            </div>
-
-            {loadingMetadata ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-500 text-xs">
-                <RefreshCw className="h-6 w-6 animate-spin text-indigo-500" />
-                <span>Đang tải thông tin...</span>
-              </div>
-            ) : (
-              <div className="mt-8 space-y-6 relative z-10">
-                {/* Department Selection */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                    Khoa / Ban quản lý (Department)
-                  </label>
-                  <select
-                    value={selectedDept}
-                    onChange={(e) => setSelectedDept(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
-                  >
-                    <option value="">-- Chọn khoa / ban --</option>
-                    {uniqueDepartments.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="button"
-                  disabled={!selectedDept}
-                  onClick={handleEnter}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-sm text-white transition-all duration-300 disabled:opacity-40 disabled:hover:bg-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20 active:scale-98 cursor-pointer font-bold"
-                >
-                  Truy cập Cố vấn
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+      {!persistedDepartment ? (
+        <SelectionCard
+          icon={<Briefcase className="h-6 w-6 text-white" />}
+          title="Cố vấn học tập"
+          description="Vui lòng chọn Khoa / Ban để bắt đầu quản lý hồ sơ cố vấn học tập."
+          loading={loadingMetadata}
+          loadingText="Đang tải thông tin..."
+        >
+          {/* Department Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Khoa / Ban quản lý (Department)
+            </label>
+            <select
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(e.target.value)}
+              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
+            >
+              <option value="">-- Chọn khoa / ban --</option>
+              {uniqueDepartments.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
+
+          {/* Submit Button */}
+          <button
+            type="button"
+            disabled={!selectedDept}
+            onClick={handleEnter}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-sm text-white transition-all duration-300 disabled:opacity-40 disabled:hover:bg-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20 active:scale-98 cursor-pointer font-bold"
+          >
+            Truy cập Cố vấn
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </SelectionCard>
       ) : (
         /* Data Table Screen */
         <div className="space-y-6">

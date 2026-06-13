@@ -224,7 +224,7 @@ export default function AdminLayout() {
             links={[
               { label: "Bảng điều khiển", to: "/admin" },
               { label: "Sinh viên", to: "/admin/students" },
-              { label: "Nhập dữ liệu", to: "/admin/curriculum_imports" },
+              { label: "Nhập dữ liệu", to: "/admin/programs?tab=imports" },
               { label: "Tài liệu hướng dẫn", href: "https://github.com", external: true },
             ]}
             bottomLeftText={`© ${new Date().getFullYear()} PathMinded Inc. Bảo lưu mọi quyền.`}

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { ReactNode } from "react";
-import { useRoutes } from "react-router-dom";
+import { useRoutes, Navigate } from "react-router-dom";
 import PublicLayout from "../components/layouts/(public)/PublicLayout";
 import AdminLayout from "../components/layouts/AdminLayout";
 import { PrivateRoute } from "../components/guards/PrivateRoute";
@@ -22,7 +22,6 @@ const CurriculumCourses = lazy(() => import("../pages/admin/CurriculumCourses/Cu
 const CoursePrerequisites = lazy(() => import("../pages/admin/CoursePrerequisites/CoursePrerequisites"));
 const CourseEquivalencies = lazy(() => import("../pages/admin/CourseEquivalencies/CourseEquivalencies"));
 const StudentCourseResults = lazy(() => import("../pages/admin/StudentCourseResults/StudentCourseResults"));
-const CurriculumImports = lazy(() => import("../pages/admin/CurriculumImports/CurriculumImports"));
 const TranscriptUploads = lazy(() => import("../pages/admin/TranscriptUploads/TranscriptUploads"));
 const ClassImports = lazy(() => import("../pages/admin/ClassImports/ClassImports"));
 const Exports = lazy(() => import("../pages/admin/Exports/Exports"));
@@ -65,7 +64,7 @@ const routes = [
           { path: "course_prerequisites", element: w(<CoursePrerequisites />) },
           { path: "course_equivalencies", element: w(<CourseEquivalencies />) },
           { path: "student_course_results", element: w(<StudentCourseResults />) },
-          { path: "curriculum_imports", element: w(<CurriculumImports />) },
+          { path: "curriculum_imports", element: <Navigate to="/admin/programs?tab=imports" replace /> },
           { path: "transcript_uploads", element: w(<TranscriptUploads />) },
           { path: "class_imports", element: w(<ClassImports />) },
           { path: "exports", element: w(<Exports />) },

@@ -23,7 +23,9 @@ import {
   Tags,
   Layers,
   ChevronDown,
-  Settings
+  Settings,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 interface SidebarProps {
@@ -48,6 +50,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return {};
     }
   });
+
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("sidebar_collapsed", String(next));
+      } catch (e) {
+        console.error("Failed to save sidebar collapsed state", e);
+      }
+      return next;
+    });
+  };
 
   const toggleSection = (title: string) => {
     setCollapsedSections((prev) => {
@@ -75,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: "Ma trận học thuật",
       items: [
-        { label: "Học phần khung", to: "/admin/curriculum_courses", icon: Bookmark },
+        { label: "Học phần ", to: "/admin/curriculum_courses", icon: Bookmark },
         { label: "Điều kiện môn học", to: "/admin/course_prerequisites", icon: GitFork },
         { label: "Môn học tương đương", to: "/admin/course_equivalencies", icon: RefreshCw },
         { label: "Kết quả học tập", to: "/admin/student_course_results", icon: FileSpreadsheet },
@@ -84,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: "Phiên nhập liệu",
       items: [
-        { label: "Nhập chương trình", to: "/admin/curriculum_imports", icon: UploadCloud },
+        { label: "Nhập chương trình", to: "/admin/programs?tab=imports", icon: UploadCloud },
         { label: "Nhập lớp học", to: "/admin/class_imports", icon: FolderInput },
         { label: "Tải bảng điểm lên", to: "/admin/transcript_uploads", icon: FileUp },
       ],
@@ -110,72 +132,102 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-800/80 bg-slate-900/90 backdrop-blur-md transition-transform duration-300 lg:translate-x-0 ${
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      } lg:static lg:flex`}
+      className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-800/80 bg-slate-900/90 backdrop-blur-md transition-all duration-300 lg:translate-x-0 ${
+        sidebarOpen ? "translate-x-0 w-72" : "-translate-x-full w-72"
+      } lg:static lg:flex ${isCollapsed ? "lg:w-20" : "lg:w-72"}`}
     >
       {/* Brand/Logo Section */}
-      <div className="flex h-16 items-center justify-between px-6 border-b border-slate-800/80">
+      <div className={`flex h-16 items-center border-b border-slate-800/80 transition-all duration-300 ${
+        isCollapsed ? "lg:flex-col lg:h-auto lg:py-3 lg:gap-2 lg:justify-center lg:px-2" : "justify-between px-6"
+      }`}>
         <Link to="/admin" className="flex items-center gap-2" onClick={() => setSidebarOpen(false)}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-600/30">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-600/30">
             PM
           </div>
-          <span className="text-lg font-bold tracking-tight text-white">
+          <span className={`text-lg font-bold tracking-tight text-white transition-all duration-300 whitespace-nowrap ${
+            isCollapsed ? "lg:hidden" : ""
+          }`}>
             PathMinded <span className="text-indigo-400 text-xs font-semibold px-1 py-0.5 rounded bg-indigo-950 border border-indigo-800">Quản trị</span>
           </span>
         </Link>
-        <button
-          className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleSidebarCollapse}
+            className="hidden lg:flex items-center justify-center rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            title={isCollapsed ? "Mở rộng thanh menu" : "Thu gọn thanh menu"}
+          >
+            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+          {!isCollapsed && (
+            <button
+              className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation items list */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <nav className={`flex-1 overflow-y-auto py-6 space-y-6 transition-all duration-300 ${
+        isCollapsed ? "px-2" : "px-4"
+      }`}>
         <div>
           <NavLink
             to="/admin"
             end
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+              `flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all ${
+                isCollapsed ? "lg:justify-center lg:px-0" : "px-3"
+              } ${
                 isActive
                   ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
                   : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-100"
               }`
             }
             onClick={() => setSidebarOpen(false)}
+            title={isCollapsed ? "Bảng điều khiển" : undefined}
           >
-            <LayoutDashboard size={18} />
-            <span>Bảng điều khiển</span>
+            <LayoutDashboard size={18} className="shrink-0" />
+            <span className={`truncate transition-all duration-350 ${isCollapsed ? "lg:hidden" : ""}`}>
+              Bảng điều khiển
+            </span>
           </NavLink>
         </div>
 
         {menuSections.map((section) => {
-          const isCollapsed = collapsedSections[section.title] !== undefined
-            ? collapsedSections[section.title]
-            : !section.items.some(item => item.to === location.pathname);
+          const isSectionCollapsed = isCollapsed
+            ? false
+            : (collapsedSections[section.title] !== undefined
+              ? collapsedSections[section.title]
+              : !section.items.some(item => item.to === location.pathname));
           return (
             <div key={section.title} className="space-y-2">
-              <button
-                onClick={() => toggleSection(section.title)}
-                className="flex w-full items-center justify-between px-3 text-left group cursor-pointer focus:outline-none"
-              >
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-300 transition-colors">
-                  {section.title}
-                </span>
-                <ChevronDown
-                  size={12}
-                  className={`text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
-                    isCollapsed ? "-rotate-90" : "rotate-0"
-                  }`}
-                />
-              </button>
+              {isCollapsed ? (
+                <div className="border-t border-slate-850 my-4 mx-2" title={section.title} />
+              ) : (
+                <button
+                  onClick={() => toggleSection(section.title)}
+                  className="flex w-full items-center justify-between px-3 text-left group cursor-pointer focus:outline-none"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 group-hover:text-slate-300 transition-colors">
+                    {section.title}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className={`text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                      isSectionCollapsed ? "-rotate-90" : "rotate-0"
+                    }`}
+                  />
+                </button>
+              )}
               
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                  isCollapsed ? "max-h-0 opacity-0" : "max-h-125 opacity-100"
+                className={`transition-all duration-300 ease-in-out ${
+                  isCollapsed
+                    ? "opacity-100"
+                    : (isSectionCollapsed ? "max-h-0 opacity-0 overflow-hidden" : "max-h-125 opacity-100")
                 }`}
               >
                 <ul className="space-y-1 mt-1.5">
@@ -186,16 +238,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <NavLink
                           to={item.to}
                           className={({ isActive }) =>
-                            `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                            `flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all ${
+                              isCollapsed ? "lg:justify-center lg:px-0" : "px-3"
+                            } ${
                               isActive
                                 ? "bg-indigo-600/90 text-white shadow-lg shadow-indigo-600/20"
                                 : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-100"
                             }`
                           }
                           onClick={() => setSidebarOpen(false)}
+                          title={isCollapsed ? item.label : undefined}
                         >
                           <Icon size={18} className="shrink-0" />
-                          <span className="truncate">{item.label}</span>
+                          <span className={`truncate transition-all duration-350 ${isCollapsed ? "lg:hidden" : ""}`}>
+                            {item.label}
+                          </span>
                         </NavLink>
                       </li>
                     );
@@ -208,17 +265,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Footer/User Info Section */}
-      <div className="border-t border-slate-800/80 bg-slate-900/40 p-4">
-        <div className="flex items-center justify-between rounded-xl bg-slate-900/45 p-3 border border-slate-800/50">
+      <div className={`border-t border-slate-800/80 bg-slate-900/40 transition-all duration-300 ${
+        isCollapsed ? "p-2" : "p-4"
+      }`}>
+        <div className={`flex items-center justify-between rounded-xl bg-slate-900/45 border border-slate-800/50 transition-all duration-300 ${
+          isCollapsed ? "flex-col p-2 gap-3" : "p-3"
+        }`}>
           <Link
             to="/admin/me"
             className="flex items-center gap-2 overflow-hidden hover:opacity-80 transition-opacity"
             onClick={() => setSidebarOpen(false)}
+            title={isCollapsed ? (user?.display_name || user?.email || "") : undefined}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-200">
               <User size={18} />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className={`min-w-0 flex-1 transition-all duration-300 ${isCollapsed ? "lg:hidden" : ""}`}>
               <p className="truncate text-xs font-medium text-white">{user?.display_name || user?.email}</p>
               <p className="text-[10px] text-slate-400 font-semibold uppercase">{user?.role}</p>
             </div>
@@ -226,7 +288,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onLogout}
             title="Đăng xuất"
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-rose-400"
+            className={`rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-rose-400 cursor-pointer ${
+              isCollapsed ? "w-full flex justify-center" : ""
+            }`}
           >
             <LogOut size={16} />
           </button>
