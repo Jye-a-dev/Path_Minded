@@ -60,7 +60,7 @@ export class GraphService {
       LEFT JOIN (
           SELECT prerequisite_course_code, COUNT(*) AS out_degree
           FROM course_prerequisites
-          WHERE program_id = $1 AND prerequisite_type NOT IN ('PREVIOUS', 'RECOMMENDED')
+          WHERE program_id = $1 AND prerequisite_type NOT IN ('RECOMMENDED')
           GROUP BY prerequisite_course_code
       ) sub ON cc.course_code = sub.prerequisite_course_code
       WHERE cc.program_id = $1
@@ -111,8 +111,8 @@ export class GraphService {
       const parent = row.prerequisite_course_code;
       const child = row.course_code;
       const type = row.prerequisite_type || 'REQUIRED';
-      // PREVIOUS and RECOMMENDED prerequisites do not propagate delay warnings
-      if (type === 'PREVIOUS' || type === 'RECOMMENDED') {
+      // RECOMMENDED prerequisites do not propagate delay warnings
+      if (type === 'RECOMMENDED') {
         return;
       }
       if (!adjList[parent]) adjList[parent] = [];

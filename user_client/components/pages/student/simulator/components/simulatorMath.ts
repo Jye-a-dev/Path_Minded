@@ -131,8 +131,8 @@ export function computeSimulatedRoadmap(
   });
 
   prereqs.forEach((r) => {
-    // PREVIOUS and RECOMMENDED prerequisites do not propagate delay warnings
-    if (r.prerequisite_type === "PREVIOUS" || r.prerequisite_type === "RECOMMENDED") {
+    // RECOMMENDED prerequisites do not propagate delay warnings
+    if (r.prerequisite_type === "RECOMMENDED") {
       return;
     }
     if (childrenOf[r.prerequisite_course_code] && childrenOf[r.course_code]) {

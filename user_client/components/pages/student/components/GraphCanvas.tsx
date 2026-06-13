@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Info, Lock, CheckCircle2, AlertTriangle, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Info, Lock, CheckCircle2, AlertTriangle, ZoomIn, ZoomOut, RotateCcw, Minimize2, Maximize2 } from "lucide-react";
 import { CurriculumCourse, PrerequisiteRule } from "../simulator/components/types";
 
 interface GraphCanvasProps {
@@ -19,6 +19,9 @@ interface GraphCanvasProps {
   zoomOut: () => void;
   resetZoom: () => void;
   prereqs: PrerequisiteRule[];
+  setZoom?: React.Dispatch<React.SetStateAction<number>>;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export function GraphCanvas({
@@ -38,6 +41,9 @@ export function GraphCanvas({
   zoomOut,
   resetZoom,
   prereqs,
+  setZoom,
+  isExpanded = false,
+  onToggleExpand,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +51,14 @@ export function GraphCanvas({
   const getBezierPath = (startX: number, startY: number, endX: number, endY: number) => {
     const controlOffset = 80;
     return `M ${startX} ${startY} C ${startX + controlOffset} ${startY}, ${endX - controlOffset} ${endY}, ${endX} ${endY}`;
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!setZoom) return;
+    e.preventDefault();
+    const zoomFactor = 0.05;
+    const direction = e.deltaY > 0 ? -1 : 1;
+    setZoom((prev) => Math.min(Math.max(prev + direction * zoomFactor, 0.4), 1.5));
   };
 
   return (
@@ -79,6 +93,19 @@ export function GraphCanvas({
         >
           <RotateCcw size={16} />
         </button>
+        {onToggleExpand && (
+          <>
+            <div className="w-px h-4 bg-zinc-700 mx-1" />
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="p-1.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer"
+              title={isExpanded ? "Thu nhỏ" : "Toàn màn hình"}
+            >
+              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Legend Indicator */}
@@ -112,6 +139,7 @@ export function GraphCanvas({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
         className={`w-full h-full select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
       >
         <svg className="w-full h-full">
