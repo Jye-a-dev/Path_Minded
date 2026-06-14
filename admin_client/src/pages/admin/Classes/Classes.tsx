@@ -5,9 +5,11 @@ import type { ClassItem } from "../../../hooks/useClasses";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ClassForm } from "./ClassForm";
-import { Plus, Edit2, Trash2, Building2, ArrowRight } from "lucide-react";
+import { Plus, Edit2, Trash2, Building2 } from "lucide-react";
 import { api } from "../../../services/api";
-import { SelectionCard } from "../../../components/ui/SelectionCard";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import { SelectionDetailsBanner } from "../../../components/ui/SelectionDetailsBanner";
+import { SelectionScreen } from "../../../components/ui/SelectionScreen";
 
 export default function Classes() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,37 +49,42 @@ export default function Classes() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ClassItem | null>(null);
 
-  const [programsList, setProgramsList] = useState<{ id: string; program_name: string; program_code: string; major_name?: string | null; version?: string | null }[]>([]);
   const [advisorsList, setAdvisorsList] = useState<{ id: string; full_name: string }[]>([]);
-  const [loadingPrograms, setLoadingPrograms] = useState(true);
-
-  // Selection states
-  const [selectedMajor, setSelectedMajor] = useState("");
-  const [selectedProgram, setSelectedProgram] = useState("");
+  const [selectedProgramDetails, setSelectedProgramDetails] = useState<{ id: string; program_name: string; program_code: string } | null>(null);
+  useEffect(() => {
+    api.get("/advisors?limit=100")
+      .then((res) => setAdvisorsList(res.data || []))
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
-    const fetchMetadata = async () => {
-      setLoadingPrograms(true);
-      try {
-        const [programsRes, advisorsRes] = await Promise.all([
-          api.get("/programs?limit=250"),
-          api.get("/advisors?limit=100"),
-        ]);
-        setProgramsList(programsRes.data || []);
-        setAdvisorsList(advisorsRes.data || []);
-      } catch (err) {
-        console.error("Failed to fetch filter metadata:", err);
-      } finally {
-        setLoadingPrograms(false);
-      }
+    let active = true;
+    if (filters.program_id) {
+      api.get("/programs?limit=250")
+        .then((res) => {
+          if (!active) return;
+          const list = res.data || [];
+          const found = list.find((p: { id: string; program_code: string; program_name: string }) => p.id === filters.program_id);
+          setSelectedProgramDetails(found || null);
+        })
+        .catch(console.error);
+    } else {
+      Promise.resolve().then(() => {
+        if (active) {
+          setSelectedProgramDetails(null);
+        }
+      });
+    }
+    return () => {
+      active = false;
     };
-    void fetchMetadata();
-  }, []);
+  }, [filters.program_id]);
 
   const getProgramCode = (programId?: string) => {
     if (!programId) return "Chưa chỉ định";
-    const found = programsList.find((p) => p.id === programId);
-    return found ? `${found.program_name} (${found.program_code})` : "N/A";
+    return selectedProgramDetails
+      ? `${selectedProgramDetails.program_name} (${selectedProgramDetails.program_code})`
+      : "N/A";
   };
 
   const getAdvisorName = (advisorId?: string) => {
@@ -125,39 +132,20 @@ export default function Classes() {
     }
   };
 
-  const uniqueMajors = Array.from(
-    new Set(
-      programsList
-        .map((p) => p.major_name?.trim() || "")
-        .filter((m) => !!m)
-    )
-  ).sort();
-
-  const filteredPrograms = programsList.filter((p) => {
-    if (!selectedMajor) return false;
-    return p.major_name?.trim() === selectedMajor;
-  });
-
-  const handleEnter = () => {
-    if (selectedProgram) {
-      setSearchParams({ programId: selectedProgram });
-    }
+  const handleEnter = (programId: string) => {
+    setSearchParams({ programId });
   };
 
   const handleClearSelection = () => {
     setSearchParams({});
-    setSelectedProgram("");
-    setSelectedMajor("");
   };
-
-  const selectedProgramDetails = programsList.find((p) => p.id === filters.program_id);
 
   const columns = [
     {
       header: "Mã lớp học",
       accessorKey: "class_code",
       render: (row: ClassItem) => (
-        <span className="inline-flex items-center gap-1 rounded bg-indigo-950/40 text-indigo-400 font-mono text-xs px-2 py-0.5 border border-indigo-900/40">
+        <span className="inline-flex items-center gap-1 rounded bg-indigo-955/40 text-indigo-400 font-mono text-xs px-2 py-0.5 border border-indigo-900/40">
           <Building2 size={10} />
           {row.class_code}
         </span>
@@ -220,12 +208,10 @@ export default function Classes() {
     <div className="space-y-6">
       {/* Title Header */}
       {!filters.program_id && (
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lớp học Sinh viên</h1>
-          <p className="text-xs text-slate-400">
-            Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo.
-          </p>
-        </div>
+        <PageHeader
+          title="Lớp học Sinh viên"
+          description="Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo."
+        />
       )}
 
       {error && (
@@ -235,104 +221,29 @@ export default function Classes() {
       )}
 
       {!filters.program_id ? (
-        <SelectionCard
-          icon={<Building2 className="h-6 w-6 text-white" />}
+        <SelectionScreen
+          icon={<Building2 className="h-6 w-6" />}
           title="Lớp học Sinh viên"
           description="Vui lòng chọn Ngành và Chương trình đào tạo để bắt đầu quản lý danh sách lớp học."
-          loading={loadingPrograms}
-          loadingText="Đang tải thông tin..."
-        >
-          {/* Sector / Major Selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-              Ngành học (Major)
-            </label>
-            <select
-              value={selectedMajor}
-              onChange={(e) => {
-                setSelectedMajor(e.target.value);
-                setSelectedProgram("");
-              }}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700"
-            >
-              <option value="">-- Chọn ngành học --</option>
-              {uniqueMajors.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Program Selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-              Chương trình đào tạo (Program)
-            </label>
-            <select
-              disabled={!selectedMajor}
-              value={selectedProgram}
-              onChange={(e) => setSelectedProgram(e.target.value)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-200 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer hover:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <option value="">-- Chọn chương trình học --</option>
-              {filteredPrograms.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.program_name} - {p.program_code}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="button"
-            disabled={!selectedProgram}
-            onClick={handleEnter}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-3 text-sm text-white transition-all duration-300 disabled:opacity-40 disabled:hover:bg-indigo-600 disabled:cursor-not-allowed shadow-lg shadow-indigo-600/20 active:scale-98 cursor-pointer font-bold"
-          >
-            Truy cập Lớp học
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </SelectionCard>
+          buttonText="Truy cập Lớp học"
+          onSelect={handleEnter}
+        />
       ) : (
         /* Data Table Screen */
         <div className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Lớp học Sinh viên</h1>
-            <p className="text-xs text-slate-400">
-              Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo.
-            </p>
-          </div>
+          <PageHeader
+            title="Lớp học Sinh viên"
+            description="Tổ chức các nhóm học tập theo niên khóa và liên kết chúng với cố vấn học tập và khung chương trình đào tạo."
+          />
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md">
-            <div className="flex items-center gap-3.5">
-              <div className="rounded-lg bg-indigo-500/10 p-3 text-indigo-400">
-                <Building2 size={22} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-xs font-bold text-indigo-400 tracking-wide uppercase bg-indigo-955/40 px-2 py-0.5 rounded border border-indigo-900/30">
-                    {selectedProgramDetails?.program_code}
-                  </span>
-                  <span className="text-sm font-bold text-slate-200">
-                    {selectedProgramDetails?.program_name}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Đang hiển thị danh sách lớp học thuộc chương trình đã chọn.
-                </p>
-              </div>
-            </div>
-            <div>
-              <button
-                onClick={handleClearSelection}
-                className="w-full md:w-auto rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-855 hover:border-slate-700 transition-all cursor-pointer"
-              >
-                Thay đổi chương trình
-              </button>
-            </div>
-          </div>
+          <SelectionDetailsBanner
+            icon={<Building2 size={22} />}
+            badge={selectedProgramDetails?.program_code}
+            title={selectedProgramDetails?.program_name}
+            description="Đang hiển thị danh sách lớp học thuộc chương trình đã chọn."
+            buttonText="Thay đổi chương trình"
+            onClear={handleClearSelection}
+          />
 
           <DataTable<ClassItem>
             columns={columns}

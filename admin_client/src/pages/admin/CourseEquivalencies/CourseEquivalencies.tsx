@@ -5,6 +5,7 @@ import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { CourseEquivalencyForm } from "./CourseEquivalencyForm";
 import { Plus, Edit2, Trash2, RefreshCw } from "lucide-react";
+import { PageHeader } from "../../../components/ui/PageHeader";
 
 export default function CourseEquivalencies() {
   const {
@@ -119,15 +120,10 @@ export default function CourseEquivalencies() {
 
   return (
     <div className="space-y-6">
-      {/* Title Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Môn học tương đương</h1>
-          <p className="mt-1 text-xs text-slate-400">
-            Định nghĩa các môn học thay thế có thể đáp ứng cùng một khối điều kiện.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Môn học tương đương"
+        description="Định nghĩa các môn học thay thế có thể đáp ứng cùng một khối điều kiện."
+      />
 
       {error && (
         <div className="rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">

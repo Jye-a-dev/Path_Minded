@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import { SelectionScreen } from "./SelectionScreen";
+import { SelectionScreen } from "../../../components/ui/SelectionScreen";
 import { CurriculumCoursesManager } from "./CurriculumCoursesManager";
 
 // ─── Entry Component Export ──────────────────────────────────────

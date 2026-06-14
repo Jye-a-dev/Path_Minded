@@ -8,6 +8,8 @@ import { AdvisorForm } from "./AdvisorForm";
 import { Plus, Edit2, Trash2, Briefcase, Link2, X, ArrowRight } from "lucide-react";
 import { api } from "../../../services/api";
 import { SelectionCard } from "../../../components/ui/SelectionCard";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import { SelectionDetailsBanner } from "../../../components/ui/SelectionDetailsBanner";
 
 export default function Advisors() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -224,38 +226,18 @@ export default function Advisors() {
       ) : (
         /* Data Table Screen */
         <div className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-white m-0">Danh sách Cố vấn</h1>
-            <p className="text-xs text-slate-400">
-              Quản lý cố vấn học tập, nhóm khoa ban và liên kết họ với tài khoản đăng nhập hệ thống.
-            </p>
-          </div>
+          <PageHeader
+            title="Danh sách Cố vấn"
+            description="Quản lý cố vấn học tập, nhóm khoa ban và liên kết họ với tài khoản đăng nhập hệ thống."
+          />
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-md">
-            <div className="flex items-center gap-3.5">
-              <div className="rounded-lg bg-indigo-500/10 p-3 text-indigo-400">
-                <Briefcase size={22} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-bold text-slate-200">
-                    Khoa / Ban: {activeFilters?.department as string}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Đang hiển thị danh sách cố vấn thuộc khoa/ban đã chọn.
-                </p>
-              </div>
-            </div>
-            <div>
-              <button
-                onClick={handleClearSelection}
-                className="w-full md:w-auto rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-855 hover:border-slate-700 transition-all cursor-pointer"
-              >
-                Thay đổi khoa / ban
-              </button>
-            </div>
-          </div>
+          <SelectionDetailsBanner
+            icon={<Briefcase size={22} />}
+            title={`Khoa / Ban: ${activeFilters?.department as string}`}
+            description="Đang hiển thị danh sách cố vấn thuộc khoa/ban đã chọn."
+            buttonText="Thay đổi khoa / ban"
+            onClear={handleClearSelection}
+          />
 
           {error && (
             <div className="rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">

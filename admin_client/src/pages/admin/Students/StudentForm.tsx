@@ -116,7 +116,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
           // Look up user by email from backend
           const res = await api.get(`/users?email=${encodeURIComponent(formEmail.trim())}`);
           const matchedUser = (res.data || []).find(
-            (u: any) => u.email.toLowerCase() === formEmail.toLowerCase().trim()
+            (u: { email: string; id: string }) => u.email.toLowerCase() === formEmail.toLowerCase().trim()
           );
           if (matchedUser) {
             resolvedUserId = matchedUser.id;

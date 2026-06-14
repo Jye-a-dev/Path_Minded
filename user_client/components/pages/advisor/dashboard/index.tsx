@@ -133,7 +133,7 @@ export default function AdvisorDashboard() {
       label: "Báo cáo ma trận đã xuất",
       value: `${exportCount} Lượt`,
       icon: <FileSpreadsheet className="h-5 w-5 text-indigo-600" />,
-      desc: "Định dạng Excel chuẩn VLU"
+      desc: "Định dạng Excel"
     }
   ];
 

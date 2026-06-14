@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { BookOpen, ArrowRight } from "lucide-react";
-import { api } from "../../../services/api";
-import { SelectionCard } from "../../../components/ui/SelectionCard";
+import { api } from "../../services/api";
+import { SelectionCard } from "./SelectionCard";
 
 interface ProgramItem {
   id: string;

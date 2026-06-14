@@ -8,6 +8,26 @@ import { Plus, Edit2, Trash2, Shield, User, Loader2, GraduationCap } from "lucid
 import { api } from "../../../services/api";
 import { Link } from "react-router-dom";
 
+interface StudentDropdownItem {
+  id: string;
+  student_code: string;
+  full_name: string;
+  cohort_year?: number;
+  status: string;
+  user_id?: string;
+  class_id?: string;
+  program_id?: string;
+  email?: string;
+}
+
+interface ProgramDropdownItem {
+  id: string;
+  program_code: string;
+  program_name: string;
+  major_name: string | null;
+  version: string | null;
+}
+
 export default function Users() {
   const {
     data,
@@ -31,8 +51,8 @@ export default function Users() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<UserItem | null>(null);
 
-  const [students, setStudents] = useState<any[]>([]);
-  const [programs, setPrograms] = useState<any[]>([]);
+  const [students, setStudents] = useState<StudentDropdownItem[]>([]);
+  const [programs, setPrograms] = useState<ProgramDropdownItem[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,7 +70,7 @@ export default function Users() {
     void loadData();
   }, []);
 
-  const studentMap = new Map<string, any>();
+  const studentMap = new Map<string, StudentDropdownItem>();
   students.forEach((s) => {
     if (s.email) {
       studentMap.set(s.email.toLowerCase().trim(), s);
