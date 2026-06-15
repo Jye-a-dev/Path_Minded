@@ -16,8 +16,8 @@ export class SyncController {
   @Sse('alerts/stream')
   streamAlerts(@Query('studentId') studentId: string): Observable<any> {
     return this.syncService.getEvents$().pipe(
-      filter(event => event.studentId === studentId),
-      map(event => ({
+      filter((event) => event.studentId === studentId),
+      map((event) => ({
         data: {
           type: event.type,
           timestamp: new Date().toISOString(),

@@ -331,12 +331,15 @@ export async function insertCurriculumCourses(
   importId: string,
   courses: ParsedCourseItem[],
 ): Promise<void> {
-  // Clear old prerequisites for this program first to avoid duplicates
+  // Clear old prerequisites and courses for this program first to overwrite completely
   if (programId) {
     await client.query(
       `DELETE FROM course_prerequisites WHERE program_id = $1`,
       [programId],
     );
+    await client.query(`DELETE FROM curriculum_courses WHERE program_id = $1`, [
+      programId,
+    ]);
   }
 
   // Fetch knowledge block mappings from database for auto-resolution

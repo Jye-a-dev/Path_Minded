@@ -422,4 +422,93 @@ export class GraphService {
     }
     return res.rows[0];
   }
+
+  /**
+   * Get all alerts for a student
+   */
+  async getStudentAlerts(studentId: string): Promise<AlertRow[]> {
+    const res = await this.pool.query<AlertRow>(
+      `SELECT id, student_id, alert_type, alert_status, gpa, total_credits, description, created_at, updated_at 
+       FROM academic_alerts 
+       WHERE student_id = $1 
+       ORDER BY created_at DESC`,
+      [studentId],
+    );
+    return res.rows;
+  }
+
+  /**
+   * Create academic alert
+   */
+  async createAlert(payload: {
+    studentId: string;
+    alertType: 'PROBATION_RISK' | 'GPA_WARNING' | 'CREDIT_WARNING';
+    alertStatus?: 'ACTIVE' | 'RESOLVED';
+    description?: string;
+    gpa?: number | null;
+    totalCredits?: number | null;
+  }): Promise<AlertRow> {
+    const status = payload.alertStatus || 'ACTIVE';
+    const res = await this.pool.query<AlertRow>(
+      `INSERT INTO academic_alerts (student_id, alert_type, alert_status, description, gpa, total_credits)
+       VALUES ($1, $2::alert_type, $3::alert_status, $4, $5, $6)
+       RETURNING id, student_id, alert_type, alert_status, gpa, total_credits, description, created_at, updated_at`,
+      [
+        payload.studentId,
+        payload.alertType,
+        status,
+        payload.description || '',
+        payload.gpa ?? null,
+        payload.totalCredits ?? null,
+      ],
+    );
+    return res.rows[0];
+  }
+
+  /**
+   * Update academic alert
+   */
+  async updateAlert(
+    id: string,
+    payload: {
+      alertType: 'PROBATION_RISK' | 'GPA_WARNING' | 'CREDIT_WARNING';
+      alertStatus: 'ACTIVE' | 'RESOLVED';
+      description?: string;
+      gpa?: number | null;
+      totalCredits?: number | null;
+    },
+  ): Promise<AlertRow> {
+    const res = await this.pool.query<AlertRow>(
+      `UPDATE academic_alerts 
+       SET alert_type = $1::alert_type, alert_status = $2::alert_status, description = $3, gpa = $4, total_credits = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6
+       RETURNING id, student_id, alert_type, alert_status, gpa, total_credits, description, created_at, updated_at`,
+      [
+        payload.alertType,
+        payload.alertStatus,
+        payload.description || '',
+        payload.gpa ?? null,
+        payload.totalCredits ?? null,
+        id,
+      ],
+    );
+    if (res.rowCount === 0) {
+      throw new Error('Alert not found');
+    }
+    return res.rows[0];
+  }
+
+  /**
+   * Delete academic alert
+   */
+  async deleteAlert(id: string): Promise<AlertRow> {
+    const res = await this.pool.query<AlertRow>(
+      `DELETE FROM academic_alerts WHERE id = $1 RETURNING student_id`,
+      [id],
+    );
+    if (res.rowCount === 0) {
+      throw new Error('Alert not found');
+    }
+    return res.rows[0];
+  }
 }

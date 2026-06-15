@@ -69,7 +69,9 @@ export class AdvisorsService {
       values.push(query.user_id);
     }
     if (query.search) {
-      clauses.push(`(a.full_name ILIKE $${idx} OR a.department ILIKE $${idx} OR u.email ILIKE $${idx})`);
+      clauses.push(
+        `(a.full_name ILIKE $${idx} OR a.department ILIKE $${idx} OR u.email ILIKE $${idx})`,
+      );
       values.push(`%${query.search}%`);
       idx++;
     }

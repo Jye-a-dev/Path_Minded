@@ -142,7 +142,9 @@ export class CourseTypeMappingsService {
     if ((enumCheck.rowCount ?? 0) === 0) {
       // Not in the enum, add it dynamically!
       // This is safe to interpolate because formattedType strictly matches /^[A-Z0-9_]{2,20}$/
-      await this.pool.query(`ALTER TYPE course_type ADD VALUE '${formattedType}'`);
+      await this.pool.query(
+        `ALTER TYPE course_type ADD VALUE '${formattedType}'`,
+      );
     }
 
     const result = await this.pool.query<CourseTypeMappingEntity>(

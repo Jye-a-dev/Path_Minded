@@ -11,6 +11,7 @@ import {
   UploadedFile,
   Sse,
   MessageEvent,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Observable } from 'rxjs';
@@ -102,8 +103,9 @@ export class CurriculumImportsController {
   confirm(
     @Param('id') id: string,
     @Body() payload: Record<string, unknown>,
+    @Req() req: any,
   ): Promise<{ message: string }> {
-    return this.service.confirm(id, payload);
+    return this.service.confirm(id, payload, req.user?.role);
   }
 
   @ApiOperation({ summary: 'Reparse curriculum Excel sheet' })

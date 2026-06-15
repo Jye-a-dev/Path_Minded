@@ -8,6 +8,8 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+  Delete,
+  Put,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { GraphService } from './graph.service';
@@ -114,6 +116,78 @@ export class GraphController {
       const message =
         error instanceof Error ? error.message : 'Error updating alert status';
       throw new BadRequestException(message);
+    }
+  }
+
+  @ApiOperation({ summary: 'Get all academic warnings for a student' })
+  @Roles('ADVISOR', 'ADMIN')
+  @Get('student/:studentId')
+  async getStudentAlerts(@Param('studentId') studentId: string): Promise<any[]> {
+    if (!studentId) {
+      throw new BadRequestException('studentId parameter is required');
+    }
+    return this.graphService.getStudentAlerts(studentId);
+  }
+
+  @ApiOperation({ summary: 'Create a new academic warning' })
+  @Roles('ADVISOR', 'ADMIN')
+  @Post()
+  async createAlert(
+    @Body()
+    payload: {
+      studentId: string;
+      alertType: 'PROBATION_RISK' | 'GPA_WARNING' | 'CREDIT_WARNING';
+      alertStatus?: 'ACTIVE' | 'RESOLVED';
+      description?: string;
+      gpa?: number | null;
+      totalCredits?: number | null;
+    },
+  ): Promise<any> {
+    if (!payload.studentId || !payload.alertType) {
+      throw new BadRequestException('studentId and alertType are required');
+    }
+    const alert = await this.graphService.createAlert(payload);
+    // Notify client
+    this.syncService.emitUpdate(alert.student_id, 'alert_status_updated');
+    return alert;
+  }
+
+  @ApiOperation({ summary: 'Update an academic warning' })
+  @Roles('ADVISOR', 'ADMIN')
+  @Put(':id')
+  async updateAlert(
+    @Param('id') id: string,
+    @Body()
+    payload: {
+      alertType: 'PROBATION_RISK' | 'GPA_WARNING' | 'CREDIT_WARNING';
+      alertStatus: 'ACTIVE' | 'RESOLVED';
+      description?: string;
+      gpa?: number | null;
+      totalCredits?: number | null;
+    },
+  ): Promise<any> {
+    if (!payload.alertType || !payload.alertStatus) {
+      throw new BadRequestException('alertType and alertStatus are required');
+    }
+    const alert = await this.graphService.updateAlert(id, payload);
+    // Notify client
+    this.syncService.emitUpdate(alert.student_id, 'alert_status_updated');
+    return alert;
+  }
+
+  @ApiOperation({ summary: 'Delete an academic warning' })
+  @Roles('ADVISOR', 'ADMIN')
+  @Delete(':id')
+  async deleteAlert(@Param('id') id: string): Promise<{ message: string }> {
+    try {
+      const alert = await this.graphService.deleteAlert(id);
+      // Notify client
+      this.syncService.emitUpdate(alert.student_id, 'alert_status_updated');
+      return { message: 'Alert deleted successfully' };
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Error deleting alert',
+      );
     }
   }
 }

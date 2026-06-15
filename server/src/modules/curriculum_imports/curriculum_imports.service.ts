@@ -460,6 +460,7 @@ export class CurriculumImportsService implements OnModuleInit {
   async confirm(
     id: string,
     payload: Record<string, unknown>,
+    userRole?: string,
   ): Promise<{ message: string }> {
     const importResult = await this.pool.query<CurriculumImportEntity>(
       `SELECT * FROM curriculum_imports WHERE id = $1`,
@@ -480,6 +481,27 @@ export class CurriculumImportsService implements OnModuleInit {
       throw new BadRequestException('courses array is required in payload');
     }
 
+    if (userRole === 'ADVISOR') {
+      // For advisors: we do NOT write to curriculum_courses.
+      // We just update the parsed_json with the confirmed courses list (saving advisor's selection),
+      // and keep the status as 'PENDING'.
+      const parsedJsonData = {
+        ...(importRecord.parsed_json as Record<string, unknown>),
+        preview: courses,
+        confirmedByAdvisor: true,
+      };
+
+      await this.pool.query(
+        `UPDATE curriculum_imports SET parsed_json = $1, import_status = 'PENDING' WHERE id = $2`,
+        [JSON.stringify(parsedJsonData), id],
+      );
+
+      return {
+        message:
+          'Đã gửi yêu cầu nhập khung chương trình học lên Quản trị viên phê duyệt.',
+      };
+    }
+
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -491,6 +513,13 @@ export class CurriculumImportsService implements OnModuleInit {
         id,
         courses,
       );
+
+      if (importRecord.program_id) {
+        await client.query(
+          `UPDATE programs SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+          [importRecord.program_id],
+        );
+      }
 
       await client.query(
         `UPDATE curriculum_imports SET import_status = 'SUCCESS', processed_at = CURRENT_TIMESTAMP WHERE id = $1`,

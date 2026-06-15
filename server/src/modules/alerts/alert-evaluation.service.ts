@@ -35,7 +35,10 @@ export class AlertEvaluationService {
     if (type === 'PE' || type === 'DEFENSE') {
       return true;
     }
-    if (type === 'ENGLISH' && (credits === 0 || /dự bị|tăng cường|foundation|preparatory/i.test(name))) {
+    if (
+      type === 'ENGLISH' &&
+      (credits === 0 || /dự bị|tăng cường|foundation|preparatory/i.test(name))
+    ) {
       return true;
     }
 
@@ -64,7 +67,12 @@ export class AlertEvaluationService {
     }
 
     // English Preparatory / Tiếng Anh tăng cường / dự bị
-    const isEnglish = code.startsWith('ENG') || code.includes('ENG') || name.includes('anh văn') || name.includes('tiếng anh') || name.includes('english');
+    const isEnglish =
+      code.startsWith('ENG') ||
+      code.includes('ENG') ||
+      name.includes('anh văn') ||
+      name.includes('tiếng anh') ||
+      name.includes('english');
     const isPrep = /dự bị|tăng cường|foundation|preparatory/i.test(name);
     if (isEnglish && isPrep) {
       return true;
@@ -206,12 +214,14 @@ export class AlertEvaluationService {
       }
 
       await client.query('COMMIT');
-      
+
       // Push real-time sync update
       this.syncService.emitUpdate(studentId, 'alert_update');
     } catch (err) {
       await client.query('ROLLBACK');
-      this.logger.error(`Failed to update alerts database records: ${err.message}`);
+      this.logger.error(
+        `Failed to update alerts database records: ${err.message}`,
+      );
       throw err;
     } finally {
       client.release();

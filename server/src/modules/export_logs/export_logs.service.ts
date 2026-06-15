@@ -83,7 +83,9 @@ export class ExportLogsService {
     }
 
     if (query.search) {
-      clauses.push(`(e.file_name ILIKE $${idx} OR c.class_code ILIKE $${idx} OR p.program_name ILIKE $${idx})`);
+      clauses.push(
+        `(e.file_name ILIKE $${idx} OR c.class_code ILIKE $${idx} OR p.program_name ILIKE $${idx})`,
+      );
       values.push(`%${query.search}%`);
       idx++;
     }

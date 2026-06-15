@@ -398,7 +398,10 @@ export class TranscriptUploadsService implements OnModuleInit {
           await this.alertEvaluationService.evaluateStudent(studentId);
         } catch (evalError) {
           // Log evaluation error but do not fail the transcript upload operation
-          console.error(`Alert evaluation failed for student ${studentId}:`, evalError);
+          console.error(
+            `Alert evaluation failed for student ${studentId}:`,
+            evalError,
+          );
         }
 
         return {

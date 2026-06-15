@@ -11,4 +11,3 @@ import { AdvisingLogsController } from './advising-logs.controller';
   exports: [AlertEvaluationService, GraphService, AdvisingLogsService],
 })
 export class AlertsModule {}
-

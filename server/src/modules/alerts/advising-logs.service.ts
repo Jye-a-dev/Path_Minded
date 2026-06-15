@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Pool } from 'pg';
 import { DB_PROVIDER } from '../../constants/app.constant';
 import { CreateAdvisingLogDto } from './dto/create-advising-log.dto';
@@ -15,7 +21,7 @@ export class AdvisingLogsService {
 
   async create(payload: CreateAdvisingLogDto): Promise<any> {
     this.logger.log(`Creating advising log for student ${payload.student_id}`);
-    
+
     try {
       const result = await this.pool.query(
         `
@@ -39,7 +45,9 @@ export class AdvisingLogsService {
       return log;
     } catch (error) {
       this.logger.error(`Error creating advising log: ${error.message}`);
-      throw new BadRequestException(`Failed to create advising log: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to create advising log: ${error.message}`,
+      );
     }
   }
 
@@ -84,10 +92,7 @@ export class AdvisingLogsService {
     const studentId = checkResult.rows[0].student_id;
 
     // 2. Perform deletion
-    await this.pool.query(
-      `DELETE FROM advising_logs WHERE id = $1`,
-      [id],
-    );
+    await this.pool.query(`DELETE FROM advising_logs WHERE id = $1`, [id]);
 
     // 3. Emit sync notification
     this.syncService.emitUpdate(studentId, 'advising_log_deleted');
