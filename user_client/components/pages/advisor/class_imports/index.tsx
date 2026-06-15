@@ -28,7 +28,7 @@ export default function AdvisorClassImportsPage() {
 
   const [allPrograms, setAllPrograms] = useState<ProgramItem[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [currentAdvisor, setCurrentAdvisor] = useState<{ id: string; full_name: string } | null>(null);
+  const [currentAdvisor, setCurrentAdvisor] = useState<{ id: string; full_name: string; department?: string | null } | null>(null);
 
   const [loadingConfig, setLoadingConfig] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
@@ -82,6 +82,36 @@ export default function AdvisorClassImportsPage() {
       .filter((m): m is string => !!m);
     return Array.from(new Set(majors)).sort();
   }, [classes, allPrograms]);
+
+  // Sync selectedMajor with advisor's department (case/accent insensitive match)
+  useEffect(() => {
+    if (!currentAdvisor?.department || uniqueMajors.length === 0) return;
+
+    const normalizeString = (str: string) => {
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[đĐ]/g, "d")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    const targetDept = currentAdvisor.department;
+    const matched = uniqueMajors.find(
+      (m) => normalizeString(m) === normalizeString(targetDept)
+    );
+
+    if (matched) {
+      if (selectedMajor !== matched && (user?.role === "ADVISOR" || !selectedMajor)) {
+        setSelectedMajor(matched);
+      }
+    } else {
+      if (selectedMajor !== targetDept && (user?.role === "ADVISOR" || !selectedMajor)) {
+        setSelectedMajor(targetDept);
+      }
+    }
+  }, [currentAdvisor, uniqueMajors, user, selectedMajor, setSelectedMajor]);
 
   // Filter classes based on selected major
   const classesForMajor = useMemo(() => {
@@ -150,11 +180,12 @@ export default function AdvisorClassImportsPage() {
               <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Chuyên ngành</label>
               <select
                 value={selectedMajor}
+                disabled={user?.role === "ADVISOR" && !!currentAdvisor?.department}
                 onChange={(e) => {
                   setSelectedMajor(e.target.value);
                   setSelectedClassId("");
                 }}
-                className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm bg-white cursor-pointer focus:outline-none focus:border-emerald-500 font-semibold"
+                className="w-full border border-zinc-200 rounded-xl px-3 py-2 text-sm bg-white cursor-pointer focus:outline-none focus:border-emerald-500 font-semibold disabled:opacity-75 disabled:bg-neutral-50 disabled:cursor-not-allowed"
               >
                 <option value="">-- Chọn chuyên ngành --</option>
                 {uniqueMajors.map((major) => (

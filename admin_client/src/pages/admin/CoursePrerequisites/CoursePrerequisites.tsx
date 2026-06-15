@@ -352,7 +352,9 @@ export default function CoursePrerequisites() {
               }
             />
           ) : (
-            <InteractiveGraph programId={filters.program_id as string} />
+            <div className="border border-slate-800 bg-slate-900/40 p-6 rounded-3xl shadow-xl relative z-10">
+              <InteractiveGraph programId={filters.program_id as string} />
+            </div>
           )}
         </div>
       )}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "@/services/api";
 import { useReloadPersistentState } from "@/hooks/useReloadPersistentState";
+import { useAuth } from "@/hooks/useAuth";
 import { UploadCloud, Loader2 } from "lucide-react";
 
 import ProgramSelector, { Program } from "./components/ProgramSelector";
@@ -10,13 +11,23 @@ import UploadPhase from "./components/UploadPhase";
 import StreamingPhase, { LogItem } from "./components/StreamingPhase";
 import ConflictResolutionPhase, { ConflictItem, CoursePreviewItem } from "./components/ConflictResolutionPhase";
 import PreviewPhase, { WarningItem } from "./components/PreviewPhase";
+import CurriculumCoursesView from "./components/CurriculumCoursesView";
+import ImportProposalsHistory from "./components/ImportProposalsHistory";
+import NotificationModal, { NotificationItem } from "./components/NotificationModal";
 
 export default function AdvisorCurriculumPage() {
+  const { user } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loadingPrograms, setLoadingPrograms] = useState(true);
+  const [currentAdvisor, setCurrentAdvisor] = useState<{ id: string; full_name: string; department?: string | null } | null>(null);
+  const [activeTab, setActiveTab] = useState<"curriculum" | "history">("curriculum");
+  const [notification, setNotification] = useState<NotificationItem | null>(null);
 
-  // Flow steps: "select_program" | "upload" | "streaming" | "conflict_resolution" | "preview"
-  const [phase, setPhase] = useReloadPersistentState<"select_program" | "upload" | "streaming" | "conflict_resolution" | "preview">("advisor_curriculum_phase", "select_program");
+  // Helper values
+  const uniqueMajors = Array.from(new Set(programs.map((p) => p.major_name).filter((m): m is string => !!m))).sort();
+
+  // Flow steps: "select_program" | "view_courses" | "upload" | "streaming" | "conflict_resolution" | "preview"
+  const [phase, setPhase] = useReloadPersistentState<"select_program" | "view_courses" | "upload" | "streaming" | "conflict_resolution" | "preview">("advisor_curriculum_phase", "select_program");
 
   // Selection state
   const [selectedMajor, setSelectedMajor] = useReloadPersistentState("advisor_curriculum_selectedMajor", "");
@@ -47,21 +58,63 @@ export default function AdvisorCurriculumPage() {
   const [previewWarnings, setPreviewWarnings] = useState<WarningItem[]>([]);
   const [submittingImport, setSubmittingImport] = useState(false);
 
-  // Fetch programs
+  // Sheets tracking state
+  const [sheetsList, setSheetsList] = useState<string[]>([]);
+  const [activeSheetIndex, setActiveSheetIndex] = useState<number>(0);
+
+  // Fetch programs and advisor details
   useEffect(() => {
-    const fetchPrograms = async () => {
+    const fetchInitData = async () => {
       setLoadingPrograms(true);
       try {
         const res = await api.get("/programs?limit=250");
         setPrograms(res.data || []);
+
+        if (user) {
+          const advRes = await api.get(`/advisors?user_id=${user.id}`);
+          if (advRes.data && advRes.data.length > 0) {
+            const advRec = advRes.data[0];
+            setCurrentAdvisor(advRec);
+          }
+        }
       } catch (err) {
-        console.error("Failed to load programs:", err);
+        console.error("Failed to load programs and advisor details:", err);
       } finally {
         setLoadingPrograms(false);
       }
     };
-    void fetchPrograms();
-  }, []);
+    void fetchInitData();
+  }, [user]);
+
+  // Sync selectedMajor with advisor's department (case/accent insensitive match)
+  useEffect(() => {
+    if (!currentAdvisor?.department || uniqueMajors.length === 0) return;
+
+    const normalizeString = (str: string) => {
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[đĐ]/g, "d")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    const targetDept = currentAdvisor.department;
+    const matched = uniqueMajors.find(
+      (m) => normalizeString(m) === normalizeString(targetDept)
+    );
+
+    if (matched) {
+      if (selectedMajor !== matched && (user?.role === "ADVISOR" || !selectedMajor)) {
+        setSelectedMajor(matched);
+      }
+    } else {
+      if (selectedMajor !== targetDept && (user?.role === "ADVISOR" || !selectedMajor)) {
+        setSelectedMajor(targetDept);
+      }
+    }
+  }, [currentAdvisor, uniqueMajors, user, selectedMajor, setSelectedMajor]);
 
   const addLog = (type: LogItem["type"], text: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -73,6 +126,8 @@ export default function AdvisorCurriculumPage() {
     setLogs([]);
     setStreamStatus("connecting");
     setProgress({ current: 0, total: 100 });
+    setSheetsList([]);
+    setActiveSheetIndex(sheetIndex);
 
     const formData = new FormData();
     formData.append("programId", selectedProgramId);
@@ -153,6 +208,8 @@ export default function AdvisorCurriculumPage() {
             setPreviewCourses(preview || []);
             setPreviewWarnings(warnings || []);
             setConflicts(serverConflicts || []);
+            setSheetsList(payload.sheets || []);
+            setActiveSheetIndex(payload.activeSheetIndex || 0);
 
             if (serverConflicts && serverConflicts.length > 0) {
               setPhase("conflict_resolution");
@@ -189,8 +246,32 @@ export default function AdvisorCurriculumPage() {
         console.error("Failed to cancel import session:", err);
       }
     }
-    setPhase("select_program");
+    setPhase("view_courses");
     setActiveSessionId(null);
+    setSheetsList([]);
+    setActiveSheetIndex(0);
+  };
+
+  const handleSheetChange = async (idx: number) => {
+    if (!activeSessionId) return;
+    setPhase("streaming");
+    setLogs([]);
+    setStreamStatus("connecting");
+    setProgress({ current: 0, total: 100 });
+    try {
+      await api.post(`/curriculum_imports/${activeSessionId}/reparse`, {
+        sheetIndex: idx,
+      });
+      startSseConnection(activeSessionId);
+    } catch (err) {
+      console.error("Failed to reparse sheet:", err);
+      setNotification({
+        type: "error",
+        title: "Lỗi chuyển trang",
+        message: "Không thể chuyển đổi trang tính: " + (err instanceof Error ? err.message : String(err))
+      });
+      setPhase("preview");
+    }
   };
 
   const handleConfirmConflicts = (updatedCourses: CoursePreviewItem[]) => {
@@ -202,22 +283,28 @@ export default function AdvisorCurriculumPage() {
     if (!activeSessionId) return;
     setSubmittingImport(true);
     try {
-      await api.post(`/curriculum_imports/${activeSessionId}/confirm`, {
+      const res = await api.post(`/curriculum_imports/${activeSessionId}/confirm`, {
         courses: selectedCourses
       });
-      alert("Tải lên và chuẩn hóa khung chương trình thành công!");
-      setPhase("select_program");
+      setNotification({
+        type: "success",
+        title: "Thành công",
+        message: res.data?.message || "Tải lên và đề xuất nhập khung chương trình học thành công!"
+      });
+      setPhase("view_courses");
       setActiveSessionId(null);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      alert(error.response?.data?.message || "Lỗi lưu khung chương trình học");
+      setNotification({
+        type: "error",
+        title: "Lỗi lưu khung",
+        message: error.response?.data?.message || "Lỗi lưu khung chương trình học"
+      });
     } finally {
       setSubmittingImport(false);
     }
   };
 
-  // Helper values
-  const uniqueMajors = Array.from(new Set(programs.map((p) => p.major_name).filter((m): m is string => !!m))).sort();
   const filteredPrograms = programs.filter((p) => p.major_name === selectedMajor);
   const selectedProgramDetails = programs.find((p) => p.id === selectedProgramId);
 
@@ -235,7 +322,8 @@ export default function AdvisorCurriculumPage() {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6 relative pb-10">
+      {/* Decorative gradient blob */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-400/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Page Header */}
@@ -245,61 +333,169 @@ export default function AdvisorCurriculumPage() {
           <span>Bóc tách học thuật</span>
         </div>
         <h1 className="text-2xl font-extrabold tracking-tight text-neutral-950">
-          Nhập khung chương trình
+          Nhập chương trình
         </h1>
         <p className="text-sm text-neutral-500 mt-1">
           Hệ thống tự động phân tích cấu trúc, chuẩn hóa khối kiến thức và đối soát xung đột của khung chương trình.
         </p>
       </div>
 
+      {/* Tab Selector */}
+      {(phase === "select_program" || phase === "view_courses") && (
+        <div className="flex font-bold text-xs select-none mb-4 bg-zinc-50/20 p-1 rounded-2xl w-fit border border-zinc-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab("curriculum")}
+            className={`px-5 py-2.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === "curriculum"
+                ? "bg-white text-emerald-800 shadow-sm border border-zinc-150"
+                : "text-neutral-450 hover:text-neutral-700"
+            }`}
+          >
+            Khung chương trình
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("history")}
+            className={`px-5 py-2.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === "history"
+                ? "bg-white text-emerald-800 shadow-sm border border-zinc-150"
+                : "text-neutral-450 hover:text-neutral-700"
+            }`}
+          >
+            Lịch sử đề xuất nhập
+          </button>
+        </div>
+      )}
+
+      {/* Stepper progress indicator */}
+      {phase !== "select_program" && phase !== "view_courses" && (
+        <div className="relative z-10 max-w-3xl mx-auto py-2">
+          <div className="flex items-center justify-between">
+            {[
+              { id: "select_program", label: "Liên kết CTĐT" },
+              { id: "upload", label: "Tải lên" },
+              { id: "streaming", label: "Phân tích" },
+              { id: "conflict_resolution", label: "Xung đột" },
+              { id: "preview", label: "Xem trước & Lưu" },
+            ].map((s, idx) => {
+              const phaseOrder = ["select_program", "upload", "streaming", "conflict_resolution", "preview"];
+              const currentIdx = phaseOrder.indexOf(phase);
+              const stepIdx = phaseOrder.indexOf(s.id);
+              const isCompleted = stepIdx < currentIdx;
+              const isActive = stepIdx === currentIdx;
+
+              // Hide conflict step if we bypass it
+              if (s.id === "conflict_resolution" && phase === "preview" && conflicts.length === 0) {
+                return null;
+              }
+
+              return (
+                <React.Fragment key={s.id}>
+                  {idx > 0 && (
+                    <div className={`flex-1 h-[2.5px] mx-2 transition-all duration-500 rounded-full ${
+                      isCompleted ? "bg-emerald-600 shadow-xs shadow-emerald-500/20" : "bg-zinc-200"
+                    }`} />
+                  )}
+                  <div className="flex flex-col items-center gap-2 relative">
+                    <div className={`h-9 w-9 rounded-2xl border-2 flex items-center justify-center text-xs font-bold transition-all duration-500 transform ${
+                      isCompleted
+                        ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20 scale-105"
+                        : isActive
+                        ? "bg-white border-emerald-600 text-emerald-800 shadow-lg shadow-emerald-600/10 scale-110 font-extrabold border-3"
+                        : "bg-white border-zinc-200 text-zinc-400"
+                    }`}>
+                      {isCompleted ? "✓" : idx + 1}
+                    </div>
+                    <span className={`text-[10px] font-extrabold uppercase tracking-wider transition-colors duration-500 ${
+                      isActive ? "text-emerald-700 font-black" : isCompleted ? "text-emerald-600" : "text-zinc-400"
+                    }`}>
+                      {s.label}
+                    </span>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Render phase based on step state */}
-      {phase === "select_program" && (
-        <ProgramSelector
-          uniqueMajors={uniqueMajors}
-          selectedMajor={selectedMajor}
-          setSelectedMajor={setSelectedMajor}
-          selectedProgramId={selectedProgramId}
-          setSelectedProgramId={setSelectedProgramId}
-          filteredPrograms={filteredPrograms}
-          onNext={() => setPhase("upload")}
-        />
-      )}
+      <div className="pt-4 transition-all duration-300">
+        {activeTab === "history" && (phase === "select_program" || phase === "view_courses") ? (
+          <ImportProposalsHistory selectedMajor={selectedMajor} />
+        ) : (
+          <>
+            {phase === "select_program" && (
+          <ProgramSelector
+            uniqueMajors={uniqueMajors}
+            selectedMajor={selectedMajor}
+            setSelectedMajor={setSelectedMajor}
+            selectedProgramId={selectedProgramId}
+            setSelectedProgramId={setSelectedProgramId}
+            filteredPrograms={filteredPrograms}
+            isMajorDisabled={user?.role === "ADVISOR" && !!currentAdvisor?.department}
+            onNext={() => setPhase("view_courses")}
+          />
+        )}
 
-      {phase === "upload" && (
-        <UploadPhase
-          selectedProgramDetails={selectedProgramDetails}
-          onBack={() => setPhase("select_program")}
-          onSubmit={handleStartUpload}
-        />
-      )}
+        {phase === "view_courses" && (
+          <CurriculumCoursesView
+            programId={selectedProgramId}
+            selectedProgramDetails={selectedProgramDetails}
+            onBack={() => setPhase("select_program")}
+            onImport={() => setPhase("upload")}
+          />
+        )}
 
-      {phase === "streaming" && (
-        <StreamingPhase
-          streamStatus={streamStatus}
-          logs={logs}
-          progress={progress}
-          onCancel={handleCancelImport}
-        />
-      )}
+        {phase === "upload" && (
+          <UploadPhase
+            selectedProgramDetails={selectedProgramDetails}
+            onBack={() => setPhase("view_courses")}
+            onSubmit={handleStartUpload}
+          />
+        )}
 
-      {phase === "conflict_resolution" && (
-        <ConflictResolutionPhase
-          conflicts={conflicts}
-          previewCourses={previewCourses}
-          onCancel={handleCancelImport}
-          onConfirm={handleConfirmConflicts}
-        />
-      )}
+        {phase === "streaming" && (
+          <StreamingPhase
+            streamStatus={streamStatus}
+            logs={logs}
+            progress={progress}
+            onCancel={handleCancelImport}
+          />
+        )}
 
-      {phase === "preview" && (
-        <PreviewPhase
-          previewCourses={previewCourses}
-          previewWarnings={previewWarnings}
-          submittingImport={submittingImport}
-          onConfirmFinal={handleConfirmFinalImport}
-          onCancel={handleCancelImport}
-        />
-      )}
+        {phase === "conflict_resolution" && (
+          <ConflictResolutionPhase
+            conflicts={conflicts}
+            previewCourses={previewCourses}
+            onCancel={handleCancelImport}
+            onConfirm={handleConfirmConflicts}
+            sheets={sheetsList}
+            activeSheetIndex={activeSheetIndex}
+            onSheetChange={handleSheetChange}
+          />
+        )}
+
+        {phase === "preview" && (
+          <PreviewPhase
+            previewCourses={previewCourses}
+            previewWarnings={previewWarnings}
+            submittingImport={submittingImport}
+            onConfirmFinal={handleConfirmFinalImport}
+            onCancel={handleCancelImport}
+            sheets={sheetsList}
+            activeSheetIndex={activeSheetIndex}
+            onSheetChange={handleSheetChange}
+          />
+        )}
+      </>
+    )}
+  </div>
+      <NotificationModal
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
     </div>
   );
 }

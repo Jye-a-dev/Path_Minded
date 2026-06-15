@@ -22,6 +22,8 @@ interface GraphCanvasProps {
   setZoom?: React.Dispatch<React.SetStateAction<number>>;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  maxSem: number;
+  colWidth: number;
 }
 
 export function GraphCanvas({
@@ -44,6 +46,8 @@ export function GraphCanvas({
   setZoom,
   isExpanded = false,
   onToggleExpand,
+  maxSem,
+  colWidth,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -145,8 +149,8 @@ export function GraphCanvas({
         <svg className="w-full h-full">
           <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
             {/* Semester Columns Labels */}
-            {Array.from({ length: 8 }).map((_, index) => {
-              const x = 50 + index * 260;
+            {Array.from({ length: maxSem }).map((_, index) => {
+              const x = 50 + index * colWidth;
               return (
                 <g key={index}>
                   {/* Header bar */}
@@ -182,9 +186,9 @@ export function GraphCanvas({
 
               // Connection points
               const startX = startNode.x + 200; // Right side of source card
-              const startY = startNode.y + 35;  // Middle Y of source card
+              const startY = startNode.y + 36;  // Middle Y of source card
               const endX = endNode.x;           // Left side of target card
-              const endY = endNode.y + 35;      // Middle Y of target card
+              const endY = endNode.y + 36;      // Middle Y of target card
 
               // Determine highlight coloring
               let strokeColor = "#3f3f46"; // Default gray connection

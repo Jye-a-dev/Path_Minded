@@ -111,10 +111,20 @@ export function InteractiveGraph({ curriculum, results, prereqs, onSimulateFailu
     return statusMap;
   }, [curriculum, results, prereqs]);
 
+  const COL_WIDTH = 240;
+  const ROW_HEIGHT = 92;
+
+  // Compute dynamic maximum semester from curriculum
+  const maxSem = useMemo(() => {
+    return curriculum.reduce((max, c) => {
+      const sem = c.expected_semester || 0;
+      return sem > max ? sem : max;
+    }, 8); // Default to at least 8 semesters
+  }, [curriculum]);
+
   // Compute layout positions for each course
   const layout = useMemo(() => {
     const semesters: Record<number, CurriculumCourse[]> = {};
-    const maxSem = 8;
     for (let i = 1; i <= maxSem; i++) {
       semesters[i] = [];
     }
@@ -127,8 +137,6 @@ export function InteractiveGraph({ curriculum, results, prereqs, onSimulateFailu
     });
 
     const positions: Record<string, { x: number; y: number }> = {};
-    const colWidth = 260;
-    const rowHeight = 110;
     const paddingLeft = 50;
     const paddingTop = 60;
 
@@ -141,23 +149,23 @@ export function InteractiveGraph({ curriculum, results, prereqs, onSimulateFailu
     Object.keys(semesters).forEach((semKey) => {
       const semNum = parseInt(semKey, 10);
       const list = semesters[semNum];
-      const colX = paddingLeft + (semNum - 1) * colWidth;
+      const colX = paddingLeft + (semNum - 1) * COL_WIDTH;
 
       // Vertical centering inside the canvas
-      const totalColHeight = list.length * rowHeight;
-      const maxColHeight = maxRows * rowHeight;
+      const totalColHeight = list.length * ROW_HEIGHT;
+      const maxColHeight = maxRows * ROW_HEIGHT;
       const startY = paddingTop + (maxColHeight - totalColHeight) / 2;
 
       list.forEach((c, index) => {
         positions[c.course_code] = {
           x: colX,
-          y: startY + index * rowHeight,
+          y: startY + index * ROW_HEIGHT,
         };
       });
     });
 
     return positions;
-  }, [curriculum]);
+  }, [curriculum, maxSem]);
 
   // Find all ancestors and descendants for highlight
   const dependencyPaths = useMemo(() => {
@@ -289,6 +297,8 @@ export function InteractiveGraph({ curriculum, results, prereqs, onSimulateFailu
         setZoom={setZoom}
         isExpanded={isExpanded}
         onToggleExpand={toggleExpand}
+        maxSem={maxSem}
+        colWidth={COL_WIDTH}
       />
       <CourseInfoPanel
         selectedCourseDetails={selectedCourseDetails}

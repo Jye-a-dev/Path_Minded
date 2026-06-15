@@ -4,10 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
-import { 
-  Users, 
-  FileSpreadsheet, 
-  UploadCloud, 
+import {
+  Users,
+  FileSpreadsheet,
+  UploadCloud,
   ArrowRight,
   Layers,
   Settings,
@@ -82,13 +82,13 @@ export default function AdvisorDashboard() {
           try {
             const programsRes = await api.get("/programs?limit=250");
             const allPrograms: ProgramItem[] = programsRes.data || [];
-            
+
             const myProgramIds = Array.from(
               new Set(myClasses.map((c) => c.program_id).filter(Boolean))
             );
-            
+
             const myPrograms = allPrograms.filter((p) => myProgramIds.includes(p.id));
-            
+
             if (myPrograms.length > 0) {
               setCurriculumValue(myPrograms.map((p) => p.program_code).join(", "));
               setCurriculumDesc(
@@ -211,7 +211,7 @@ export default function AdvisorDashboard() {
           </div>
           <div className="mt-8 pt-4 border-t border-zinc-100 flex items-center justify-between">
             <span className="text-xs text-neutral-400 font-semibold uppercase">Định dạng hỗ trợ: XLS, XLSX, TXT</span>
-            <Link 
+            <Link
               href="/advisor/curriculum"
               className="inline-flex items-center gap-1.5 text-sm font-bold text-violet-600 hover:text-violet-500 transition-all cursor-pointer group"
             >
@@ -236,7 +236,7 @@ export default function AdvisorDashboard() {
           </div>
           <div className="mt-8 pt-4 border-t border-zinc-100 flex items-center justify-between">
             <span className="text-xs text-neutral-400 font-semibold uppercase">Tải xuống tức thì trong 3 giây</span>
-            <Link 
+            <Link
               href="/advisor/classes"
               className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-55 transition-all cursor-pointer group"
             >

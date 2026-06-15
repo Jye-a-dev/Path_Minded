@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, ShieldCheck, Edit } from "lucide-react";
+import { AlertTriangle, ShieldCheck, Edit, Database, FileSpreadsheet } from "lucide-react";
 
 export interface ConflictItem {
   courseCode: string;
@@ -60,6 +60,14 @@ export const ConflictResolutionCenter: React.FC<ConflictResolutionCenterProps> =
     setResolutions((prev) => ({ ...prev, [code]: choice }));
   };
 
+  const handleResolveAll = (type: "db" | "excel") => {
+    const next: Record<string, "db" | "excel" | "custom"> = { ...resolutions };
+    conflicts.forEach((c) => {
+      next[c.courseCode] = type;
+    });
+    setResolutions(next);
+  };
+
   const handleStartCustomEdit = (conflict: ConflictItem) => {
     setEditingCode(conflict.courseCode);
     setEditForm({
@@ -101,6 +109,33 @@ export const ConflictResolutionCenter: React.FC<ConflictResolutionCenterProps> =
           <p className="text-[10px] text-amber-400/80 mt-1.5 leading-relaxed">
             💡 <strong>Mẹo Gộp phiên bản (Versioning):</strong> Chọn <em>Tùy biến</em> và đổi Mã học phần thành <code>&lt;MÃ&gt;_V2</code> để lưu song song cả 2 phiên bản học phần trong cùng chương trình đào tạo.
           </p>
+        </div>
+      </div>
+
+      {/* Batch Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-4 border border-slate-800 rounded-xl relative z-10">
+        <div className="space-y-0.5">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Xử lý hàng loạt</span>
+          <p className="text-xs text-slate-400 font-semibold font-sans">Áp dụng một lựa chọn chung cho tất cả {conflicts.length} học phần có xung đột.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleResolveAll("db")}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-850 bg-slate-900 hover:bg-slate-800 px-3.5 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-350 transition cursor-pointer active:scale-98 shadow-sm"
+          >
+            <Database size={13} />
+            Giữ cũ tất cả (Database)
+          </button>
+          <button
+            type="button"
+            onClick={() => handleResolveAll("excel")}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-850 bg-slate-900 hover:bg-slate-800 px-3.5 py-2 text-xs font-bold text-indigo-400 hover:text-indigo-350 transition cursor-pointer active:scale-98 shadow-sm"
+            style={{ color: "var(--primary-color)", borderColor: "rgba(99, 102, 241, 0.2)" }}
+          >
+            <FileSpreadsheet size={13} />
+            Ghi đè tất cả (Excel)
+          </button>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCurriculumImports } from "../../../hooks/useCurriculumImports";
-import type { ImportItem } from "../../../hooks/useCurriculumImports";
+import type { ImportItem, GroupedImportItem } from "../../../hooks/useCurriculumImports";
 import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
@@ -99,6 +99,7 @@ export function CurriculumImportsManager({
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [sheetsList, setSheetsList] = useState<string[]>([]);
   const [activeSheetIndex, setActiveSheetIndex] = useState<number>(0);
+  const [selectedVersions, setSelectedVersions] = useState<Record<string, string>>({});
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     title: string;
@@ -190,11 +191,51 @@ export function CurriculumImportsManager({
     }
   };
 
-  const handleConfirmImport = () => {
-    showNotification(
-      "Thông báo",
-      "Phiên nhập này chưa được xác nhận hoàn tất. Vui lòng bấm '+ Phiên nhập mới' để tải lên lại và nhấn 'Xác nhận Nhập vào DB' ở bảng xem trước."
-    );
+  const handleConfirmImport = (row: ImportItem) => {
+    // If the session has saved parsed data, load it and proceed directly to preview or conflict resolution
+    const rawParsed = row.parsed_json;
+    if (rawParsed) {
+      interface ParsedImportData {
+        preview?: CoursePreviewItem[];
+        warnings?: WarningItem[];
+        sheets?: string[];
+        activeSheetIndex?: number;
+        conflicts?: ConflictItem[];
+      }
+      const parsed = (typeof rawParsed === "string" ? JSON.parse(rawParsed) : rawParsed) as ParsedImportData;
+      setPreviewData(parsed.preview || []);
+      setPreviewWarnings(parsed.warnings || []);
+      setSheetsList(parsed.sheets || []);
+      setActiveSheetIndex(parsed.activeSheetIndex || 0);
+      setConflicts(parsed.conflicts || []);
+      setActiveSessionId(row.id);
+      
+      setModalOpen(true);
+      if (parsed.conflicts && parsed.conflicts.length > 0) {
+        setImportPhase("conflict_resolution");
+      } else {
+        setImportPhase("preview");
+      }
+    } else {
+      showNotification(
+        "Thông báo",
+        "Phiên nhập này chưa được xác nhận hoàn tất. Vui lòng bấm '+ Phiên nhập mới' để tải lên lại và nhấn 'Xác nhận Nhập vào DB' ở bảng xem trước."
+      );
+    }
+  };
+
+  const handleRejectImport = async (id: string) => {
+    try {
+      await api.patch(`/curriculum_imports/${id}`, {
+        import_status: "FAILED",
+        import_error: "Bị từ chối bởi Quản trị viên",
+      });
+      // Refresh the page data
+      setPage(1);
+      showNotification("Thành công", "Đã từ chối đề xuất nhập khung chương trình học.");
+    } catch (err) {
+      showNotification("Lỗi", "Không thể từ chối đề xuất nhập: " + (err instanceof Error ? err.message : String(err)), true);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -223,7 +264,35 @@ export function CurriculumImportsManager({
     });
   };
 
-  const columns = getCurriculumImportsColumns(handleConfirmImport, handleDelete);
+  const groupedData: GroupedImportItem[] = Object.values(
+    data.reduce<Record<string, ImportItem[]>>((acc, item) => {
+      if (!acc[item.file_name]) acc[item.file_name] = [];
+      acc[item.file_name].push(item);
+      return acc;
+    }, {})
+  ).map((items) => {
+    const sorted = [...items].sort(
+      (a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+    );
+    const first = sorted[0];
+    const selectedId = selectedVersions[first.file_name] || first.id;
+    const activeItem = sorted.find((item) => item.id === selectedId) || first;
+    return {
+      ...activeItem,
+      versions: sorted,
+    } as GroupedImportItem;
+  });
+
+  const handleVersionChange = (fileName: string, id: string) => {
+    setSelectedVersions((prev) => ({ ...prev, [fileName]: id }));
+  };
+
+  const columns = getCurriculumImportsColumns(
+    handleConfirmImport,
+    handleRejectImport,
+    handleDelete,
+    handleVersionChange
+  );
 
   return (
     <div className="space-y-8">
@@ -256,9 +325,9 @@ export function CurriculumImportsManager({
       )}
 
       {/* Data Table */}
-      <DataTable<ImportItem>
+      <DataTable<GroupedImportItem>
         columns={columns}
-        data={data}
+        data={groupedData}
         loading={loading}
         total={total}
         page={page}

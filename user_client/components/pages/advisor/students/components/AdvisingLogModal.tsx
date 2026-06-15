@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { X, MessageSquare, Plus, Loader2, Calendar, User, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
 import { StudentItem } from "./StudentModal";
 import { api } from "@/services/api";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface AdvisingLog {
   id: string;
@@ -52,6 +53,10 @@ export default function AdvisingLogModal({
   const [activeAlert, setActiveAlert] = useState<ActiveAlert | null>(null);
   const [resolving, setResolving] = useState(false);
 
+  // Custom confirmation modal states
+  const [deleteLogId, setDeleteLogId] = useState<string | null>(null);
+  const [showResolveConfirm, setShowResolveConfirm] = useState(false);
+
   const fetchLogsAndAlerts = useCallback(async () => {
     if (!student) return;
     setLoading(true);
@@ -76,8 +81,8 @@ export default function AdvisingLogModal({
     if (isOpen && student) {
       const timer = setTimeout(() => {
         void fetchLogsAndAlerts();
+        setContent("");
       }, 0);
-      setContent("");
       return () => clearTimeout(timer);
     }
   }, [isOpen, student, fetchLogsAndAlerts]);
@@ -108,23 +113,33 @@ export default function AdvisingLogModal({
     }
   };
 
-  const handleDeleteLog = async (logId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa nhật ký tư vấn này?")) return;
+  const handleDeleteLog = (logId: string) => {
+    setDeleteLogId(logId);
+  };
 
+  const performDeleteLog = async () => {
+    if (!deleteLogId) return;
+    setError(null);
     try {
-      await api.delete(`/alerts/advising-logs/${logId}`);
+      await api.delete(`/alerts/advising-logs/${deleteLogId}`);
       await fetchLogsAndAlerts();
     } catch (err) {
       console.error("Failed to delete log:", err);
-      alert("Không thể xóa nhật ký tư vấn.");
+      setError("Không thể xóa nhật ký tư vấn.");
+    } finally {
+      setDeleteLogId(null);
     }
   };
 
-  const handleResolveAlert = async () => {
+  const handleResolveAlert = () => {
     if (!activeAlert) return;
-    if (!confirm("Bạn muốn đánh dấu cảnh báo này đã được giải quyết theo lộ trình mới?")) return;
+    setShowResolveConfirm(true);
+  };
 
+  const performResolveAlert = async () => {
+    if (!activeAlert) return;
     setResolving(true);
+    setError(null);
     try {
       await api.patch(`/alerts/${activeAlert.id}/status`, {
         status: "RESOLVED"
@@ -134,9 +149,10 @@ export default function AdvisingLogModal({
       if (onAlertResolved) onAlertResolved();
     } catch (err) {
       console.error("Failed to resolve alert:", err);
-      alert("Không thể cập nhật trạng thái cảnh báo.");
+      setError("Không thể cập nhật trạng thái cảnh báo.");
     } finally {
       setResolving(false);
+      setShowResolveConfirm(false);
     }
   };
 
@@ -313,12 +329,36 @@ export default function AdvisingLogModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl px-4 py-2 border border-zinc-200 bg-white hover:bg-neutral-50 text-neutral-600 text-xs font-bold transition cursor-pointer"
+            className="rounded-xl px-4 py-2 border border-zinc-200 bg-white hover:bg-neutral-55 text-neutral-600 text-xs font-bold transition cursor-pointer"
           >
             Đóng lại
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteLogId !== null}
+        onClose={() => setDeleteLogId(null)}
+        onConfirm={performDeleteLog}
+        title="Xóa nhật ký tư vấn"
+        message="Bạn có chắc chắn muốn xóa nhật ký tư vấn này? Hành động này không thể hoàn tác."
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        type="danger"
+      />
+
+      {/* Resolve Alert Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showResolveConfirm}
+        onClose={() => setShowResolveConfirm(false)}
+        onConfirm={performResolveAlert}
+        title="Giải quyết cảnh báo"
+        message="Bạn muốn đánh dấu cảnh báo này đã được giải quyết theo lộ trình mới?"
+        confirmText="Giải quyết"
+        cancelText="Hủy bỏ"
+        type="warning"
+      />
     </div>
   );
 }

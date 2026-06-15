@@ -10,6 +10,11 @@ export interface ImportItem {
   import_error?: string;
   uploaded_at: string;
   processed_at?: string;
+  parsed_json?: string;
+}
+
+export interface GroupedImportItem extends ImportItem {
+  versions: ImportItem[];
 }
 
 export function useCurriculumImports(initialFilters: Record<string, unknown> = {}) {

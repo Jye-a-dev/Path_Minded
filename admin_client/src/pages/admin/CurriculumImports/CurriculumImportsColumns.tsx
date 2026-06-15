@@ -1,17 +1,36 @@
-import { type ImportItem } from "../../../hooks/useCurriculumImports";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { type ImportItem, type GroupedImportItem } from "../../../hooks/useCurriculumImports";
+import { CheckCircle2, Trash2, XCircle } from "lucide-react";
 
 export const getCurriculumImportsColumns = (
-  handleConfirmImport: () => void,
-  handleDelete: (id: string) => Promise<void>
+  handleConfirmImport: (row: ImportItem) => void,
+  handleRejectImport: (id: string) => Promise<void>,
+  handleDelete: (id: string) => Promise<void>,
+  onVersionChange?: (fileName: string, id: string) => void
 ) => [
   {
     header: "Tên tệp / Nguồn",
     accessorKey: "file_name",
-    render: (row: ImportItem) => (
+    render: (row: GroupedImportItem) => (
       <div>
         <span className="text-slate-200 font-bold block">{row.file_name}</span>
-        <span className="text-[10px] text-slate-500 font-mono block">ID: {row.id}</span>
+        {row.versions && row.versions.length > 1 && onVersionChange ? (
+          <div className="mt-1 flex items-center gap-1.5 text-[10px]">
+            <span className="text-slate-500 font-semibold uppercase">Bản tải lên:</span>
+            <select
+              value={row.id}
+              onChange={(e) => onVersionChange(row.file_name, e.target.value)}
+              className="bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700 px-1.5 py-0.5 rounded cursor-pointer focus:outline-none"
+            >
+              {row.versions.map((v: ImportItem, index: number) => (
+                <option key={v.id} value={v.id} className="bg-slate-950 text-slate-300">
+                  {new Date(v.uploaded_at).toLocaleString()} {index === 0 ? "(Mới nhất)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <span className="text-[10px] text-slate-500 font-mono block">ID: {row.id}</span>
+        )}
       </div>
     ),
   },
@@ -63,13 +82,22 @@ export const getCurriculumImportsColumns = (
     render: (row: ImportItem) => (
       <div className="flex items-center gap-2">
         {row.import_status === "PENDING" && (
-          <button
-            onClick={() => handleConfirmImport()}
-            className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-2 py-1 text-xs font-bold text-white shadow-lg transition cursor-pointer"
-          >
-            <CheckCircle2 size={12} />
-            Xác nhận
-          </button>
+          <>
+            <button
+              onClick={() => handleConfirmImport(row)}
+              className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-2 py-1.5 text-xs font-bold text-white shadow-lg transition cursor-pointer"
+            >
+              <CheckCircle2 size={12} />
+              Duyệt / Đối soát
+            </button>
+            <button
+              onClick={() => handleRejectImport(row.id)}
+              className="flex items-center gap-1.5 rounded bg-rose-600 hover:bg-rose-500 px-2 py-1.5 text-xs font-bold text-white shadow-lg transition cursor-pointer"
+            >
+              <XCircle size={12} />
+              Từ chối
+            </button>
+          </>
         )}
         <button
           onClick={() => handleDelete(row.id)}

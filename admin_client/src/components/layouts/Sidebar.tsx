@@ -10,7 +10,6 @@ import {
   GitFork,
   RefreshCw,
   FileSpreadsheet,
-  UploadCloud,
   FileUp,
   FolderInput,
   DownloadCloud,
@@ -106,7 +105,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: "Phiên nhập liệu",
       items: [
-        { label: "Nhập chương trình", to: "/admin/programs?tab=imports", icon: UploadCloud },
         { label: "Nhập lớp học", to: "/admin/class_imports", icon: FolderInput },
         { label: "Tải bảng điểm lên", to: "/admin/transcript_uploads", icon: FileUp },
       ],

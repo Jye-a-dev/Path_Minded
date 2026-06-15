@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Sliders, Info, RotateCcw, Zap, ChevronDown } from "lucide-react";
 import { CurriculumCourse, CourseResult, CLASSIFICATIONS, GRADE_VALUES } from "./types";
 
@@ -42,18 +42,14 @@ export function GpaProjectionTab({
       .sort((a, b) => a - b);
   }, [remainingCourses]);
 
-  // Set the first remaining semester expanded by default
-  useEffect(() => {
-    if (remainingSemesters.length > 0) {
-      setExpandedSemesters({ [remainingSemesters[0]]: true });
-    }
-  }, [remainingSemesters]);
-
   const toggleSemester = (sem: number) => {
-    setExpandedSemesters((prev) => ({
-      ...prev,
-      [sem]: !prev[sem],
-    }));
+    setExpandedSemesters((prev) => {
+      const isCurrentlyExpanded = prev[sem] !== undefined ? prev[sem] : remainingSemesters[0] === sem;
+      return {
+        ...prev,
+        [sem]: !isCurrentlyExpanded,
+      };
+    });
   };
 
   return (
@@ -234,7 +230,9 @@ export function GpaProjectionTab({
               );
               if (coursesInSem.length === 0) return null;
 
-              const isExpanded = !!expandedSemesters[semNum];
+              const isExpanded = expandedSemesters[semNum] !== undefined
+                ? expandedSemesters[semNum]
+                : remainingSemesters[0] === semNum;
 
               // Count how many courses have mocked grades in this semester
               const mockCount = coursesInSem.filter(c => mockGrades[c.course_code] && mockGrades[c.course_code] !== "NONE").length;

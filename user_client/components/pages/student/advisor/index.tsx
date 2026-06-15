@@ -1,69 +1,77 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/services/api";
 import {
   MessageCircle,
-  Mail,
-  Phone,
   Clock,
   Info,
-  ExternalLink,
+  Loader2,
+  Calendar,
+  User,
+  FileText,
+  AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 
+interface StudentProfile {
+  id: string;
+  advisor_feedback?: string | null;
+}
+
+interface AdvisingLog {
+  id: string;
+  student_id: string;
+  advisor_id: string | null;
+  alert_id: string | null;
+  log_date: string;
+  content: string;
+  advisor_name: string | null;
+  alert_type: string | null;
+  alert_description: string | null;
+}
+
 export default function StudentAdvisorPage() {
-  const [settings, setSettings] = useState<Record<string, string>>({
-    advisor_email: "cvht@vlu.edu.vn",
-    training_hotline: "(028) 7109 9221",
-    asc_portal_url: "https://asc.vlu.edu.vn",
-  });
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [logs, setLogs] = useState<AdvisingLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    if (!user) return;
+
+    const fetchProfileAndLogs = async () => {
+      setLoading(true);
       try {
-        const res = await api.get("/settings");
-        if (res.data) {
-          setSettings((prev) => ({
-            ...prev,
-            ...res.data,
-          }));
+        const res = await api.get(`/students?user_id=${user.id}`);
+        if (res.data?.length > 0) {
+          const studentProfile = res.data[0];
+          setProfile(studentProfile);
+
+          // Fetch logs
+          setLoadingLogs(true);
+          try {
+            const logsRes = await api.get(`/alerts/advising-logs?studentId=${studentProfile.id}`);
+            setLogs(logsRes.data || []);
+          } catch (err) {
+            console.error("Failed to load advising logs:", err);
+          } finally {
+            setLoadingLogs(false);
+          }
+        } else {
+          setProfile(null);
         }
       } catch (err) {
-        console.error("Failed to load settings:", err);
+        console.error("Failed to load student profile:", err);
+      } finally {
+        setLoading(false);
       }
     };
-    void fetchSettings();
-  }, []);
 
-  const channels = [
-    {
-      icon: <Mail className="h-5 w-5 text-violet-600" />,
-      title: "Email Phòng CNTT",
-      desc: "Gửi yêu cầu hỗ trợ qua email nội bộ của trường",
-      action: settings.advisor_email,
-      href: `mailto:${settings.advisor_email}`,
-      color: "hover:border-violet-300 hover:bg-violet-50/30",
-      iconBg: "bg-violet-50 border-violet-100",
-    },
-    {
-      icon: <Phone className="h-5 w-5 text-emerald-600" />,
-      title: "Hotline phòng CNTT",
-      desc: "Hỗ trợ trực tiếp qua điện thoại trong giờ hành chính",
-      action: settings.training_hotline,
-      href: `tel:${settings.training_hotline.replace(/[\s\(\)]+/g, "")}`,
-      color: "hover:border-emerald-300 hover:bg-emerald-50/30",
-      iconBg: "bg-emerald-50 border-emerald-100",
-    },
-    {
-      icon: <ExternalLink className="h-5 w-5 text-indigo-600" />,
-      title: "Cổng đào tạo online",
-      desc: "Tra cứu và đăng ký học phần tại cổng chính thức",
-      action: "Truy cập Online VLU Portal",
-      href: settings.asc_portal_url,
-      color: "hover:border-indigo-300 hover:bg-indigo-50/30",
-      iconBg: "bg-indigo-50 border-indigo-100",
-    },
-  ];
+    void fetchProfileAndLogs();
+  }, [user]);
 
   const faqs = [
     {
@@ -83,6 +91,33 @@ export default function StudentAdvisorPage() {
       a: "Toàn bộ dữ liệu được truyền qua HTTPS và lưu trữ mã hóa tại server. PathMinded không bao giờ chia sẻ dữ liệu với bên thứ ba.",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+          <p className="text-xs font-bold text-zinc-400">Đang tải thông tin tư vấn...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-xl mx-auto py-16 text-center space-y-4">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 border border-amber-100 text-amber-400">
+          <AlertCircle size={26} />
+        </div>
+        <h1 className="text-xl font-bold text-neutral-900">
+          Chưa liên kết hồ sơ
+        </h1>
+        <p className="text-sm text-neutral-500">
+          Tài khoản ({user?.email}) chưa được liên kết với hồ sơ sinh viên để xem thông tin Cố vấn Học tập.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-3xl">
@@ -109,32 +144,89 @@ export default function StudentAdvisorPage() {
         </div>
       </div>
 
-      {/* Contact channels */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {channels.map((ch) => (
-          <a
-            key={ch.title}
-            href={ch.href}
-            target={ch.href.startsWith("http") ? "_blank" : undefined}
-            rel="noreferrer"
-            className={`group flex flex-col gap-4 p-5 rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 ${ch.color} hover:shadow-md cursor-pointer`}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform ${ch.iconBg}`}
-            >
-              {ch.icon}
-            </div>
-            <div>
-              <p className="text-sm font-bold text-neutral-900">{ch.title}</p>
-              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                {ch.desc}
-              </p>
-              <p className="text-xs font-semibold text-violet-600 mt-2 break-all">
-                {ch.action}
-              </p>
-            </div>
-          </a>
-        ))}
+      {/* Advisor Feedback Card */}
+      <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="flex items-center gap-3 border-b border-zinc-150 pb-4 mb-4">
+          <div className="h-10 w-10 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600">
+            <MessageCircle className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-neutral-900">Nhận xét từ Cố vấn học tập</h3>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">Lời khuyên &amp; Phản hồi chính thức</p>
+          </div>
+        </div>
+        
+        {profile?.advisor_feedback ? (
+          <div className="bg-violet-50/20 rounded-2xl border border-violet-100/30 p-5">
+            <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap font-medium">
+              {profile.advisor_feedback}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-zinc-200 bg-neutral-50/50 p-6 text-center">
+            <p className="text-xs text-neutral-450 font-bold leading-relaxed">
+              Hiện tại chưa có ý kiến phản hồi hoặc nhận xét nào từ Cố vấn học tập dành cho bạn.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Advising Logs Section */}
+      <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-xs relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="flex items-center gap-3 border-b border-zinc-150 pb-4 mb-4">
+          <div className="h-10 w-10 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-neutral-900">Nhật ký tư vấn học tập</h3>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">Lịch sử ghi chép &amp; Trao đổi chi tiết</p>
+          </div>
+        </div>
+
+        {loadingLogs ? (
+          <div className="flex py-8 items-center justify-center text-zinc-400 gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-violet-600" />
+            <span className="text-xs font-bold">Đang tải nhật ký tư vấn...</span>
+          </div>
+        ) : logs.length > 0 ? (
+          <div className="space-y-4">
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="border border-zinc-150 rounded-2xl p-4 bg-zinc-50/20 hover:shadow-xs transition-shadow relative"
+              >
+                <div className="flex flex-wrap items-center gap-3.5 text-[10px] font-bold text-neutral-450">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={12} className="text-neutral-400" />
+                    <span>{new Date(log.log_date).toLocaleString("vi-VN")}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <User size={12} className="text-neutral-400" />
+                    <span>Cố vấn: {log.advisor_name || "Hệ thống"}</span>
+                  </div>
+                  {log.alert_type && (
+                    <span className="bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded text-[9px] font-bold inline-flex items-center gap-1">
+                      <AlertTriangle size={9} />
+                      Liên kết cảnh báo
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-sm text-neutral-700 mt-2.5 whitespace-pre-wrap leading-relaxed font-medium">
+                  {log.content}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-zinc-200 bg-neutral-50/50 p-6 text-center">
+            <p className="text-xs text-neutral-450 font-bold leading-relaxed">
+              Hiện tại chưa có nhật ký tư vấn nào được ghi nhận từ Cố vấn học tập.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* FAQ */}

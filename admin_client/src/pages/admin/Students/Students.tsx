@@ -5,13 +5,14 @@ import { DataTable } from "../../../components/data_display/DataTable";
 import { Modal } from "../../../components/ui/Modal";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import { StudentForm } from "./StudentForm";
-import { Plus, Edit2, Trash2, GraduationCap, ChevronLeft } from "lucide-react";
+import { Plus, Edit2, Trash2, GraduationCap, ChevronLeft, AlertTriangle } from "lucide-react";
 import { api } from "../../../services/api";
 import { useColumnLabels } from "../../../hooks/useColumnLabels";
 import { useClassLookup } from "../../../hooks/useClassLookup";
 import { useSearchParams } from "react-router-dom";
 import { StudentsConfigCard } from "./components/StudentsConfigCard";
 import { DeleteAllModal } from "./components/DeleteAllModal";
+import { StudentAlertsModal } from "./components/StudentAlertsModal";
 
 export default function Students() {
   const {
@@ -73,6 +74,9 @@ export default function Students() {
   // Single delete state
   const [deleteTarget, setDeleteTarget] = useState<StudentItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Alerts CRUD state
+  const [alertsModalStudent, setAlertsModalStudent] = useState<StudentItem | null>(null);
 
   const { getLabel } = useColumnLabels("CLASS");
   const { getClassName } = useClassLookup();
@@ -264,8 +268,16 @@ export default function Students() {
       render: (row: StudentItem) => (
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setAlertsModalStudent(row)}
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-amber-400 transition-colors cursor-pointer"
+            title="Quản lý cảnh báo học tập"
+          >
+            <AlertTriangle size={14} />
+          </button>
+          <button
             onClick={() => handleOpenEdit(row)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            title="Sửa hồ sơ sinh viên"
           >
             <Edit2 size={14} />
           </button>
@@ -418,6 +430,13 @@ export default function Students() {
         confirmText={deleteLoading ? "Đang xóa..." : "Xóa sinh viên"}
         isDanger={true}
         onConfirm={handleDeleteSingle}
+      />
+
+      {/* Alerts CRUD Modal */}
+      <StudentAlertsModal
+        isOpen={!!alertsModalStudent}
+        onClose={() => setAlertsModalStudent(null)}
+        student={alertsModalStudent}
       />
     </div>
   );

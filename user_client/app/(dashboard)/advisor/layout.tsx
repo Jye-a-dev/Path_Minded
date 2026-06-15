@@ -41,7 +41,7 @@ const advisorSections = [
     title: "Nhập & Xuất dữ liệu",
     items: [
       {
-        label: "Nhập khung chương trình",
+        label: "Nhập chương trình",
         to: "/advisor/curriculum",
         icon: UploadCloud,
       },

@@ -21,6 +21,18 @@ interface GraphCanvasProps {
   prereqs: PrerequisiteItem[];
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  maxSem: number;
+  colWidth: number;
+  setZoom?: React.Dispatch<React.SetStateAction<number>>;
+}
+
+const CARD_W = 200;
+const CARD_H = 80;
+
+/** Truncate a string to fit approximately maxChars characters */
+function truncate(str: string, maxChars: number) {
+  if (!str) return "";
+  return str.length > maxChars ? str.slice(0, maxChars - 1) + "…" : str;
 }
 
 export function GraphCanvas({
@@ -41,13 +53,22 @@ export function GraphCanvas({
   prereqs,
   isExpanded = false,
   onToggleExpand,
+  maxSem,
+  colWidth,
+  setZoom,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Compute curved path between nodes
-  const getBezierPath = (startX: number, startY: number, endX: number, endY: number) => {
-    const controlOffset = 80;
-    return `M ${startX} ${startY} C ${startX + controlOffset} ${startY}, ${endX - controlOffset} ${endY}, ${endX} ${endY}`;
+  const getBezierPath = (sx: number, sy: number, ex: number, ey: number) => {
+    const o = 80;
+    return `M ${sx} ${sy} C ${sx + o} ${sy}, ${ex - o} ${ey}, ${ex} ${ey}`;
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!setZoom) return;
+    e.preventDefault();
+    const d = e.deltaY > 0 ? -1 : 1;
+    setZoom((prev) => Math.min(Math.max(prev + d * 0.05, 0.4), 1.5));
   };
 
   return (
@@ -60,254 +81,197 @@ export function GraphCanvas({
 
       {/* Toolbar Controls */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-800">
-        <button
-          type="button"
-          onClick={zoomIn}
-          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Phóng to"
-        >
+        <button type="button" onClick={zoomIn} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Phóng to">
           <ZoomIn size={16} />
         </button>
-        <button
-          type="button"
-          onClick={zoomOut}
-          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Thu nhỏ"
-        >
+        <button type="button" onClick={zoomOut} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Thu nhỏ">
           <ZoomOut size={16} />
         </button>
         <div className="w-px h-4 bg-slate-800 mx-1" />
-        <button
-          type="button"
-          onClick={resetZoom}
-          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Đặt lại"
-        >
+        <button type="button" onClick={resetZoom} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Đặt lại">
           <RotateCcw size={16} />
         </button>
         {onToggleExpand && (
           <>
             <div className="w-px h-4 bg-slate-800 mx-1" />
-            <button
-              type="button"
-              onClick={onToggleExpand}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              title={isExpanded ? "Thu nhỏ" : "Toàn màn hình"}
-            >
+            <button type="button" onClick={onToggleExpand} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title={isExpanded ? "Thu nhỏ" : "Toàn màn hình"}>
               {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </button>
           </>
         )}
       </div>
 
-      {/* Legend Indicator */}
+      {/* Legend */}
       <div className="absolute bottom-4 left-4 right-4 lg:right-auto z-10 flex flex-wrap gap-3.5 bg-slate-900/85 backdrop-blur-md px-3.5 py-2.5 rounded-xl border border-slate-800 text-[10px] font-bold text-slate-300">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-          <span>Bắt buộc</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-          <span>Tự chọn</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-          <span>Thể chất</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-          <span>Tiếng Anh</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
-          <span>Quốc phòng</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-          <span>Khác</span>
-        </div>
+        {[
+          { color: "#6366f1", label: "Bắt buộc" },
+          { color: "#f59e0b", label: "Tự chọn" },
+          { color: "#3b82f6", label: "Thể chất" },
+          { color: "#10b981", label: "Tiếng Anh" },
+          { color: "#ec4899", label: "Quốc phòng" },
+          { color: "#64748b", label: "Khác" },
+        ].map(({ color, label }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: color, display: "inline-block" }} />
+            <span>{label}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Dynamic Interactive SVG Canvas */}
+      {/* SVG Canvas */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
         className={`w-full h-full select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
       >
         <svg className="w-full h-full">
           <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-            {/* Semester Columns Labels */}
-            {Array.from({ length: 8 }).map((_, index) => {
-              const x = 50 + index * 260;
+            {/* Semester column headers */}
+            {Array.from({ length: maxSem }).map((_, i) => {
+              const x = 50 + i * colWidth;
               return (
-                <g key={index}>
-                  <rect
-                    x={x}
-                    y={10}
-                    width={200}
-                    height={28}
-                    rx={6}
-                    fill="#0f172a"
-                    stroke="#1e293b"
-                    strokeWidth={1}
-                  />
-                  <text
-                    x={x + 100}
-                    y={28}
-                    textAnchor="middle"
-                    fill="#64748b"
-                    fontSize="11px"
-                    fontWeight="bold"
-                  >
-                    HỌC KỲ {index + 1}
+                <g key={i}>
+                  <rect x={x} y={10} width={CARD_W} height={28} rx={6} fill="#0f172a" stroke="#1e293b" strokeWidth={1} />
+                  <text x={x + CARD_W / 2} y={28} textAnchor="middle" fill="#64748b" fontSize="11" fontWeight="bold">
+                    HỌC KỲ {i + 1}
                   </text>
                 </g>
               );
             })}
 
-            {/* Edge Connections Paths */}
+            {/* Edge paths */}
             {prereqs.map((rule, idx) => {
-              const startNode = layout[rule.prerequisite_course_code];
-              const endNode = layout[rule.course_code];
-              if (!startNode || !endNode) return null;
-
-              const startX = startNode.x + 200; // Right side of source card
-              const startY = startNode.y + 36;  // Middle Y of source card
-              const endX = endNode.x;           // Left side of target card
-              const endY = endNode.y + 36;      // Middle Y of target card
-
-              let strokeColor = "#334155"; // Default dark slate connection
-              let strokeWidth = 1.2;
-              let isHighlighted = false;
-
+              const sn = layout[rule.prerequisite_course_code];
+              const en = layout[rule.course_code];
+              if (!sn || !en) return null;
+              let stroke = "#334155";
+              let sw = 1.2;
+              let highlighted = false;
               if (selectedCourseCode) {
-                const isSourceSelected = rule.prerequisite_course_code === selectedCourseCode;
-                const isTargetSelected = rule.course_code === selectedCourseCode;
-
-                if (isSourceSelected && dependencyPaths.descendants.has(rule.course_code)) {
-                  strokeColor = "#f97316"; // Descendant link path: Orange
-                  strokeWidth = 2.5;
-                  isHighlighted = true;
-                } else if (isTargetSelected && dependencyPaths.ancestors.has(rule.prerequisite_course_code)) {
-                  strokeColor = "#3b82f6"; // Prerequisite link path: Blue
-                  strokeWidth = 2.5;
-                  isHighlighted = true;
+                const srcSel = rule.prerequisite_course_code === selectedCourseCode;
+                const tgtSel = rule.course_code === selectedCourseCode;
+                if (srcSel && dependencyPaths.descendants.has(rule.course_code)) {
+                  stroke = "#f97316"; sw = 2.5; highlighted = true;
+                } else if (tgtSel && dependencyPaths.ancestors.has(rule.prerequisite_course_code)) {
+                  stroke = "#3b82f6"; sw = 2.5; highlighted = true;
                 }
               }
-
               return (
                 <path
                   key={idx}
-                  d={getBezierPath(startX, startY, endX, endY)}
+                  d={getBezierPath(sn.x + CARD_W, sn.y + CARD_H / 2, en.x, en.y + CARD_H / 2)}
                   fill="none"
-                  stroke={strokeColor}
-                  strokeWidth={strokeWidth}
-                  opacity={selectedCourseCode && !isHighlighted ? 0.2 : 0.85}
-                  className="transition-all duration-300"
+                  stroke={stroke}
+                  strokeWidth={sw}
+                  opacity={selectedCourseCode && !highlighted ? 0.2 : 0.85}
                 />
               );
             })}
 
-            {/* Render Course Node Cards */}
+            {/* Course node cards — pure SVG, no foreignObject */}
             {curriculum.map((c) => {
               const pos = layout[c.course_code];
               if (!pos) return null;
 
               const isSelected = selectedCourseCode === c.course_code;
 
-              // Color node card by course type
-              let cardBg = "rgba(15, 23, 42, 0.6)";
-              let cardBorder = "#1e293b";
-              let textType = "Khác";
+              // Colors by type
+              let fillColor = "rgba(15,23,42,0.8)";
+              let strokeColor = "#1e293b";
+              let typeLabel = "Khác";
+              let accentColor = "#64748b";
 
-              if (c.course_type === "REQUIRED") {
-                cardBg = "rgba(99, 102, 241, 0.05)";
-                cardBorder = "#6366f1";
-                textType = "Bắt buộc";
-              } else if (c.course_type === "ELECTIVE") {
-                cardBg = "rgba(245, 158, 11, 0.05)";
-                cardBorder = "#f59e0b";
-                textType = "Tự chọn";
-              } else if (c.course_type === "PE") {
-                cardBg = "rgba(59, 130, 246, 0.05)";
-                cardBorder = "#3b82f6";
-                textType = "Thể chất";
-              } else if (c.course_type === "ENGLISH") {
-                cardBg = "rgba(16, 185, 129, 0.05)";
-                cardBorder = "#10b981";
-                textType = "Tiếng Anh";
-              } else if (c.course_type === "DEFENSE") {
-                cardBg = "rgba(236, 72, 153, 0.05)";
-                cardBorder = "#ec4899";
-                textType = "Quốc phòng";
-              }
+              if (c.course_type === "REQUIRED")  { fillColor = "rgba(99,102,241,0.12)"; strokeColor = "#6366f1"; typeLabel = "Bắt buộc"; accentColor = "#818cf8"; }
+              else if (c.course_type === "ELECTIVE") { fillColor = "rgba(245,158,11,0.12)"; strokeColor = "#f59e0b"; typeLabel = "Tự chọn"; accentColor = "#fbbf24"; }
+              else if (c.course_type === "PE")     { fillColor = "rgba(59,130,246,0.12)"; strokeColor = "#3b82f6"; typeLabel = "Thể chất"; accentColor = "#60a5fa"; }
+              else if (c.course_type === "ENGLISH") { fillColor = "rgba(16,185,129,0.12)"; strokeColor = "#10b981"; typeLabel = "Tiếng Anh"; accentColor = "#34d399"; }
+              else if (c.course_type === "DEFENSE") { fillColor = "rgba(236,72,153,0.12)"; strokeColor = "#ec4899"; typeLabel = "Quốc phòng"; accentColor = "#f472b6"; }
 
-              // If path highlighted
-              let highlightRing = "";
               let cardOpacity = 1;
+              let glowStroke = strokeColor;
+              let glowWidth = 1;
+
               if (selectedCourseCode) {
                 if (isSelected) {
-                  highlightRing = "ring-2 ring-violet-500 ring-offset-2 ring-offset-slate-950";
-                  cardBorder = "#a78bfa";
+                  glowStroke = "#a78bfa"; glowWidth = 2.5;
                 } else if (dependencyPaths.ancestors.has(c.course_code)) {
-                  highlightRing = "ring-2 ring-blue-500/80 ring-offset-1 ring-offset-slate-950";
-                  cardBorder = "#3b82f6";
+                  glowStroke = "#3b82f6"; glowWidth = 2;
                 } else if (dependencyPaths.descendants.has(c.course_code)) {
-                  highlightRing = "ring-2 ring-orange-500/80 ring-offset-1 ring-offset-slate-950";
-                  cardBorder = "#f97316";
+                  glowStroke = "#f97316"; glowWidth = 2;
                 } else {
-                  cardOpacity = 0.35; // Dim non-involved courses
+                  cardOpacity = 0.3;
                 }
               }
 
+              const { x, y } = pos;
+              const courseName = truncate(c.course_name || c.course_code, 26);
+              const courseCode = truncate(c.course_code, 14);
+
               return (
-                <foreignObject
+                <g
                   key={c.course_code}
-                  x={pos.x}
-                  y={pos.y}
-                  width={200}
-                  height={72}
-                  className="overflow-visible"
+                  opacity={cardOpacity}
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCourseCode(isSelected ? null : c.course_code);
+                  }}
                 >
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedCourseCode(isSelected ? null : c.course_code);
-                    }}
-                    style={{
-                      backgroundColor: cardBg,
-                      borderColor: cardBorder,
-                      opacity: cardOpacity,
-                    }}
-                    className={`h-full border rounded-2xl p-3 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-md hover:scale-[1.02] backdrop-blur-sm select-none text-slate-200 ${highlightRing}`}
+                  {/* Card background */}
+                  <rect
+                    x={x} y={y}
+                    width={CARD_W} height={CARD_H}
+                    rx={12}
+                    fill={fillColor}
+                    stroke={glowStroke}
+                    strokeWidth={glowWidth}
+                  />
+
+                  {/* Top divider line */}
+                  <line x1={x + 10} y1={y + 22} x2={x + CARD_W - 10} y2={y + 22} stroke={strokeColor} strokeWidth={0.5} opacity={0.4} />
+
+                  {/* Course code */}
+                  <text
+                    x={x + 10} y={y + 15}
+                    fill="#94a3b8"
+                    fontSize="9"
+                    fontWeight="bold"
+                    fontFamily="monospace"
+                    letterSpacing="0.5"
                   >
-                    <div className="flex items-start justify-between gap-1.5">
-                      <span className="text-[10px] font-black font-mono tracking-wide text-slate-400">
-                        {c.course_code}
-                      </span>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-800/85 text-slate-400">
-                        {textType}
-                      </span>
-                    </div>
+                    {courseCode}
+                  </text>
 
-                    <p
-                      className="text-xs font-bold leading-snug truncate text-slate-200"
-                      title={c.course_name}
-                    >
-                      {c.course_name}
-                    </p>
+                  {/* Type badge (right) */}
+                  <rect x={x + CARD_W - 52} y={y + 5} width={46} height={13} rx={4} fill="rgba(30,41,59,0.9)" />
+                  <text x={x + CARD_W - 29} y={y + 14.5} textAnchor="middle" fill="#94a3b8" fontSize="8" fontWeight="bold">
+                    {typeLabel}
+                  </text>
 
-                    <div className="flex items-center justify-between text-[9px] font-bold text-slate-400">
-                      <span>{c.credits} tín chỉ</span>
-                      <span className="opacity-80" style={{ color: cardBorder }}>
-                        Học kỳ {c.expected_semester}
-                      </span>
-                    </div>
-                  </div>
-                </foreignObject>
+                  {/* Course name — the middle section, bright white */}
+                  <text
+                    x={x + 10} y={y + 38}
+                    fill="#f1f5f9"
+                    fontSize="11"
+                    fontWeight="600"
+                  >
+                    {courseName}
+                  </text>
+
+                  {/* Bottom: credits */}
+                  <text x={x + 10} y={y + 68} fill="#64748b" fontSize="9" fontWeight="bold">
+                    {c.credits} tín chỉ
+                  </text>
+
+                  {/* Bottom: semester (right, accent color) */}
+                  <text x={x + CARD_W - 10} y={y + 68} textAnchor="end" fill={accentColor} fontSize="9" fontWeight="bold">
+                    Học kỳ {c.expected_semester}
+                  </text>
+                </g>
               );
             })}
           </g>
